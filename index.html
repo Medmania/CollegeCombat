@@ -278,11 +278,42 @@ textarea:focus {
   flex-direction: column;
   gap: 4px;
   min-height: 104px;
+  position: relative;
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card:active {
+  transform: scale(0.985);
 }
 
 .card.selected {
   border-color: var(--gold);
-  background: rgba(255, 209, 102, 0.12);
+  background: rgba(255, 209, 102, 0.13);
+  box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.3), 0 10px 24px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.card.selected::after {
+  content: '\2713';
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--gold);
+}
+
+.cnum {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(190, 205, 225, 0.85);
+  margin-top: 1px;
 }
 
 .swatch {
@@ -388,6 +419,22 @@ textarea:focus {
 .dot.on {
   background: #4ade80;
   box-shadow: 0 0 8px #4ade80;
+}
+
+.dot.wait {
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(255, 209, 102, 0.8);
+  animation: dotPulse 1s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .code-area {
@@ -912,15 +959,50 @@ textarea:focus {
 
   .roster {
     grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
   }
 
   .card {
-    min-height: 84px;
-    padding: 9px;
+    min-height: 66px;
+    padding: 8px;
+    gap: 2px;
+  }
+
+  .cname {
+    font-size: 12.5px;
+  }
+
+  .ctag {
+    font-size: 10.5px;
+  }
+
+  .cnum {
+    font-size: 9px;
   }
 
   .cpass {
     display: none;
+  }
+
+  .field {
+    margin-bottom: 10px;
+  }
+
+  .steps {
+    font-size: 11px;
+    line-height: 1.35;
+    padding-left: 16px;
+    margin-bottom: 8px;
+  }
+
+  .slot {
+    padding: 9px;
+    gap: 6px;
+  }
+
+  .slot textarea {
+    min-height: 34px;
   }
 
   .actions {
@@ -930,6 +1012,120 @@ textarea:focus {
   .actions .btn {
     flex: 1 1 0;
   }
+}
+
+
+/* ---------- juice ---------- */
+
+.ticker span {
+  display: inline-block;
+}
+
+.ticker span.slide {
+  animation: tickerIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes tickerIn {
+  from {
+    transform: translateX(22px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes superPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 209, 102, 0.35);
+    border-color: rgba(255, 209, 102, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(255, 209, 102, 0.9);
+    border-color: rgba(255, 240, 190, 0.95);
+  }
+}
+
+.pad-btn.super.ready {
+  animation: superPulse 1.1s ease-in-out infinite;
+}
+
+.hud-tag {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #93c5fd;
+  border: 1px solid rgba(147, 197, 253, 0.45);
+  border-radius: 4px;
+  padding: 0 3px;
+  flex: 0 0 auto;
+}
+
+/* ---------- lobby slot states ---------- */
+
+.slot.state-invited {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.slot.state-connecting {
+  border-color: rgba(255, 209, 102, 0.55);
+  background: rgba(255, 209, 102, 0.07);
+}
+
+.slot.state-connected {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.slot-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  margin-left: auto;
+}
+
+.state-invited .slot-badge {
+  color: #93c5fd;
+}
+
+.state-connecting .slot-badge {
+  color: var(--gold);
+}
+
+.state-connected .slot-badge {
+  color: #4ade80;
+}
+
+#lobby-start.ready {
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.4), 0 12px 28px rgba(255, 209, 102, 0.22);
+  transform: translateY(-1px);
+}
+
+/* ---------- settings ---------- */
+
+.settings-link {
+  align-self: center;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--gold);
+  height: 28px;
+}
+
+#screen-settings .hint {
+  text-align: left;
 }
     </style>
   </head>
@@ -959,6 +1155,8 @@ textarea:focus {
           </button>
         </div>
 
+        <button class="ghost settings-link" data-nav="settings">Settings</button>
+
         <p class="hint">
           Multiplayer connects phones directly, peer to peer. Nothing is stored anywhere.
           Both players need to be on the <strong>same Wi-Fi</strong>.
@@ -987,6 +1185,15 @@ textarea:focus {
             <button class="chip active" data-bots="1">1 bot</button>
             <button class="chip" data-bots="2">2 bots</button>
             <button class="chip" data-bots="3">3 bots</button>
+          </div>
+        </div>
+
+        <div class="field" id="difficulty-row">
+          <label>Bot difficulty</label>
+          <div class="chips" id="difficulty">
+            <button class="chip" data-diff="easy">Easy</button>
+            <button class="chip active" data-diff="normal">Normal</button>
+            <button class="chip" data-diff="hard">Hard</button>
           </div>
         </div>
 
@@ -1082,6 +1289,23 @@ textarea:focus {
         </div>
       </section>
 
+      <!-- ================= SETTINGS ================= -->
+      <section class="screen" id="screen-settings">
+        <header class="bar">
+          <button class="ghost" data-nav="menu">&#8592; Back</button>
+          <h2>Settings</h2>
+          <span class="spacer"></span>
+        </header>
+
+        <div class="field">
+          <label for="sfx-volume">Sound effects</label>
+          <input id="sfx-volume" type="range" min="0" max="100" step="5" value="80" />
+          <p class="hint" id="sfx-value">80%</p>
+        </div>
+
+        <p class="hint">Saved on this phone only. No account, no cloud, no server.</p>
+      </section>
+
       <!-- ================= RESULT ================= -->
       <section class="screen" id="screen-result">
         <div class="paper">
@@ -1125,19 +1349,29 @@ const { CHARACTERS, getCharacter, HEADLINES, TICKER } = globalThis.KK_Roster;
 
 
 /* ===================== audio ===================== */
-/* Tiny WebAudio blips — no asset files, nothing to download. */
+/* Tiny WebAudio blips — no asset files, nothing to download.
+   Everything runs through one master gain so the Settings slider works. */
 
 function createAudio() {
   let ctx = null;
+  let master = null;
+  let volume = 0.8;
 
   function ensure() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = volume;
+      master.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
+  }
+
+  function out() {
+    return master || (ctx && ctx.destination);
   }
 
   function tone({ freq = 220, dur = 0.08, type = 'square', gain = 0.05, slide = 0 }) {
@@ -1151,7 +1385,7 @@ function createAudio() {
     if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
     g.gain.setValueAtTime(gain, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g).connect(c.destination);
+    osc.connect(g).connect(out());
     osc.start(t);
     osc.stop(t + dur + 0.02);
   }
@@ -1167,12 +1401,20 @@ function createAudio() {
     const g = c.createGain();
     g.gain.value = gain;
     src.buffer = buf;
-    src.connect(g).connect(c.destination);
+    src.connect(g).connect(out());
     src.start();
+  }
+
+  function setVolume(v) {
+    volume = Math.max(0, Math.min(1, Number(v) || 0));
+    if (master) master.gain.value = volume;
+    return volume;
   }
 
   return {
     ensure,
+    setVolume,
+    getVolume: () => volume,
     punch: () => tone({ freq: 320, dur: 0.05, type: 'square', gain: 0.03, slide: -120 }),
     kick: () => tone({ freq: 180, dur: 0.09, type: 'sawtooth', gain: 0.035, slide: -80 }),
     hit: (big = false) => {
@@ -1646,6 +1888,7 @@ function createRenderer(canvas) {
   const bubbles = [];
   const motion = new Map();
   const rigs = new Map();
+  const downed = new Map();
 
   const cam = {
     pos: [750, -300, 105],
@@ -2093,7 +2336,7 @@ function createRenderer(canvas) {
           });
         }
         rings.push({ x: e.x, h: e.h, r: 8, max: big ? 110 : 64, life: 0.3, maxLife: 0.3, color });
-        shake = Math.min(16, shake + (big ? 9 : 4));
+        shake = Math.min(20, shake + (big ? 12 : 5));
 
         if (attacker && attacker.taunts && attacker.taunts.length && Math.random() < 0.3) {
           say(attacker.id, attacker.taunts[Math.floor(Math.random() * attacker.taunts.length)]);
@@ -2117,7 +2360,7 @@ function createRenderer(canvas) {
           });
         }
         rings.push({ x: e.x, h: 40, r: 12, max: 110, life: 0.38, maxLife: 0.38, color: '#ffd166' });
-        shake = Math.min(24, shake + 16);
+        shake = Math.min(28, shake + 20);
         if (p && p.taunts && p.taunts.length) say(p.id, p.taunts[0]);
       } else if (e.type === 'super' || e.type === 'superstart') {
         const p = players.find((q) => q.id === e.id);
@@ -2287,6 +2530,36 @@ function createRenderer(canvas) {
       ctx.restore();
     }
 
+    /* a fighter hitting the floor gets its own thump */
+    for (const p of view.players) {
+      const isDown = p.alive && p.downT > 0.02;
+      const wasDown = downed.get(p.id) || false;
+      if (isDown && !wasDown) {
+        const g = project([p.x, 0, 0]);
+        if (g) {
+          for (let i = 0; i < 14; i++) {
+            const a = (Math.random() - 0.5) * Math.PI;
+            const sp = 70 + Math.random() * 160;
+            particles.push({
+              x: p.x,
+              y: (Math.random() - 0.5) * 40,
+              h: 6,
+              vx: Math.cos(a) * sp,
+              vy: (Math.random() - 0.5) * 60,
+              vh: 40 + Math.random() * 90,
+              life: 0.45 + Math.random() * 0.25,
+              max: 0.7,
+              size: 2.5 + Math.random() * 2.5,
+              color: 'rgba(226,206,182,0.9)'
+            });
+          }
+          rings.push({ x: p.x, h: 8, r: 10, max: 78, life: 0.34, maxLife: 0.34, color: '#e2ceb6' });
+          shake = Math.min(26, shake + 12);
+        }
+      }
+      downed.set(p.id, isDown);
+    }
+
     const order = view.players
       .map((p) => ({ p, foot: project([p.x, 0, p.h]) }))
       .filter((o) => o.foot)
@@ -2306,14 +2579,19 @@ function createRenderer(canvas) {
 }
 
 /* ===================== ai ===================== */
-/* Bot opponent for the side-view engine. Runs only on the host or in solo,
-   so a little randomness here never desyncs anything.
+/* Bot AI.
 
-   Two separate clocks matter:
-     mem.timer     — how often the bot re-picks a target
-     mem.actTimer  — how often it may start an attack
-   Without the second clock a bot rolls for an attack 30 times a second and
-   turns into a machine gun. */
+   Three layers, deliberately simple:
+
+     profile  — who the fighter is (personality), derived from its passive
+                and its id, so The Intern and The Deadline do not fight alike
+     level    — Easy / Normal / Hard: reaction time, aggression, combo rate,
+                spacing discipline and how well it times a super
+     state    — what it is doing right now: approach, poke, pressure, retreat,
+                anti-air, punish, wait
+
+   Bots only ever run on the host or in solo, so the randomness here cannot
+   desync a networked match. All memory lives on p.ai. */
 
 const NEUTRAL = {
   mx: 0,
@@ -2324,21 +2602,239 @@ const NEUTRAL = {
   super: false
 };
 
+/* ---------------------------------------------------------------- profiles */
+
+/* aggression  how readily it starts an attack
+   patience    how long it waits between decisions (higher = calmer)
+   spacing     multiplier on its preferred fighting distance
+   mobility    how much it dashes and jumps around
+   prefer      which button it reaches for first */
+const PROFILES = {
+  intern: { aggression: 1.3, patience: 0.25, spacing: 0.8, mobility: 1.35, prefer: 'kick' },
+  manager: { aggression: 1.0, patience: 0.55, spacing: 1.0, mobility: 1.0, prefer: 'punch' },
+  deadline: { aggression: 0.65, patience: 0.9, spacing: 1.15, mobility: 0.65, prefer: 'kick' },
+  replyall: { aggression: 1.0, patience: 0.5, spacing: 1.0, mobility: 1.0, prefer: 'punch' },
+  sixpm: { aggression: 1.1, patience: 0.45, spacing: 0.95, mobility: 0.95, prefer: 'kick' },
+  founder: { aggression: 1.05, patience: 0.65, spacing: 0.85, mobility: 0.8, prefer: 'punch' }
+};
+
+/* the passive is the stronger signal, so it wins when the id is unknown */
+const BY_PASSIVE = {
+  slippery: { aggression: 1.35, patience: 0.2, spacing: 0.78, mobility: 1.4, prefer: 'kick' },
+  heavy: { aggression: 0.62, patience: 0.95, spacing: 1.18, mobility: 0.6, prefer: 'kick' },
+  tank: { aggression: 1.12, patience: 0.7, spacing: 0.82, mobility: 0.75, prefer: 'punch' },
+  quick: { aggression: 1.2, patience: 0.32, spacing: 0.88, mobility: 1.25, prefer: 'punch' },
+  shover: { aggression: 1.05, patience: 0.5, spacing: 0.95, mobility: 1.0, prefer: 'kick' },
+  charged: { aggression: 1.0, patience: 0.5, spacing: 1.0, mobility: 1.0, prefer: 'punch' },
+  none: { aggression: 1.0, patience: 0.5, spacing: 1.0, mobility: 1.0, prefer: 'punch' }
+};
+
+/* ------------------------------------------------------------------ levels */
+
+const LEVELS = {
+  easy: { react: 0.7, aggression: 0.45, combo: 0.1, spacing: 0.5, superIQ: 0.15, defend: 0.12 },
+  normal: { react: 0.32, aggression: 1.0, combo: 0.55, spacing: 1.0, superIQ: 0.65, defend: 0.45 },
+  hard: { react: 0.16, aggression: 1.3, combo: 0.9, spacing: 1.35, superIQ: 1.0, defend: 0.7 }
+};
+
+let difficulty = 'normal';
+
+function setBotDifficulty(level) {
+  difficulty = LEVELS[level] ? level : 'normal';
+}
+
+function getBotDifficulty() {
+  return difficulty;
+}
+
+const aiClamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+function profileFor(p) {
+  const passiveId = (p.passiveId || (p.ai && p.ai.passiveId) || '').trim();
+  const byPassive = BY_PASSIVE[passiveId];
+  const byId = PROFILES[p.charId];
+  if (byId && byPassive) {
+    /* blend: personality from the fighter, temperament nudged by the passive */
+    return {
+      aggression: (byId.aggression + byPassive.aggression) / 2,
+      patience: (byId.patience + byPassive.patience) / 2,
+      spacing: (byId.spacing + byPassive.spacing) / 2,
+      mobility: (byId.mobility + byPassive.mobility) / 2,
+      prefer: byId.prefer
+    };
+  }
+  return byPassive || byId || BY_PASSIVE.none;
+}
+
+/* ----------------------------------------------------------------- memory */
+
+function memory(p) {
+  const mem = p.ai || (p.ai = {});
+  if (mem.targetT === undefined) mem.targetT = 0;
+  if (mem.targetId === undefined) mem.targetId = null;
+  if (mem.reactT === undefined) mem.reactT = 0;
+  if (mem.action === undefined) mem.action = null;
+  if (mem.actionT === undefined) mem.actionT = 0;
+  if (mem.pending === undefined) mem.pending = [];
+  if (mem.state === undefined) mem.state = 'approach';
+  return mem;
+}
+
+/* ---------------------------------------------------------------- actions */
+
+function setAction(mem, action) {
+  mem.action = action;
+  mem.actionT = action === 'wait' ? 0.05 : 0.12;
+}
+
+function applyAction(p, out, action, dir) {
+  switch (action) {
+    case 'punch':
+      out.punch = true;
+      break;
+    case 'kick':
+      out.kick = true;
+      break;
+    case 'sweep':
+      out.my = 1;
+      out.kick = true;
+      break;
+    case 'uppercut':
+      out.my = 1;
+      out.punch = true;
+      break;
+    case 'crouch':
+      out.my = 1;
+      break;
+    case 'jump':
+      out.my = -1;
+      break;
+    case 'jumpin':
+      out.my = -1;
+      out.mx = dir;
+      break;
+    case 'back':
+      out.mx = -dir;
+      break;
+    case 'dashin':
+      out.dash = true;
+      out.mx = dir;
+      break;
+    case 'super':
+      out.super = true;
+      break;
+    case 'approach':
+      out.mx = dir;
+      break;
+    default:
+      out.mx = 0;
+      break;
+  }
+}
+
+/* --------------------------------------------------------------- decisions */
+
+function startCombo(p, mem, first, lvl, prof) {
+  setAction(mem, first);
+  if (Math.random() < lvl.combo) {
+    const followUp = first === 'punch' ? (prof.prefer === 'kick' ? 'kick' : 'uppercut') : 'punch';
+    const atk = p.attacks[first];
+    mem.pending.push({ t: atk.dur * 0.8, action: followUp });
+  }
+}
+
+function decide(p, target, dist, dir, mem, lvl, prof) {
+  const A = p.attacks;
+  const reach = A.kick.range;
+  const ideal = reach * prof.spacing * 0.85;
+  const hpFrac = p.hp / p.maxHp;
+  const hurt = hpFrac < 0.3;
+  const targetAirborne = !target.onGround && target.h > 30;
+
+  /* 1. super, but only at a moment worth spending it on */
+  const superRange = p.moves.super.range;
+  if (p.meter >= 100 && dist < superRange * 0.85) {
+    const goodMoment = target.hitstun > 0 || target.downT > 0 || target.attack !== null || dist < 95;
+    if (goodMoment && Math.random() < lvl.superIQ) {
+      mem.state = 'punish';
+      return setAction(mem, 'super');
+    }
+  }
+
+  /* 2. punish a whiffed attack */
+  if (target.attack && dist < reach + 24 && Math.random() < 0.55 * lvl.aggression) {
+    mem.state = 'punish';
+    return startCombo(p, mem, prof.prefer, lvl, prof);
+  }
+
+  /* 3. anti-air: they jumped at us */
+  if (targetAirborne && dist < reach + 40) {
+    if (target.h < 95 && Math.random() < lvl.defend) {
+      mem.state = 'antiair';
+      return setAction(mem, 'punch');
+    }
+    if (Math.random() < lvl.defend * 0.6) {
+      mem.state = 'retreat';
+      return setAction(mem, 'back');
+    }
+  }
+
+  /* 4. hurt and close: get out */
+  if (hurt && dist < ideal + 50 && Math.random() < 0.35 + lvl.spacing * 0.25) {
+    mem.state = 'retreat';
+    return setAction(mem, Math.random() < 0.6 ? 'back' : 'crouch');
+  }
+
+  /* 5. in range: pressure */
+  if (dist < reach - 4) {
+    /* how often it swings, straight from aggression */
+    const attackChance = aiClamp(0.15 + 0.45 * (prof.aggression - 0.6), 0.1, 0.85) * lvl.aggression;
+    if (Math.random() > attackChance) {
+      mem.state = 'wait';
+      return setAction(mem, 'wait');
+    }
+    mem.state = 'pressure';
+    if (target.crouching) return setAction(mem, 'sweep');
+    const roll = Math.random();
+    if (roll < 0.42) return startCombo(p, mem, 'punch', lvl, prof);
+    if (roll < 0.78) return startCombo(p, mem, 'kick', lvl, prof);
+    return setAction(mem, 'sweep');
+  }
+
+  /* 6. just outside: poke, or step in */
+  if (dist < reach + 80) {
+    mem.state = 'poke';
+    if (Math.random() < 0.28 * lvl.aggression * prof.aggression) return setAction(mem, 'kick');
+    if (Math.random() < 0.16 * prof.mobility) return setAction(mem, 'dashin');
+    return setAction(mem, 'approach');
+  }
+
+  /* 7. far away: close the gap, occasionally jump in */
+  mem.state = 'approach';
+  if (dist > 300 && Math.random() < 0.12 * prof.mobility) {
+    mem.state = 'approach';
+    setAction(mem, 'jumpin');
+    mem.pending.push({ t: 0.34, action: 'kick' });
+    return undefined;
+  }
+  return setAction(mem, 'approach');
+}
+
+/* ------------------------------------------------------------------- entry */
+
 function botInput(p, m) {
   const out = { ...NEUTRAL };
-  if (!p.alive || m.over || p.downT > 0 || p.hitstun > 0) return out;
+  if (!p.alive || m.over || p.downT > 0) return out;
 
-  const mem = p.ai || (p.ai = {});
-  /* older saves and hand-built players may not carry these yet */
-  if (mem.timer === undefined) mem.timer = 0;
-  if (mem.actTimer === undefined) mem.actTimer = 0;
-  if (mem.actionT === undefined) mem.actionT = 0;
-  if (mem.action === undefined) mem.action = null;
+  const mem = memory(p);
+  const lvl = LEVELS[difficulty];
+  const prof = profileFor(p);
   const dt = 1 / 30;
 
-  mem.timer -= dt;
-  if (mem.timer <= 0) {
-    mem.timer = 0.4 + Math.random() * 0.4;
+  /* re-pick a target now and then */
+  mem.targetT -= dt;
+  if (mem.targetT <= 0 || !mem.targetId) {
+    mem.targetT = 0.35 + Math.random() * 0.2;
     let best = null;
     let bd = Infinity;
     for (const q of m.players) {
@@ -2360,57 +2856,51 @@ function botInput(p, m) {
   const dir = dx >= 0 ? 1 : -1;
   out.mx = dir;
 
-  /* --- decide --- */
-  mem.actTimer -= dt;
-  if (mem.actTimer <= 0) {
-    mem.actTimer = 0.55 + Math.random() * 0.45;
-    mem.action = null;
+  /* stunned: no input at all */
+  if (p.hitstun > 0) return out;
 
-    const reach = p.attacks.kick.range;
-    const hurt = p.hp < p.maxHp * 0.25;
-
-    if (p.meter >= 100 && dist < p.moves.super.range * 0.8) {
-      mem.action = 'super';
-    } else if (target.attack && dist < 150) {
-      /* defend: duck a high strike, hop a sweep */
-      const kind = target.attack.type;
-      if ((kind === 'punch' || kind === 'kick' || kind === 'backKick') && Math.random() < 0.45) mem.action = 'crouch';
-      else if (kind === 'sweep' && Math.random() < 0.4) mem.action = 'jump';
-    } else if (dist < reach - 6) {
-      if (target.crouching) mem.action = 'sweep';
-      else if (Math.random() < 0.38) mem.action = 'punch';
-      else if (Math.random() < 0.3) mem.action = 'kick';
-    } else if (dist < reach + 80) {
-      if (Math.random() < 0.22) mem.action = 'kick';
-      else if (Math.random() < 0.12) mem.action = 'jump';
-    } else if (dist > 300 && p.onGround && p.cd.dash <= 0 && Math.random() < 0.2) {
-      mem.action = 'dash';
+  /* queued combo steps */
+  if (mem.pending.length) {
+    const step = mem.pending[0];
+    step.t -= dt;
+    if (step.t <= 0) {
+      mem.pending.shift();
+      setAction(mem, step.action);
     }
-
-    /* a hurt bot backs off instead of trading */
-    if (hurt && dist < 140 && Math.random() < 0.5) mem.action = 'retreat';
-
-    mem.actionT = mem.action ? 0.14 : 0;
   }
 
+  /* reactive defence, scaled by difficulty */
+  if (target.attack && dist < 175 && Math.random() < lvl.defend) {
+    const kind = target.attack.type;
+    if ((kind === 'punch' || kind === 'kick' || kind === 'backKick' || kind === 'crouchPunch') && p.onGround) {
+      setAction(mem, 'crouch');
+    } else if (kind === 'sweep' && p.onGround) {
+      setAction(mem, 'jump');
+    } else if (kind === 'airKick' || kind === 'airPunch') {
+      setAction(mem, 'back');
+    }
+  }
+
+  /* main decision, on a clock so the bot is not a machine gun */
+  mem.reactT -= dt;
+  if (mem.reactT <= 0) {
+    /* impatient fighters think faster: patience stretches the gap */
+    mem.reactT = lvl.react * (0.65 + Math.random() * 0.7) * (0.55 + prof.patience);
+    decide(p, target, dist, dir, mem, lvl, prof);
+  }
+
+  /* hold the current action for a moment so the engine sees it */
   if (mem.actionT > 0) {
     mem.actionT -= dt;
-    if (mem.action === 'punch') out.punch = true;
-    else if (mem.action === 'kick') out.kick = true;
-    else if (mem.action === 'sweep') {
-      out.my = 1;
-      out.kick = true;
-    } else if (mem.action === 'jump') {
-      out.my = -1;
-      out.mx = dir * 0.7;
-    } else if (mem.action === 'crouch') out.my = 1;
-    else if (mem.action === 'dash') out.dash = true;
-    else if (mem.action === 'super') out.super = true;
-    else if (mem.action === 'retreat') out.mx = -dir;
+    applyAction(p, out, mem.action, dir);
+  } else if (!p.attack) {
+    /* nothing happening: drift toward the preferred distance */
+    const reach = p.attacks.kick.range;
+    const ideal = reach * prof.spacing * 0.85;
+    if (dist > ideal + 30) out.mx = dir;
+    else if (dist < ideal - 40) out.mx = -dir;
+    else out.mx = 0;
   }
-
-  /* drift back to a fighting distance when very close and not attacking */
-  if (dist < 42 && !mem.actionT) out.mx = dir * 0.2;
 
   return out;
 }
@@ -2712,6 +3202,9 @@ const S = {
   mode: 'solo',
   me: { name: 'You', charId: CHARACTERS[0].id },
   botCount: 1,
+  difficulty: 'normal',
+  hitStop: 0,
+  slotState: {},
   match: null,
   localId: 'p0',
   running: false,
@@ -2773,6 +3266,7 @@ function buildRoster(container, onPick, selectedId) {
       <span class="swatch" style="background:${esc(c.colors.body)};border-color:${esc(c.colors.accent)}"></span>
       <span class="cname">${esc(c.name)}</span>
       <span class="ctag">${esc(c.tagline)}</span>
+      <span class="cnum">SPD ${c.stats.speed.toFixed(2)} · POW ${c.stats.power.toFixed(2)} · ${c.stats.hp} HP</span>
       <span class="cpass">${esc(c.passive.text)}</span>`;
     el.addEventListener('click', () => onPick(c.id));
     container.appendChild(el);
@@ -2796,6 +3290,7 @@ function refreshRoster() {
 function openPick(mode) {
   S.mode = mode;
   $('#bot-row').hidden = mode !== 'solo';
+  $('#difficulty-row').hidden = mode !== 'solo';
   $('#pick-msg').textContent = '';
   $('#pick-title').textContent =
     mode === 'solo' ? 'Choose your fighter' : mode === 'host' ? 'Pick your fighter' : 'Pick your fighter';
@@ -2809,6 +3304,7 @@ function openPick(mode) {
 /* ---------------------------------------------------------------- solo match */
 
 function startSolo() {
+  setBotDifficulty(S.difficulty);
   const char = getCharacter(S.me.charId);
   const fighters = [{ id: 'p0', name: S.me.name || 'You', char, isBot: false }];
   const pool = CHARACTERS.filter((c) => c.id !== char.id);
@@ -2824,25 +3320,54 @@ function startSolo() {
 
 /* -------------------------------------------------------------------- lobby */
 
+function slotStateFor(i) {
+  const entry = S.lobby.find((l) => l.slot === i);
+  if (entry && entry.connected) return 'connected';
+  if (S.slotState[i] === 'connecting') return 'connecting';
+  if (S.codes[i]) return 'invited';
+  return 'empty';
+}
+
+const SLOT_BADGE = {
+  empty: 'empty',
+  invited: 'invite sent',
+  connecting: 'connecting',
+  connected: 'ready'
+};
+
 function renderLobby() {
   const box = $('#lobby-slots');
   if (!box) return;
   const parts = [];
+
   for (let i = 0; i < 3; i++) {
+    const state = slotStateFor(i);
     const entry = S.lobby.find((l) => l.slot === i);
-    if (entry && entry.connected) {
+    const badge = `<span class="slot-badge">${SLOT_BADGE[state]}</span>`;
+
+    if (state === 'connected') {
       parts.push(`
-        <div class="slot">
+        <div class="slot state-connected">
           <div class="slot-head"><span class="dot on"></span>${esc(entry.name)} — ${esc(
         getCharacter(entry.charId).name
-      )}</div>
+      )}${badge}</div>
         </div>`);
       continue;
     }
+
+    if (state === 'connecting') {
+      parts.push(`
+        <div class="slot state-connecting">
+          <div class="slot-head"><span class="dot wait"></span>Slot ${i + 1}${badge}</div>
+          <div class="slot-msg">Reply code accepted. Waiting for their phone to answer…</div>
+        </div>`);
+      continue;
+    }
+
     const code = S.codes[i] || '';
     parts.push(`
-      <div class="slot">
-        <div class="slot-head"><span class="dot"></span>Slot ${i + 1} — empty</div>
+      <div class="slot state-${state}">
+        <div class="slot-head"><span class="dot"></span>Slot ${i + 1}${badge}</div>
         <button class="btn small" data-gen="${i}">${code ? 'New invite code' : 'Generate invite code'}</button>
         <div class="code-area ${code ? 'show' : ''}" data-code="${i}">${esc(code)}</div>
         <textarea data-answer="${i}" rows="2" placeholder="Paste your friend's reply code here">${esc(
@@ -2852,13 +3377,18 @@ function renderLobby() {
         <div class="slot-msg">${esc(S.slotMsg[i] || '')}</div>
       </div>`);
   }
+
   box.innerHTML = parts.join('');
   updateLobbyStart();
 }
 
 function updateLobbyStart() {
   const btn = $('#lobby-start');
-  if (btn) btn.disabled = S.lobby.filter((l) => l.connected).length === 0;
+  if (!btn) return;
+  const ready = S.lobby.filter((l) => l.connected).length > 0;
+  btn.disabled = !ready;
+  btn.classList.toggle('ready', ready);
+  btn.textContent = ready ? 'Start fight' : 'Waiting for a player…';
 }
 
 function setSlotMsg(i, text) {
@@ -2879,6 +3409,7 @@ function beginHost() {
   S.codes = {};
   S.answers = {};
   S.slotMsg = {};
+  S.slotState = {};
   if (S.host) S.host.closeAll();
 
   S.host = new HostSession();
@@ -2891,6 +3422,7 @@ function beginHost() {
     entry.name = msg.name || 'Guest';
     entry.charId = msg.charId || CHARACTERS[0].id;
     entry.connected = true;
+    S.slotState[index] = 'connected';
     if (!existing) S.lobby.push(entry);
     S.host.send(index, { t: 'welcome', id });
     renderLobby();
@@ -2904,6 +3436,7 @@ function beginHost() {
   S.host.on('close', (index) => {
     S.lobby = S.lobby.filter((l) => l.slot !== index);
     delete S.remoteInputs[`g${index}`];
+    S.slotState[index] = S.codes[index] ? 'invited' : 'empty';
     renderLobby();
   });
 
@@ -2920,6 +3453,7 @@ async function generateInvite(i) {
     setSlotMsg(i, 'Creating invite…');
     const code = await S.host.createInvite(i);
     S.codes[i] = code;
+    S.slotState[i] = 'invited';
     S.slotMsg[i] = 'Invite ready. Send this whole code to your friend.';
     renderLobby();
   } catch (err) {
@@ -2935,7 +3469,9 @@ async function acceptAnswer(i) {
   }
   try {
     await S.host.acceptAnswer(i, blob);
-    setSlotMsg(i, 'Connecting… waiting for your friend.');
+    S.slotState[i] = 'connecting';
+    S.slotMsg[i] = 'Reply accepted. Waiting for their phone.';
+    renderLobby();
   } catch (err) {
     setSlotMsg(i, err.message || 'That code did not work.');
   }
@@ -3082,7 +3618,8 @@ function buildHudStrip() {
         <span class="hud-name">${esc(p.name)}</span>
         <span class="hud-bar hp"><i></i></span>
         <span class="hud-bar mt"><i style="background:${esc(p.colors.accent)}"></i></span>
-      </span>`;
+      </span>
+      ${p.isBot ? '<span class="hud-tag">BOT</span>' : ''}`;
     strip.appendChild(el);
     S.hudCards.push({ id: p.id, el, hp: el.querySelector('.hp i'), mt: el.querySelector('.mt i') });
   }
@@ -3122,6 +3659,10 @@ function loop(ts) {
   if (dt < 0) dt = 0;
 
   if (heldInPortrait) {
+    acc = 0;
+  } else if (S.hitStop > 0) {
+    /* freeze frames: the world holds still for a beat on impact */
+    S.hitStop = Math.max(0, S.hitStop - dt);
     acc = 0;
   } else {
     acc += dt;
@@ -3196,7 +3737,9 @@ function handleEvents(events) {
   if (!m) return;
   for (const e of events) {
     if (e.type === 'hit') {
-      audio.hit(e.kind === 'kick' || e.kind === 'super');
+      const heavy = e.kind === 'kick' || e.kind === 'super' || e.kind === 'backKick' || e.kind === 'sweep';
+      S.hitStop = Math.max(S.hitStop, heavy ? 0.085 : 0.045);
+      audio.hit(heavy);
       if (S.mode === 'guest') {
         const t = m.players.find((p) => p.id === e.on);
         if (t) t.hitstun = 0.12;
@@ -3205,6 +3748,7 @@ function handleEvents(events) {
       if (e.kind === 'punch') audio.punch();
       else audio.kick();
     } else if (e.type === 'ko') {
+      S.hitStop = Math.max(S.hitStop, 0.16);
       audio.ko();
     } else if (e.type === 'super' || e.type === 'superstart') {
       audio.superMove();
@@ -3230,7 +3774,11 @@ function updateHud() {
   if (now - S.tickerAt > 7000) {
     S.tickerAt = now;
     S.tickerIndex = (S.tickerIndex + 1) % TICKER.length;
-    $('#hud-ticker').textContent = TICKER[S.tickerIndex];
+    const tickEl = $('#hud-ticker');
+    tickEl.textContent = TICKER[S.tickerIndex];
+    tickEl.classList.remove('slide');
+    void tickEl.offsetWidth;
+    tickEl.classList.add('slide');
   }
 
   const local = m.players.find((p) => p.id === S.localId);
@@ -3304,7 +3852,22 @@ function wire() {
     });
   });
 
-  $$('[data-nav="menu"]').forEach((btn) => btn.addEventListener('click', quitToMenu));
+  $$('[data-nav]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      audio.ensure();
+      audio.click();
+      if (btn.dataset.nav === 'menu') quitToMenu();
+      else show(btn.dataset.nav);
+    })
+  );
+
+  $('#difficulty').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-diff]');
+    if (!chip) return;
+    S.difficulty = chip.dataset.diff;
+    $$('#difficulty .chip').forEach((c) => c.classList.toggle('active', c === chip));
+    audio.click();
+  });
 
   $('#player-name').addEventListener('input', (e) => {
     S.me.name = e.target.value.trim().slice(0, 14);
@@ -3397,6 +3960,27 @@ function wire() {
   });
 
   $('#result-menu').addEventListener('click', quitToMenu);
+
+  const vol = $('#sfx-volume');
+  if (vol) {
+    try {
+      const saved = localStorage.getItem('kk.volume');
+      if (saved !== null) vol.value = saved;
+    } catch (_) {
+      /* ignore */
+    }
+    audio.setVolume(Number(vol.value) / 100);
+    $('#sfx-value').textContent = `${vol.value}%`;
+    vol.addEventListener('input', () => {
+      audio.setVolume(Number(vol.value) / 100);
+      $('#sfx-value').textContent = `${vol.value}%`;
+      try {
+        localStorage.setItem('kk.volume', vol.value);
+      } catch (_) {
+        /* ignore */
+      }
+    });
+  }
 
   const onResize = () => {
     if (renderer) renderer.resize();

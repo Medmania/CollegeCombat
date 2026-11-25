@@ -16,6 +16,9 @@ move — no sprite swapping.
 - **No backend.** No Firestore, no Supabase, no accounts, no keys, no database.
   Gameplay packets travel phone-to-phone.
 - **One file per character.** Adding a colleague is a copy, an edit and one line.
+- **Bots with personality.** Each fighter's bot inherits its temperament from its
+  passive and its stats, so The Intern swarms you while The Deadline waits and
+  counters. Three difficulty levels.
 
 ---
 
@@ -215,6 +218,38 @@ time.
   front of you.
 - A knockdown leaves you on the floor for about a second. Free hits.
 
+## Bots
+
+Bots are built from three layers, all in `js/ai.js`:
+
+**Profile** — temperament, blended from the fighter's passive and its id:
+
+| Fighter | Passive | How it fights |
+| --- | --- | --- |
+| The Intern | slippery | swarms you, dashes in, pokes with kicks |
+| The Deadline | heavy | patient, holds range, waits for a mistake, heavy kicks |
+| The Manager | none | balanced, tries to sit at its best distance |
+| The Founder | tank | walks you down, absorbs pressure, looks for a super |
+| Reply All | charged | balanced, builds meter fast |
+| The 6 PM Call | shover | mid-range, knockback-heavy |
+
+Each profile sets `aggression`, `patience`, `spacing`, `mobility` and which
+button it reaches for first. Tweak the numbers in `PROFILES` to change a
+character's temperament.
+
+**Level** — Easy / Normal / Hard, chosen on the solo setup screen. It scales
+reaction time, how often the bot swings, how well it keeps distance, how often
+it defends against your attacks, how often it chains a combo, and how well it
+times a super.
+
+**State** — what it is doing right now: `approach`, `poke`, `pressure`,
+`retreat`, `antiair`, `punish` or `wait`. Bots crouch under your jabs, jump over
+your sweeps, back off when they are hurt, punish a whiffed attack, and only spend
+a full meter when you are close or already stunned.
+
+Bots only ever run on the host or in solo, so their randomness can never desync a
+networked match.
+
 ## Checks
 
 ```bash
@@ -232,6 +267,9 @@ position and height, and every fighter file is complete.
 
 Debug helper in the browser console: `__kursi()` prints the live match state,
 which is handy while you tune numbers.
+
+Settings (the link under the main menu) holds the sound-effects volume, saved on
+the phone. Nothing leaves the device.
 
 ---
 

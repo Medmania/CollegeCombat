@@ -14,7 +14,7 @@
 const TICK = 1 / 30;
 const LANE = { min: 0, max: 1500 };
 const PLAYER_R = 26;
-const BODY_GAP = 86;
+const BODY_GAP = 78;
 const STAND_H = 122;
 const CROUCH_H = 50;
 const GRAVITY = 2400;
@@ -74,7 +74,8 @@ function buildAttacks(char) {
       family: 'punch',
       type: 'punch',
       damage: p.damage,
-      range: p.range,
+      /* a touch more reach so a jab comfortably clears BODY_GAP */
+      range: p.range * 1.05,
       dur: d(p.dur),
       hitAt: p.hitAt * PACE,
       knock: p.knock,
@@ -172,6 +173,7 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     id,
     name: name || char.name,
     charId: char.id,
+    passiveId: (char.passive && char.passive.id) || 'none',
     isBot: !!isBot,
     slot,
     x,
