@@ -430,14 +430,98 @@ textarea:focus {
   text-align: center;
 }
 
-/* ---------- game ---------- */
+/* ---------- game (landscape, controls overlaid) ---------- */
 
-/* broadcast-style portrait strip */
+#screen-game {
+  padding: 0;
+  overflow: hidden;
+  background: #05070b;
+  display: none;
+}
+
+#screen-game.active {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+}
+
+#game-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.game-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: calc(4px + env(safe-area-inset-top)) 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  min-width: 34px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.net-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 6px;
+  padding: 1px 5px;
+}
+
+.net-badge.bad {
+  color: #fca5a5;
+  border-color: rgba(252, 165, 165, 0.4);
+}
+
+.ticker {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 10.5px;
+  color: rgba(235, 225, 220, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hud-row .ghost {
+  pointer-events: auto;
+  color: rgba(235, 225, 220, 0.85);
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
 .hud-strip {
   display: flex;
-  gap: 6px;
-  padding: 2px 10px 6px;
-  flex: 0 0 auto;
+  gap: 5px;
+  max-width: 420px;
 }
 
 .hud-card {
@@ -445,16 +529,17 @@ textarea:focus {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 9px;
-  padding: 4px 5px;
+  gap: 4px;
+  background: rgba(10, 8, 12, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  padding: 3px 4px;
+  backdrop-filter: blur(3px);
 }
 
 .hud-card.me {
-  border-color: rgba(255, 209, 102, 0.55);
-  background: rgba(255, 209, 102, 0.1);
+  border-color: rgba(255, 209, 102, 0.6);
+  background: rgba(255, 209, 102, 0.14);
 }
 
 .hud-card.dead {
@@ -462,8 +547,8 @@ textarea:focus {
 }
 
 .hud-face {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 2px solid #fff;
   flex: 0 0 auto;
@@ -478,10 +563,9 @@ textarea:focus {
 }
 
 .hud-name {
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  color: #dfe6f0;
+  color: #e6ecf4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -489,14 +573,14 @@ textarea:focus {
 
 .hud-bar {
   display: block;
-  height: 4px;
+  height: 3.5px;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
 .hud-bar.mt {
-  height: 2.5px;
+  height: 2px;
 }
 
 .hud-bar i {
@@ -507,109 +591,51 @@ textarea:focus {
   transition: width 0.12s linear;
 }
 
-#screen-game {
-  padding: 0;
-  overflow: hidden;
-  background: #05070b;
-}
-
-.game-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: calc(6px + env(safe-area-inset-top)) 12px 4px;
-  flex: 0 0 auto;
-}
-
-.timer {
-  font-size: 20px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--gold);
-  min-width: 44px;
-}
-
-.net-badge {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.4);
-  border-radius: 6px;
-  padding: 2px 6px;
-}
-
-.net-badge.bad {
-  color: #fca5a5;
-  border-color: rgba(252, 165, 165, 0.4);
-}
-
-.game-top .ghost {
-  margin-left: auto;
-}
-
-.ticker {
-  flex: 0 0 auto;
-  font-size: 11px;
-  color: rgba(148, 160, 180, 0.9);
-  padding: 0 12px 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stage {
-  flex: 0 0 auto;
-  align-self: center;
-  width: 100%;
-  aspect-ratio: 5 / 6;
-  max-height: 58vh;
-  position: relative;
-}
-
-#game-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  touch-action: none;
-}
+/* --- controls --- */
 
 .controls {
-  flex: 1 1 auto;
-  min-height: 148px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52%;
+  max-height: 230px;
   display: flex;
+  justify-content: space-between;
   align-items: flex-end;
-  gap: 8px;
-  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 0 14px calc(10px + env(safe-area-inset-bottom));
+  pointer-events: none;
+  z-index: 6;
   touch-action: none;
   user-select: none;
 }
 
 .stick-zone {
-  flex: 1 1 45%;
   position: relative;
+  width: 40%;
+  max-width: 260px;
   height: 100%;
-  max-height: 240px;
-  border-radius: 18px;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 70%);
+  pointer-events: auto;
   touch-action: none;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.06), transparent 72%);
 }
 
 .stick-hint {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 92px;
-  height: 92px;
-  margin: -46px 0 0 -46px;
+  bottom: 14%;
+  transform: translateX(-50%);
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
-  border: 2px dashed rgba(255, 255, 255, 0.16);
+  border: 2px dashed rgba(255, 255, 255, 0.18);
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.16em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.35);
   transition: opacity 0.15s ease;
   pointer-events: none;
 }
@@ -620,12 +646,12 @@ textarea:focus {
 
 .stick {
   position: absolute;
-  width: 104px;
-  height: 104px;
-  margin: -52px 0 0 -52px;
+  width: 96px;
+  height: 96px;
+  margin: -48px 0 0 -48px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
   opacity: 0;
   transition: opacity 0.12s;
   pointer-events: none;
@@ -639,66 +665,126 @@ textarea:focus {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 46px;
-  height: 46px;
-  margin: -23px 0 0 -23px;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
   border-radius: 50%;
-  background: rgba(255, 209, 102, 0.85);
-  box-shadow: 0 0 16px rgba(255, 209, 102, 0.35);
+  background: rgba(255, 209, 102, 0.9);
+  box-shadow: 0 0 16px rgba(255, 209, 102, 0.4);
 }
 
 .pad {
-  flex: 1 1 55%;
-  height: 100%;
-  max-height: 240px;
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 8px;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 200px;
+  pointer-events: auto;
 }
 
 .pad-btn {
   appearance: none;
-  border: 2px solid rgba(255, 255, 255, 0.16);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(12, 10, 16, 0.5);
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   cursor: pointer;
   touch-action: none;
+  pointer-events: auto;
   transition: transform 0.06s ease, background 0.1s ease;
+  backdrop-filter: blur(3px);
 }
 
 .pad-btn.pressed {
-  transform: scale(0.94);
+  transform: scale(0.93);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .pad-btn.punch {
-  border-color: rgba(248, 113, 113, 0.55);
+  border-color: rgba(248, 113, 113, 0.6);
   color: var(--punch);
 }
 
 .pad-btn.kick {
-  border-color: rgba(96, 165, 250, 0.55);
+  border-color: rgba(96, 165, 250, 0.6);
   color: var(--kick);
 }
 
-.pad-btn.dash {
-  border-color: rgba(52, 211, 153, 0.55);
+.pad-btn.jump {
+  border-color: rgba(52, 211, 153, 0.6);
   color: var(--dash);
 }
 
+.pad-btn.crouch {
+  border-color: rgba(196, 181, 253, 0.6);
+  color: #c4b5fd;
+}
+
 .pad-btn.super {
-  border-color: rgba(255, 209, 102, 0.6);
+  position: absolute;
+  right: 0;
+  top: -46px;
+  width: 92px;
+  height: 38px;
+  border-radius: 12px;
+  border-color: rgba(255, 209, 102, 0.45);
   color: var(--super);
+  opacity: 0.45;
 }
 
 .pad-btn.super.ready {
-  background: rgba(255, 209, 102, 0.22);
-  box-shadow: 0 0 18px rgba(255, 209, 102, 0.4);
+  opacity: 1;
+  background: rgba(255, 209, 102, 0.28);
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.45);
+}
+
+/* --- rotate gate --- */
+
+.rotate-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #0b0e15;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.rotate-inner p {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 12px 0 4px;
+}
+
+.rotate-inner small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.rotate-icon {
+  font-size: 44px;
+  color: var(--gold);
+  animation: spin 2.4s ease-in-out infinite;
+}
+
+@keyframes spin {
+  0%, 40% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(90deg); }
+}
+
+@media (orientation: portrait) {
+  #screen-game.active .rotate-overlay {
+    display: flex;
+  }
 }
 
 /* ---------- result ---------- */
@@ -786,6 +872,61 @@ textarea:focus {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ---------- landscape tweaks for the menus ---------- */
+
+@media (orientation: landscape) and (max-height: 620px) {
+  #app {
+    max-width: 100%;
+  }
+
+  .screen {
+    padding: calc(8px + env(safe-area-inset-top)) 18px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .brand {
+    margin-top: 1vh;
+  }
+
+  .logo {
+    font-size: clamp(24px, 6vw, 38px);
+  }
+
+  .roster-strip {
+    margin: 10px 0 0;
+  }
+
+  .stack {
+    flex-direction: row;
+    margin-top: 12px;
+  }
+
+  .btn {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .roster {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .card {
+    min-height: 84px;
+    padding: 9px;
+  }
+
+  .cpass {
+    display: none;
+  }
+
+  .actions {
+    flex-direction: row;
+  }
+
+  .actions .btn {
+    flex: 1 1 0;
+  }
+}
     </style>
   </head>
   <body>
@@ -839,8 +980,8 @@ textarea:focus {
         <div class="field" id="bot-row">
           <label>Opponents</label>
           <div class="chips" id="bot-count">
-            <button class="chip" data-bots="1">1 bot</button>
-            <button class="chip active" data-bots="2">2 bots</button>
+            <button class="chip active" data-bots="1">1 bot</button>
+            <button class="chip" data-bots="2">2 bots</button>
             <button class="chip" data-bots="3">3 bots</button>
           </div>
         </div>
@@ -898,18 +1039,18 @@ textarea:focus {
         <p class="msg" id="join-msg"></p>
       </section>
 
-      <!-- ================= GAME ================= -->
+      <!-- ================= GAME (landscape) ================= -->
       <section class="screen" id="screen-game">
-        <div class="game-top">
-          <span class="timer" id="hud-time">75</span>
-          <span class="net-badge" id="net-badge" hidden>LIVE</span>
-          <button class="ghost" id="btn-quit">Quit</button>
-        </div>
-        <div class="hud-strip" id="hud-strip"></div>
-        <div class="ticker"><span id="hud-ticker">Fight!</span></div>
+        <canvas id="game-canvas"></canvas>
 
-        <div class="stage">
-          <canvas id="game-canvas"></canvas>
+        <div class="game-hud">
+          <div class="hud-row">
+            <span class="timer" id="hud-time">75</span>
+            <span class="net-badge" id="net-badge" hidden>LIVE</span>
+            <span class="ticker" id="hud-ticker">Fight!</span>
+            <button class="ghost" id="btn-quit">Quit</button>
+          </div>
+          <div class="hud-strip" id="hud-strip"></div>
         </div>
 
         <div class="controls">
@@ -920,8 +1061,17 @@ textarea:focus {
           <div class="pad">
             <button class="pad-btn punch" id="btn-punch">PUNCH</button>
             <button class="pad-btn kick" id="btn-kick">KICK</button>
-            <button class="pad-btn dash" id="btn-dash">DASH</button>
+            <button class="pad-btn jump" id="btn-jump">JUMP</button>
+            <button class="pad-btn crouch" id="btn-crouch">CROUCH</button>
             <button class="pad-btn super" id="btn-super">SUPER</button>
+          </div>
+        </div>
+
+        <div class="rotate-overlay" id="rotate-overlay">
+          <div class="rotate-inner">
+            <div class="rotate-icon">&#8635;</div>
+            <p>Rotate your phone</p>
+            <small>The fight is played in landscape.</small>
           </div>
         </div>
       </section>
@@ -964,7 +1114,7 @@ textarea:focus {
      js/engine.js       the rules (movement, hits, damage, knockout)
    They are loaded just above this block. */
 
-const { TICK, ARENA, PLAYER_R, SUPER_COST, createMatch, stepMatch, packSnapshot } = globalThis.KK_Engine;
+const { TICK, LANE, PLAYER_R, SUPER_COST, createMatch, stepMatch, packSnapshot } = globalThis.KK_Engine;
 const { CHARACTERS, getCharacter, HEADLINES, TICKER } = globalThis.KK_Roster;
 
 
@@ -1041,15 +1191,20 @@ function createAudio() {
 }
 
 /* ===================== input ===================== */
-/* Touch + keyboard input. One local player per device.
-   Phone: left-half virtual stick, right-side action buttons.
-   Desktop: WASD / arrows to move, J punch, K kick, L dash, Space super. */
+/* Touch + keyboard input for a landscape layout.
+
+   Phone: floating stick on the left third, four buttons on the right
+          (PUNCH, KICK, JUMP, CROUCH) and SUPER when the meter is full.
+          Double-tap the left or right side of the stick area to dash.
+
+   Desktop: A/D or arrows move, W or Up jumps, S or Down crouches,
+            J punch, K kick, L dash, Space super. */
 
 const KEYS = {
-  up: ['ArrowUp', 'KeyW'],
-  down: ['ArrowDown', 'KeyS'],
   left: ['ArrowLeft', 'KeyA'],
   right: ['ArrowRight', 'KeyD'],
+  jump: ['ArrowUp', 'KeyW'],
+  crouch: ['ArrowDown', 'KeyS'],
   punch: ['KeyJ'],
   kick: ['KeyK'],
   dash: ['KeyL'],
@@ -1058,29 +1213,23 @@ const KEYS = {
 
 function createInput(doc = document) {
   const held = new Set();
-  const state = {
-    mx: 0,
-    my: 0,
-    punch: false,
-    kick: false,
-    dash: false,
-    superQueued: false
-  };
+  const buttons = { punch: false, kick: false, jump: false, crouch: false };
+  /* A tap can be shorter than one frame, so presses are latched until the game
+     loop reads them. Otherwise quick jabs simply vanish. */
+  const queued = { punch: false, kick: false, jump: false, super: false };
 
-  const touch = { active: false, id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
-  const buttons = { punch: false, kick: false, dash: false };
+  const touch = { active: false, id: null, ox: 0, dx: 0 };
+  const tap = { time: 0, side: 0, dash: false };
 
   const stickEl = doc.getElementById('stick');
   const knobEl = doc.getElementById('stick-knob');
-  const stickZone = doc.getElementById('stick-zone');
-  const RADIUS = 52;
-
-  function setKnob(dx, dy) {
-    if (!knobEl) return;
-    knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
-  }
-
   const hintEl = doc.getElementById('stick-hint');
+  const stickZone = doc.getElementById('stick-zone');
+  const RADIUS = 56;
+
+  function setKnob(dx) {
+    if (knobEl) knobEl.style.transform = `translate(${dx}px, 0px)`;
+  }
 
   function showStick(on, ox = 0, oy = 0) {
     if (!stickEl) return;
@@ -1089,49 +1238,54 @@ function createInput(doc = document) {
     if (on) {
       stickEl.style.left = `${ox}px`;
       stickEl.style.top = `${oy}px`;
-      setKnob(0, 0);
+      setKnob(0);
     }
   }
 
   if (stickZone) {
     stickZone.addEventListener('pointerdown', (e) => {
       if (touch.active) return;
+      const r = stickZone.getBoundingClientRect();
+      const localX = e.clientX - r.left;
+
+      /* double-tap left or right half to dash that way */
+      const side = localX < r.width / 2 ? -1 : 1;
+      const now = performance.now();
+      if (now - tap.time < 300 && tap.side === side) {
+        tap.dash = true;
+      }
+      tap.time = now;
+      tap.side = side;
+
       touch.active = true;
       touch.id = e.pointerId;
-      const r = stickZone.getBoundingClientRect();
       touch.ox = e.clientX;
-      touch.oy = e.clientY;
-      touch.baseX = e.clientX - r.left;
-      touch.baseY = e.clientY - r.top;
-      showStick(true, touch.baseX, touch.baseY);
-      stickZone.setPointerCapture(e.pointerId);
+      touch.dx = 0;
+      showStick(true, localX, e.clientY - r.top);
+      try {
+        stickZone.setPointerCapture(e.pointerId);
+      } catch (_) {
+        /* ignore */
+      }
     });
 
     stickZone.addEventListener('pointermove', (e) => {
       if (!touch.active || e.pointerId !== touch.id) return;
       let dx = e.clientX - touch.ox;
-      let dy = e.clientY - touch.oy;
-      const d = Math.hypot(dx, dy);
-      if (d > RADIUS) {
-        dx = (dx / d) * RADIUS;
-        dy = (dy / d) * RADIUS;
-      }
+      if (dx > RADIUS) dx = RADIUS;
+      if (dx < -RADIUS) dx = -RADIUS;
       touch.dx = dx / RADIUS;
-      touch.dy = dy / RADIUS;
-      setKnob(dx, dy);
+      setKnob(dx);
     });
 
     const end = (e) => {
       if (!touch.active || (e && e.pointerId !== touch.id)) return;
       touch.active = false;
       touch.dx = 0;
-      touch.dy = 0;
       showStick(false);
     };
     stickZone.addEventListener('pointerup', end);
     stickZone.addEventListener('pointercancel', end);
-    /* Listen on the window too: with pointer capture the thumb often drifts
-       outside the zone, and losing the drag there would freeze movement. */
     window.addEventListener('pointerup', end);
     window.addEventListener('pointercancel', end);
   }
@@ -1143,7 +1297,7 @@ function createInput(doc = document) {
       e.preventDefault();
       buttons[key] = true;
       el.classList.add('pressed');
-      if (key === 'super') state.superQueued = true;
+      if (key !== 'crouch') queued[key] = true;
       try {
         el.setPointerCapture(e.pointerId);
       } catch (_) {
@@ -1163,61 +1317,68 @@ function createInput(doc = document) {
 
   bindButton('btn-punch', 'punch');
   bindButton('btn-kick', 'kick');
-  bindButton('btn-dash', 'dash');
+  bindButton('btn-jump', 'jump');
+  bindButton('btn-crouch', 'crouch');
   bindButton('btn-super', 'super');
 
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
     held.add(e.code);
     if (KEYS.super.includes(e.code)) {
-      state.superQueued = true;
+      queued.super = true;
       e.preventDefault();
     }
-    if (KEYS.punch.includes(e.code) || KEYS.kick.includes(e.code) || KEYS.dash.includes(e.code)) {
+    if (KEYS.punch.includes(e.code)) queued.punch = true;
+    if (KEYS.kick.includes(e.code)) queued.kick = true;
+    if (KEYS.jump.includes(e.code)) queued.jump = true;
+    if (
+      KEYS.punch.includes(e.code) ||
+      KEYS.kick.includes(e.code) ||
+      KEYS.jump.includes(e.code) ||
+      KEYS.crouch.includes(e.code) ||
+      KEYS.dash.includes(e.code)
+    ) {
       e.preventDefault();
     }
   });
   window.addEventListener('keyup', (e) => held.delete(e.code));
   window.addEventListener('blur', () => {
     held.clear();
-    buttons.punch = buttons.kick = buttons.dash = false;
+    buttons.punch = buttons.kick = buttons.jump = buttons.crouch = false;
   });
 
   const anyHeld = (list) => list.some((k) => held.has(k));
 
   function getInput() {
     let mx = 0;
-    let my = 0;
-
     if (touch.active) {
-      mx = touch.dx;
-      my = touch.dy;
+      mx = Math.abs(touch.dx) < 0.18 ? 0 : touch.dx;
     } else {
       if (anyHeld(KEYS.left)) mx -= 1;
       if (anyHeld(KEYS.right)) mx += 1;
-      if (anyHeld(KEYS.up)) my -= 1;
-      if (anyHeld(KEYS.down)) my += 1;
     }
 
     const input = {
       mx,
-      my,
-      punch: buttons.punch || anyHeld(KEYS.punch),
-      kick: buttons.kick || anyHeld(KEYS.kick),
-      dash: buttons.dash || anyHeld(KEYS.dash),
-      super: state.superQueued
+      punch: buttons.punch || queued.punch || anyHeld(KEYS.punch),
+      kick: buttons.kick || queued.kick || anyHeld(KEYS.kick),
+      jump: buttons.jump || queued.jump || anyHeld(KEYS.jump),
+      crouch: buttons.crouch || anyHeld(KEYS.crouch),
+      dash: tap.dash || anyHeld(KEYS.dash),
+      super: queued.super
     };
-    state.superQueued = false;
+    queued.punch = queued.kick = queued.jump = queued.super = false;
+    tap.dash = false;
     return input;
   }
 
   function reset() {
     held.clear();
-    buttons.punch = buttons.kick = buttons.dash = false;
+    buttons.punch = buttons.kick = buttons.jump = buttons.crouch = false;
     touch.active = false;
     touch.dx = 0;
-    touch.dy = 0;
-    state.superQueued = false;
+    queued.punch = queued.kick = queued.jump = queued.super = false;
+    tap.dash = false;
     showStick(false);
   }
 
@@ -1225,27 +1386,21 @@ function createInput(doc = document) {
 }
 
 /* ===================== render ===================== */
-/* 3D renderer.
+/* Side-view renderer.
 
-   Real perspective: a camera above and behind the arena, a ground plane, upright
-   fighters, a facade and a crowd behind them. Drawn with the 2D canvas API only,
-   so there is no library to load and the page still opens by double-click.
+   A camera sits beside the lane, almost level with the fighters, and follows the
+   action. Fighters are drawn as an articulated skeleton — hip, knee, ankle,
+   shoulder, elbow, hand — so punches, kicks, sweeps, jumps and crouches are real
+   limb motion rather than a sprite swap.
 
-   Coordinates: the engine's (x, y) is the GROUND plane, z is height. */
+   Still no 3D library: the projection is a few lines of vector maths. */
 
 
 const TAU = Math.PI * 2;
-const WORLD_UP = [0, 0, 1];
-
-/* ---------------------------------------------------------------- vec math */
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a, b) => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0]
-];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm3 = (v) => {
   const l = Math.hypot(v[0], v[1], v[2]) || 1;
   return [v[0] / l, v[1] / l, v[2] / l];
@@ -1270,9 +1425,148 @@ function rng(seed) {
   };
 }
 
-/* ------------------------------------------------------------------ scene */
-
 const CROWD_COLORS = ['#e05a4a', '#3f7fbf', '#e8b64c', '#5fa86b', '#9b6bc4', '#e08a3c', '#4fb3a5'];
+
+/* skeleton proportions, in the same units as the world */
+const RIG = {
+  hipY: 60,
+  torso: 42,
+  neck: 16,
+  headR: 15,
+  thigh: 30,
+  shin: 32,
+  upper: 22,
+  fore: 22,
+  chestW: 30,
+  waistW: 24
+};
+
+/* ---------------------------------------------------------------- poses */
+
+function basePose() {
+  return {
+    hipY: RIG.hipY,
+    lean: 0,
+    fThigh: 0.16,
+    fShin: 0.08,
+    bThigh: -0.16,
+    bShin: -0.08,
+    fUpper: 0.52,
+    fFore: 2.45,
+    bUpper: 0.34,
+    bFore: 2.58,
+    headTilt: 0
+  };
+}
+
+function poseFor(p, phase) {
+  const P = basePose();
+  if (!p.alive || p.downT > 0) return P;
+
+  const moving = Math.abs(p.vx) > 40 && p.onGround && !p.attack;
+
+  if (!p.onGround) {
+    P.hipY = 62;
+    P.fThigh = 0.75;
+    P.fShin = 1.75;
+    P.bThigh = 0.2;
+    P.bShin = 1.95;
+    P.fUpper = -0.35;
+    P.fFore = 1.15;
+    P.bUpper = -0.55;
+    P.bFore = 1.0;
+  } else if (p.crouching) {
+    P.hipY = 33;
+    P.fThigh = 1.0;
+    P.fShin = 1.8;
+    P.bThigh = -0.95;
+    P.bShin = -1.75;
+    P.fUpper = 0.55;
+    P.fFore = 2.4;
+    P.bUpper = 0.4;
+    P.bFore = 2.5;
+    P.lean = 0.16;
+  } else if (moving) {
+    const s = Math.sin(phase);
+    const c = Math.cos(phase);
+    P.fThigh = 0.5 * s;
+    P.bThigh = -0.5 * s;
+    P.fShin = 0.3 + Math.max(0, -c) * 0.75;
+    P.bShin = -0.3 - Math.max(0, c) * 0.75;
+    P.fUpper = 0.4 - 0.4 * s;
+    P.bUpper = 0.25 + 0.4 * s;
+    P.hipY = RIG.hipY - Math.abs(s) * 3;
+    P.lean = 0.06;
+  }
+
+  const a = p.attack;
+  if (a) {
+    const prog = clamp(a.t / a.dur, 0, 1);
+    const ext = Math.sin(Math.min(1, prog * 1.5) * Math.PI);
+
+    if (a.type === 'punch') {
+      P.fUpper = 1.5;
+      P.fFore = 1.57;
+      P.bUpper = -0.15;
+      P.bFore = 2.0;
+      P.lean = 0.12 * ext;
+      P.fThigh = 0.3;
+      P.bThigh = -0.3;
+    } else if (a.type === 'kick') {
+      P.fThigh = 0.5 + 1.0 * ext;
+      P.fShin = 0.6 + 0.95 * ext;
+      P.bThigh = -0.3;
+      P.bShin = -0.35;
+      P.lean = -0.18 * ext;
+      P.hipY = RIG.hipY + 4 * ext;
+      P.fUpper = -0.3;
+      P.fFore = 1.2;
+      P.bUpper = -0.5;
+      P.bFore = 1.0;
+    } else if (a.type === 'sweep') {
+      P.hipY = 33;
+      P.fThigh = 1.15 + 0.5 * ext;
+      P.fShin = 1.25 + 0.4 * ext;
+      P.bThigh = -1.0;
+      P.bShin = -1.75;
+      P.lean = 0.28;
+      P.fUpper = 0.6;
+      P.fFore = 2.3;
+      P.bUpper = 0.9;
+      P.bFore = 2.5;
+    } else if (a.type === 'air') {
+      P.hipY = 62;
+      P.fThigh = 0.85 + 0.5 * ext;
+      P.fShin = 1.05 + 0.5 * ext;
+      P.bThigh = 0.25;
+      P.bShin = 1.95;
+      P.fUpper = -0.5;
+      P.fFore = 1.1;
+      P.bUpper = -0.7;
+      P.bFore = 0.9;
+    } else if (a.type === 'super') {
+      P.fUpper = 0.15;
+      P.fFore = 1.6;
+      P.bUpper = 0.05;
+      P.bFore = 1.5;
+      P.lean = -0.22 * ext;
+      P.hipY = RIG.hipY - 4 * ext;
+    }
+  }
+
+  if (p.hitstun > 0.02) {
+    P.lean = -0.34;
+    P.fUpper = -0.5;
+    P.fFore = 1.0;
+    P.bUpper = -0.7;
+    P.bFore = 0.9;
+    P.headTilt = -0.25;
+  }
+
+  return P;
+}
+
+/* --------------------------------------------------------------- renderer */
 
 function createRenderer(canvas) {
   const ctx = canvas.getContext('2d');
@@ -1285,30 +1579,29 @@ function createRenderer(canvas) {
   const rings = [];
   const bubbles = [];
   const motion = new Map();
+  const rigs = new Map();
 
   const cam = {
-    pos: [ARENA.cx, ARENA.cy + 800, 480],
-    target: [ARENA.cx, ARENA.cy - 30, 60],
+    pos: [750, -300, 105],
+    target: [750, 0, 58],
     right: [1, 0, 0],
     up: [0, 0, 1],
-    fwd: [0, -1, 0],
-    f: 500
+    fwd: [0, 1, 0],
+    f: 400
   };
-  let camX = ARENA.cx;
-  let camY = ARENA.cy;
-  let zoom = 1;
+  let camX = 750;
+  let camDepth = 300;
 
   const crowd = (() => {
-    const r = rng(2026);
+    const r = rng(4242);
     const out = [];
-    for (let ring = 0; ring < 3; ring++) {
-      const radius = ARENA.r + 78 + ring * 46;
-      const count = 16 + ring * 6;
-      for (let i = 0; i < count; i++) {
-        const a = Math.PI * 1.02 + ((Math.PI * 0.96) * i) / count + r() * 0.05;
+    for (let row = 0; row < 3; row++) {
+      const depth = 250 + row * 34;
+      for (let i = 0; i < 34; i++) {
+        const x = LANE.min - 260 + (i / 33) * (LANE.max - LANE.min + 520) + (r() - 0.5) * 20;
         out.push({
-          x: ARENA.cx + Math.cos(a) * radius,
-          y: ARENA.cy + Math.sin(a) * radius,
+          x,
+          y: depth,
           color: CROWD_COLORS[Math.floor(r() * CROWD_COLORS.length)],
           h: 30 + r() * 10,
           bob: r() * TAU
@@ -1326,41 +1619,13 @@ function createRenderer(canvas) {
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cam.f = H / 2 / Math.tan(0.52);
-  }
-
-  /* ------------------------------------------------------------- camera */
-
-  function updateCamera(view) {
-    const alive = view.players.filter((p) => p.alive);
-    let cx = ARENA.cx;
-    let cy = ARENA.cy;
-    let spread = 120;
-    if (alive.length) {
-      cx = alive.reduce((s, p) => s + p.x, 0) / alive.length;
-      cy = alive.reduce((s, p) => s + p.y, 0) / alive.length;
-      spread = Math.max(...alive.map((p) => Math.hypot(p.x - cx, p.y - cy)));
-    }
-    cx = clamp(cx, ARENA.cx - 130, ARENA.cx + 130);
-    cy = clamp(cy, ARENA.cy - 110, ARENA.cy + 110);
-
-    const k = 0.06;
-    camX += (cx - camX) * k;
-    camY += (cy - camY) * k;
-    const wantZoom = 1.08 + spread / 900;
-    zoom += (wantZoom - zoom) * 0.05;
-
-    cam.pos = [camX, camY + 655 * zoom, 322 * zoom];
-    cam.target = [camX, camY - 18, 74];
-    cam.fwd = norm3(sub(cam.target, cam.pos));
-    cam.right = norm3(cross(WORLD_UP, cam.fwd));
-    cam.up = cross(cam.fwd, cam.right);
+    cam.f = H / 2 / Math.tan(0.46);
   }
 
   function project(p) {
     const d = sub(p, cam.pos);
     const vz = dot(d, cam.fwd);
-    if (vz <= 8) return null;
+    if (vz <= 6) return null;
     const vx = dot(d, cam.right);
     const vy = dot(d, cam.up);
     return {
@@ -1371,39 +1636,31 @@ function createRenderer(canvas) {
     };
   }
 
-  function horizonY() {
-    const dH = norm3([cam.fwd[0], cam.fwd[1], 0]);
-    const vz = dot(dH, cam.fwd);
-    const vy = dot(dH, cam.up);
-    if (vz <= 0.0001) return H * 0.4;
-    return H / 2 - (cam.f * vy) / vz;
+  function updateCamera(view) {
+    const alive = view.players.filter((p) => p.alive);
+    let minX = LANE.min + 200;
+    let maxX = LANE.max - 200;
+    if (alive.length) {
+      minX = Math.min(...alive.map((p) => p.x));
+      maxX = Math.max(...alive.map((p) => p.x));
+    }
+    const mid = (minX + maxX) / 2;
+    const spread = Math.max(200, maxX - minX);
+
+    camX += (mid - camX) * 0.09;
+    const wantDepth = clamp((cam.f * (spread + 520)) / W, 200, 1200);
+    camDepth += (wantDepth - camDepth) * 0.07;
+
+    cam.pos = [camX, -camDepth, 108];
+    cam.target = [camX, 0, 58];
+    cam.fwd = norm3(sub(cam.target, cam.pos));
+    /* right = fwd x worldUp keeps screen-x pointing the same way as world x,
+       so moving right on the stick moves right on screen. */
+    cam.right = norm3(cross(cam.fwd, [0, 0, 1]));
+    cam.up = cross(cam.right, cam.fwd);
   }
 
-  /* -------------------------------------------------------------- ground */
-
-  function drawSkyAndGround() {
-    const hy = clamp(horizonY(), -H, H);
-
-    const sky = ctx.createLinearGradient(0, 0, 0, Math.max(1, hy));
-    sky.addColorStop(0, '#120a1f');
-    sky.addColorStop(0.5, '#4a1c3c');
-    sky.addColorStop(1, '#b8503a');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, Math.max(1, hy));
-
-    const glow = ctx.createRadialGradient(W / 2, hy, 4, W / 2, hy, W * 0.8);
-    glow.addColorStop(0, 'rgba(255,150,70,0.42)');
-    glow.addColorStop(1, 'rgba(255,120,60,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, Math.max(0, hy - H * 0.55), W, Math.min(H, H * 0.55));
-
-    const g = ctx.createLinearGradient(0, hy, 0, H);
-    g.addColorStop(0, '#3a2a2c');
-    g.addColorStop(0.35, '#2a1f22');
-    g.addColorStop(1, '#171114');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, Math.max(0, hy), W, H - Math.max(0, hy));
-  }
+  /* ------------------------------------------------------------ backdrop */
 
   function poly(points, fill, stroke, width) {
     const pts = points.map(project);
@@ -1423,390 +1680,328 @@ function createRenderer(canvas) {
     }
   }
 
-  function circlePoints(cx, cy, r, z, segments = 48) {
-    const out = [];
-    for (let i = 0; i < segments; i++) {
-      const a = (TAU * i) / segments;
-      out.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r, z]);
-    }
-    return out;
-  }
-
-  function drawArena() {
-    /* apron: a slightly larger disc under the ring */
-    poly(circlePoints(ARENA.cx, ARENA.cy, ARENA.r + 26, 0.2, 56), '#241a1d', 'rgba(255,200,120,0.12)', 2);
-
-    /* painted wedges, rangoli style */
-    const wedges = ['rgba(64,120,200,0.55)', 'rgba(232,150,50,0.5)', 'rgba(206,80,120,0.45)', 'rgba(90,170,120,0.45)'];
-    for (let i = 0; i < 12; i++) {
-      const a0 = (TAU * i) / 12;
-      const a1 = (TAU * (i + 1)) / 12;
-      const pts = [[ARENA.cx, ARENA.cy, 0.35]];
-      for (let k = 0; k <= 6; k++) {
-        const a = a0 + ((a1 - a0) * k) / 6;
-        pts.push([ARENA.cx + Math.cos(a) * ARENA.r, ARENA.cy + Math.sin(a) * ARENA.r, 0.35]);
-      }
-      poly(pts, wedges[i % wedges.length], null, 0);
-    }
-
-    /* rings */
-    for (const f of [0.34, 0.62, 0.85]) {
-      const pts = circlePoints(ARENA.cx, ARENA.cy, ARENA.r * f, 0.45, 44).map(project);
-      if (pts.some((p) => !p)) continue;
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.closePath();
-      ctx.strokeStyle = 'rgba(255,235,200,0.16)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
-
-    /* centre emblem */
-    poly(circlePoints(ARENA.cx, ARENA.cy, 62, 0.5, 30), 'rgba(255,210,140,0.14)', 'rgba(255,220,160,0.45)', 2.5);
-    poly(circlePoints(ARENA.cx, ARENA.cy, 34, 0.55, 24), 'rgba(255,210,140,0.10)', 'rgba(255,220,160,0.3)', 1.5);
-
-    /* boundary */
-    const ring = circlePoints(ARENA.cx, ARENA.cy, ARENA.r, 0.6, 56).map(project);
-    if (!ring.some((p) => !p)) {
-      ctx.beginPath();
-      ctx.moveTo(ring[0].x, ring[0].y);
-      for (let i = 1; i < ring.length; i++) ctx.lineTo(ring[i].x, ring[i].y);
-      ctx.closePath();
-      const pulse = 0.55 + Math.sin(time * 2) * 0.12;
-      ctx.strokeStyle = `rgba(255,200,110,${pulse})`;
-      ctx.lineWidth = 5;
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
-  }
-
   function drawBackdrop() {
-    const R = ARENA.r;
-    const A0 = Math.PI * 1.02;
-    const A1 = Math.PI * 1.98;
+    const far = project([camX, 9000, 0]);
+    const horizon = far ? far.y : H * 0.45;
 
-    /* --- the wall: quads of an arc, far side only, painted back to front --- */
-    const SEG = 20;
-    const wallR = R + 250;
-    const segs = [];
-    for (let i = 0; i < SEG; i++) {
-      const t0 = A0 + ((A1 - A0) * i) / SEG;
-      const t1 = A0 + ((A1 - A0) * (i + 1)) / SEG;
-      const x1 = ARENA.cx + Math.cos(t0) * wallR;
-      const y1 = ARENA.cy + Math.sin(t0) * wallR;
-      const x2 = ARENA.cx + Math.cos(t1) * wallR;
-      const y2 = ARENA.cy + Math.sin(t1) * wallR;
-      const mid = project([(x1 + x2) / 2, (y1 + y2) / 2, 0]);
-      segs.push({ x1, y1, x2, y2, z: mid ? mid.z : 0, i });
+    const sky = ctx.createLinearGradient(0, 0, 0, Math.max(1, horizon));
+    sky.addColorStop(0, '#0d0716');
+    sky.addColorStop(0.45, '#3d1a3a');
+    sky.addColorStop(1, '#a8473a');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, Math.max(1, horizon));
+
+    const glow = ctx.createRadialGradient(W / 2, horizon, 4, W / 2, horizon, W * 0.7);
+    glow.addColorStop(0, 'rgba(255,150,80,0.4)');
+    glow.addColorStop(1, 'rgba(255,120,60,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, Math.max(0, horizon - H * 0.6), W, Math.min(H, H * 0.6));
+
+    /* distant skyline */
+    const sky2 = [];
+    for (let i = 0; i < 26; i++) {
+      const x = LANE.min - 900 + i * 90;
+      const hgt = 60 + ((i * 37) % 70);
+      sky2.push({ x, hgt });
     }
-    segs.sort((a, b) => b.z - a.z);
-    for (const q of segs) {
-      const tone = 0.72 + (q.i % 2) * 0.12;
-      const col = `rgb(${Math.round(107 * tone + 30)},${Math.round(70 * tone + 20)},${Math.round(48 * tone + 14)})`;
+    for (const b of sky2) {
       poly(
         [
-          [q.x1, q.y1, 0],
-          [q.x2, q.y2, 0],
-          [q.x2, q.y2, 205],
-          [q.x1, q.y1, 205]
+          [b.x, 1600, 0],
+          [b.x + 62, 1600, 0],
+          [b.x + 62, 1600, b.hgt],
+          [b.x, 1600, b.hgt]
         ],
-        col,
+        'rgba(30,16,30,0.85)',
         null,
         0
       );
     }
 
-    /* --- colonnade in front of the wall --- */
+    /* floor */
+    const g = ctx.createLinearGradient(0, horizon, 0, H);
+    g.addColorStop(0, '#3a2a2c');
+    g.addColorStop(0.3, '#241a1e');
+    g.addColorStop(1, '#120d10');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, Math.max(0, horizon), W, H - Math.max(0, horizon));
+
+    /* colonnade behind the fighters */
     const pillars = [];
-    const PILL = 13;
-    for (let i = 0; i < PILL; i++) {
-      const a = A0 + ((A1 - A0) * (i + 0.5)) / PILL;
-      const r = R + 196;
-      pillars.push({ x: ARENA.cx + Math.cos(a) * r, y: ARENA.cy + Math.sin(a) * r });
-    }
-    const pillarOrder = pillars
-      .map((p) => ({ p, pr: project([p.x, p.y, 0]) }))
+    for (let x = LANE.min - 500; x <= LANE.max + 500; x += 130) pillars.push(x);
+    const order = pillars
+      .map((x) => ({ x, pr: project([x, 360, 0]) }))
       .filter((o) => o.pr)
       .sort((a, b) => b.pr.z - a.pr.z);
 
-    for (const { p: pl, pr } of pillarOrder) {
-      const top = project([pl.x, pl.y, 232]);
+    for (const { x, pr } of order) {
+      const top = project([x, 360, 250]);
       if (!top) continue;
-      const halfW = 13 * pr.s;
-      const g = ctx.createLinearGradient(pr.x - halfW, 0, pr.x + halfW, 0);
-      g.addColorStop(0, '#6b4a34');
-      g.addColorStop(0.4, '#cfa478');
-      g.addColorStop(1, '#5d3f2c');
-      ctx.fillStyle = g;
+      const halfW = 15 * pr.s;
+      const grad = ctx.createLinearGradient(pr.x - halfW, 0, pr.x + halfW, 0);
+      grad.addColorStop(0, '#6b4a34');
+      grad.addColorStop(0.4, '#cfa478');
+      grad.addColorStop(1, '#5d3f2c');
+      ctx.fillStyle = grad;
       ctx.fillRect(pr.x - halfW, top.y, halfW * 2, pr.y - top.y);
-      /* capital */
       ctx.fillStyle = '#d9b189';
-      ctx.fillRect(pr.x - halfW * 1.45, top.y - 7 * pr.s, halfW * 2.9, 8 * pr.s);
+      ctx.fillRect(pr.x - halfW * 1.4, top.y - 6 * pr.s, halfW * 2.8, 7 * pr.s);
     }
 
-    /* --- crowd: two banks on the far side, behind the ring --- */
+    /* crowd */
     const crowdOrder = crowd
       .map((c) => ({ c, pr: project([c.x, c.y, 0]) }))
-      .filter((o) => o.pr && o.c.y < ARENA.cy + 40)
+      .filter((o) => o.pr)
       .sort((a, b) => b.pr.z - a.pr.z);
 
     for (const { c, pr } of crowdOrder) {
-      const s2 = pr.s;
-      const bob = Math.sin(time * 2.6 + c.bob) * 3 * s2;
-      const h = c.h * s2;
-      const w = 13 * s2;
+      const s = pr.s;
+      const bob = Math.sin(time * 2.6 + c.bob) * 3 * s;
+      const h = c.h * s;
+      const w = 13 * s;
       ctx.fillStyle = c.color;
       ctx.beginPath();
       ctx.roundRect(pr.x - w / 2, pr.y - h + bob, w, h, w * 0.42);
       ctx.fill();
-      ctx.fillStyle = shade(c.color, -50);
+      ctx.fillStyle = shade(c.color, -55);
       ctx.beginPath();
-      ctx.arc(pr.x, pr.y - h + bob - w * 0.2, w * 0.42, 0, TAU);
+      ctx.arc(pr.x, pr.y - h + bob - w * 0.18, w * 0.4, 0, TAU);
       ctx.fill();
     }
-  }
 
-  /* ------------------------------------------------------------ fighters */
+    /* the stage the fight happens on */
+    const x0 = LANE.min - 120;
+    const x1 = LANE.max + 120;
+    poly(
+      [
+        [x0, -230, 0],
+        [x1, -230, 0],
+        [x1, 235, 0],
+        [x0, 235, 0]
+      ],
+      '#2b2024',
+      'rgba(255,205,140,0.25)',
+      3
+    );
+    poly(
+      [
+        [x0, 150, 0],
+        [x1, 150, 0],
+        [x1, 235, 0],
+        [x0, 235, 0]
+      ],
+      'rgba(255,180,120,0.05)',
+      null,
+      0
+    );
 
-  function facing2D(face) {
-    /* turn a ground-plane angle into a screen direction, with a depth cue */
-    const dir = [Math.cos(face), Math.sin(face), 0];
-    const sx = dot(dir, cam.right);
-    const sy = -dot(dir, cam.fwd) * 0.45;
-    const l = Math.hypot(sx, sy) || 1;
-    return [sx / l, sy / l];
-  }
-
-  function drawShadow(p, pr) {
-    const r = PLAYER_R * 1.15 * pr.s;
-    ctx.save();
-    ctx.globalAlpha = p.alive ? 0.42 : 0.2;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.ellipse(pr.x, pr.y, r, r * 0.34, 0, 0, TAU);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawDowned(p, pr, scale) {
-    const c = p.colors;
-    const y = pr.y;
-    const bodyW = 72 * scale;
-    const bodyH = 27 * scale;
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = c.body;
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 2 * scale;
-    ctx.beginPath();
-    ctx.ellipse(pr.x, y - bodyH * 0.6, bodyW * 0.5, bodyH * 0.5, 0, 0, TAU);
-    ctx.fill();
-    ctx.stroke();
-    /* head */
-    const hx = pr.x + (Math.cos(p.face) >= 0 ? bodyW * 0.5 : -bodyW * 0.5);
-    ctx.fillStyle = c.skin;
-    ctx.beginPath();
-    ctx.arc(hx, y - bodyH * 0.55, 16 * scale, 0, TAU);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = c.hair || '#222';
-    ctx.beginPath();
-    ctx.arc(hx, y - bodyH * 0.55 - 3 * scale, 16 * scale, Math.PI * 1.05, Math.PI * 1.95);
-    ctx.fill();
-    /* X eyes */
-    ctx.strokeStyle = '#14161b';
-    ctx.lineWidth = 2 * scale;
-    for (const d of [-1, 1]) {
-      const ex = hx + d * 4 * scale;
-      const ey = y - bodyH * 0.55;
+    /* lane markings */
+    for (let x = LANE.min; x <= LANE.max; x += 150) {
+      const a = project([x, -120, 0]);
+      const b = project([x, 120, 0]);
+      if (!a || !b) continue;
+      ctx.strokeStyle = 'rgba(255,220,180,0.08)';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(ex - 3 * scale, ey - 3 * scale);
-      ctx.lineTo(ex + 3 * scale, ey + 3 * scale);
-      ctx.moveTo(ex + 3 * scale, ey - 3 * scale);
-      ctx.lineTo(ex - 3 * scale, ey + 3 * scale);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
       ctx.stroke();
     }
-    ctx.restore();
   }
 
-  function limb(x1, y1, x2, y2, width, color, outline) {
+  /* -------------------------------------------------------------- fighter */
+
+  function seg(a, b, w, color, outline) {
     ctx.lineCap = 'round';
     ctx.strokeStyle = color;
-    ctx.lineWidth = width;
+    ctx.lineWidth = w;
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(a[0], a[1]);
+    ctx.lineTo(b[0], b[1]);
     ctx.stroke();
     if (outline) {
       ctx.strokeStyle = outline;
-      ctx.lineWidth = Math.max(1, width * 0.14);
+      ctx.lineWidth = Math.max(1, w * 0.13);
       ctx.stroke();
     }
   }
 
-  function drawFighter(p, pr) {
+  function drawDowned(p, foot, s, dir) {
     const c = p.colors;
-    const scale = pr.s;
-    const baseX = pr.x;
-    const baseY = pr.y;
-    const K = 1.2;
-    const u = (v) => v * scale * K;
+    const u = (v) => v * s;
+    const y = foot.y;
+    const bodyW = u(74);
+    const bodyH = u(26);
 
-    if (!p.alive) {
-      drawDowned(p, pr, scale);
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = c.body;
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = u(2);
+    ctx.beginPath();
+    ctx.ellipse(foot.x - dir * u(10), y - bodyH * 0.5, bodyW * 0.5, bodyH * 0.5, 0, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+
+    /* head */
+    const hx = foot.x + dir * bodyW * 0.42;
+    const hy = y - bodyH * 0.42;
+    ctx.fillStyle = c.skin;
+    ctx.beginPath();
+    ctx.arc(hx, hy, u(14), 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = c.hair || '#222';
+    ctx.beginPath();
+    ctx.arc(hx, hy - u(2), u(14), Math.PI * 1.05, Math.PI * 1.95);
+    ctx.fill();
+
+    ctx.strokeStyle = '#14161b';
+    ctx.lineWidth = u(2);
+    for (const d of [-1, 1]) {
+      const ex = hx + d * u(4.5);
+      ctx.beginPath();
+      ctx.moveTo(ex - u(3), hy - u(3));
+      ctx.lineTo(ex + u(3), hy + u(3));
+      ctx.moveTo(ex + u(3), hy - u(3));
+      ctx.lineTo(ex - u(3), hy + u(3));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFighter(p, foot, s) {
+    const c = p.colors;
+    const dir = p.facing >= 0 ? 1 : -1;
+    const u = (v) => v * s;
+
+    if (!p.alive || p.downT > 0.02) {
+      drawDowned(p, foot, s, dir);
       return;
     }
 
+    /* smooth the rig toward the target pose */
+    const target = poseFor(p, motion.get(p.id) ? motion.get(p.id).phase : 0);
+    let rig = rigs.get(p.id);
+    if (!rig) {
+      rig = { ...target };
+      rigs.set(p.id, rig);
+    }
+    for (const k of Object.keys(target)) rig[k] += (target[k] - rig[k]) * 0.28;
+
     const hitFlash = p.hitstun > 0.02;
     const body = hitFlash ? '#ffffff' : c.body;
-    const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -34);
+    const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -38);
     const outline = 'rgba(0,0,0,0.45)';
 
-    /* walk cycle */
-    let phase = 0;
-    const m = motion.get(p.id);
-    if (m) phase = m.phase;
+    const ox = foot.x;
+    const oy = foot.y;
 
-    const bob = Math.sin(phase * 2) * u(2.2);
-    const hipY = baseY - u(52) + bob;
-    const shoulderY = baseY - u(94) + bob;
-    const headY = baseY - u(112) + bob;
-    const aim = facing2D(p.face);
-    const facingRight = aim[0] >= 0;
+    /* joint positions in local units (y grows downward from the feet) */
+    const P = (len, ang, from) => [from[0] + Math.sin(ang) * len * dir, from[1] + Math.cos(ang) * len];
 
-    /* ---- legs ---- */
-    const legSwing = Math.sin(phase) * u(11);
-    const legLift = Math.abs(Math.cos(phase)) * u(4);
-    limb(baseX - u(6), hipY, baseX - u(7) - legSwing * 0.5, baseY - legLift, u(13), bodyDark, outline);
-    limb(baseX + u(6), hipY, baseX + u(7) + legSwing * 0.5, baseY - legLift * 0.4, u(13), bodyDark, outline);
+    const hip = [0, -rig.hipY];
+    const shoulder = [
+      hip[0] + Math.sin(rig.lean) * RIG.torso * dir,
+      hip[1] - Math.cos(rig.lean) * RIG.torso
+    ];
+    const neck = [shoulder[0], shoulder[1] - RIG.neck * 0.35];
+    const head = [neck[0] + Math.sin(rig.lean + rig.headTilt) * 12 * dir, neck[1] - 13];
 
-    /* feet */
-    ctx.fillStyle = '#20242c';
+    const fKnee = P(RIG.thigh, rig.fThigh, hip);
+    const fAnkle = P(RIG.shin, rig.fShin, fKnee);
+    const bKnee = P(RIG.thigh, rig.bThigh, hip);
+    const bAnkle = P(RIG.shin, rig.bShin, bKnee);
+
+    const fElbow = P(RIG.upper, rig.fUpper, shoulder);
+    const fHand = P(RIG.fore, rig.fFore, fElbow);
+    const bElbow = P(RIG.upper, rig.bUpper, shoulder);
+    const bHand = P(RIG.fore, rig.bFore, bElbow);
+
+    const S = (pt) => [ox + pt[0] * s, oy + pt[1] * s];
+
+    /* shadow already drawn by caller */
+
+    /* back limbs */
+    seg(S(hip), S(bKnee), u(15), bodyDark, outline);
+    seg(S(bKnee), S(bAnkle), u(13), bodyDark, outline);
+    seg(S(shoulder), S(bElbow), u(12), bodyDark, outline);
+    seg(S(bElbow), S(bHand), u(10), shade(c.skin, -40), outline);
+
+    /* torso */
+    const hipS = S(hip);
+    const shS = S(shoulder);
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = body;
+    ctx.lineWidth = u(RIG.chestW);
     ctx.beginPath();
-    ctx.ellipse(baseX - u(7) - legSwing * 0.5, baseY - legLift * 0.4, u(8), u(4), 0, 0, TAU);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(baseX + u(7) + legSwing * 0.5, baseY - legLift * 0.2, u(8), u(4), 0, 0, TAU);
-    ctx.fill();
+    ctx.moveTo(hipS[0], hipS[1]);
+    ctx.lineTo(shS[0], shS[1]);
+    ctx.stroke();
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = u(RIG.chestW) + u(2.5);
+    ctx.globalAlpha = 0.35;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    /* ---- back arm ---- */
-    const backShoulderX = baseX - aim[0] * u(13);
-    const backShoulderY = shoulderY + u(4);
-    let backHandX = baseX - aim[0] * u(22);
-    let backHandY = shoulderY + u(28);
-
-    /* ---- torso ---- */
-    limb(baseX, hipY + u(4), baseX, shoulderY, u(32), body, outline);
-
-    /* collar / trim */
+    /* collar */
     ctx.fillStyle = c.accent;
     ctx.beginPath();
-    ctx.ellipse(baseX, shoulderY + u(2), u(15), u(6), 0, 0, TAU);
-    ctx.fill();
-    /* belt */
-    ctx.fillStyle = shade(c.body, -50);
-    ctx.beginPath();
-    ctx.roundRect(baseX - u(15), hipY - u(6), u(30), u(9), u(3));
+    ctx.ellipse(shS[0], shS[1] + u(2), u(15), u(6), 0, 0, TAU);
     ctx.fill();
 
-    /* ---- front arm (does the attacking) ---- */
-    const shoulderX = baseX + aim[0] * u(14);
-    const shoulderYf = shoulderY + u(6);
-    let handX = baseX + aim[0] * u(24);
-    let handY = shoulderY + u(30);
-
-    const atk = p.attack;
-    if (atk) {
-      const prog = clamp(atk.t / atk.dur, 0, 1);
-      const punch = Math.sin(Math.min(1, prog * 1.5) * Math.PI);
-      if (atk.type === 'punch') {
-        const reach = u(58) * punch;
-        handX = shoulderX + aim[0] * reach;
-        handY = shoulderYf + aim[1] * reach;
-        backHandX = backShoulderX - aim[0] * u(6) * punch;
-        backHandY = backShoulderY + u(18);
-      } else if (atk.type === 'kick') {
-        handX = baseX + aim[0] * u(26);
-        handY = shoulderY + u(26);
-      } else if (atk.type === 'super') {
-        handX = baseX + aim[0] * u(30);
-        handY = shoulderY - u(10) * punch;
-      }
-    }
-
-    limb(backShoulderX, backShoulderY, backHandX, backHandY, u(11), bodyDark, outline);
+    /* head */
+    const headS = S(head);
     ctx.fillStyle = c.skin;
     ctx.beginPath();
-    ctx.arc(backHandX, backHandY, u(6), 0, TAU);
-    ctx.fill();
-
-    /* ---- head ---- */
-    ctx.save();
-    ctx.fillStyle = c.skin;
-    ctx.beginPath();
-    ctx.arc(baseX, headY, u(16), 0, TAU);
+    ctx.arc(headS[0], headS[1], u(RIG.headR), 0, TAU);
     ctx.fill();
     ctx.strokeStyle = outline;
-    ctx.lineWidth = u(1.5);
+    ctx.lineWidth = u(1.6);
     ctx.stroke();
 
-    /* hair */
     ctx.fillStyle = c.hair || '#222';
     ctx.beginPath();
-    ctx.arc(baseX, headY - u(2), u(16), Math.PI * 1.02, Math.PI * 1.98);
+    ctx.arc(headS[0], headS[1] - u(1.5), u(RIG.headR), Math.PI * 1.02, Math.PI * 1.98);
     ctx.fill();
 
-    /* eyes look where you aim */
     ctx.fillStyle = '#14161b';
-    const eyeDX = aim[0] * u(5);
-    const eyeDY = u(2) + aim[1] * u(3);
-    for (const s of [-1, 1]) {
+    for (const off of [0.35, 0.75]) {
       ctx.beginPath();
-      ctx.arc(baseX + eyeDX + s * u(5.5), headY + eyeDY, u(2.6), 0, TAU);
+      ctx.arc(headS[0] + dir * u(RIG.headR * off), headS[1] + u(1.5), u(2.6), 0, TAU);
       ctx.fill();
     }
-    ctx.restore();
 
-    /* ---- front arm drawn last so it sits over the torso ---- */
-    limb(shoulderX, shoulderYf, handX, handY, u(12), body, outline);
-    ctx.fillStyle = c.skin;
+    /* front leg */
+    seg(S(hip), S(fKnee), u(16), body, outline);
+    seg(S(fKnee), S(fAnkle), u(14), body, outline);
+    ctx.fillStyle = '#20242c';
     ctx.beginPath();
-    ctx.arc(handX, handY, u(6.5), 0, TAU);
+    ctx.ellipse(S(fAnkle)[0] + dir * u(3), S(fAnkle)[1], u(9), u(5), 0, 0, TAU);
     ctx.fill();
-    ctx.strokeStyle = outline;
-    ctx.lineWidth = u(1.2);
-    ctx.stroke();
 
-    /* kick leg sweep */
-    if (atk && atk.type === 'kick') {
-      const prog = clamp(atk.t / atk.dur, 0, 1);
-      const swing = Math.sin(Math.min(1, prog * 1.6) * Math.PI);
-      const footX = baseX + aim[0] * u(72) * swing;
-      const footY = hipY + u(26) + aim[1] * u(40) * swing;
-      limb(baseX + u(4), hipY, footX, footY, u(14), body, outline);
-      ctx.fillStyle = '#20242c';
-      ctx.beginPath();
-      ctx.ellipse(footX, footY, u(9), u(5), 0, 0, TAU);
-      ctx.fill();
-    }
+    /* front arm last so it reads on top */
+    seg(S(shoulder), S(fElbow), u(13), body, outline);
+    seg(S(fElbow), S(fHand), u(11), shade(c.skin, 10), outline);
+    ctx.fillStyle = shade(c.skin, 18);
+    ctx.beginPath();
+    ctx.arc(S(fHand)[0], S(fHand)[1], u(6.5), 0, TAU);
+    ctx.fill();
 
-    /* ---- local player marker ---- */
+    /* marker for the local player */
     if (p.isLocal) {
       ctx.fillStyle = '#ffd166';
-      const my = headY - u(28);
+      const my = headS[1] - u(30);
       ctx.beginPath();
-      ctx.moveTo(baseX, my + u(9));
-      ctx.lineTo(baseX - u(7), my);
-      ctx.lineTo(baseX + u(7), my);
+      ctx.moveTo(headS[0], my + u(9));
+      ctx.lineTo(headS[0] - u(7), my);
+      ctx.lineTo(headS[0] + u(7), my);
       ctx.closePath();
       ctx.fill();
     }
   }
 
-  /* ------------------------------------------------------------ effects */
+  /* -------------------------------------------------------------- effects */
 
   function feed(events, players) {
     for (const e of events || []) {
@@ -1814,56 +2009,55 @@ function createRenderer(canvas) {
         const target = players.find((p) => p.id === e.on);
         const attacker = players.find((p) => p.id === e.id);
         const color = target ? target.colors.accent : '#fff';
-        const big = e.kind === 'kick' || e.kind === 'super';
+        const big = e.kind === 'kick' || e.kind === 'super' || e.kind === 'sweep';
         for (let i = 0; i < (big ? 16 : 9); i++) {
           const a = Math.random() * TAU;
-          const sp = 60 + Math.random() * (big ? 260 : 150);
+          const sp = 90 + Math.random() * (big ? 300 : 170);
           particles.push({
             x: e.x,
-            y: e.y,
-            z: 55 + Math.random() * 45,
+            y: (Math.random() - 0.5) * 40,
+            h: e.h,
             vx: Math.cos(a) * sp,
-            vy: Math.sin(a) * sp,
-            vz: 40 + Math.random() * 150,
+            vy: (Math.random() - 0.5) * 120,
+            vh: Math.sin(a) * sp,
             life: 0.4 + Math.random() * 0.3,
             max: 0.7,
             size: 2 + Math.random() * 3,
             color: i % 3 === 0 ? '#fff' : color
           });
         }
-        rings.push({ x: e.x, y: e.y, z: 60, r: 8, max: big ? 110 : 64, life: 0.3, maxLife: 0.3, color });
+        rings.push({ x: e.x, h: e.h, r: 8, max: big ? 110 : 64, life: 0.3, maxLife: 0.3, color });
         shake = Math.min(16, shake + (big ? 9 : 4));
 
-        if (attacker && attacker.taunts && attacker.taunts.length && Math.random() < 0.34) {
+        if (attacker && attacker.taunts && attacker.taunts.length && Math.random() < 0.3) {
           say(attacker.id, attacker.taunts[Math.floor(Math.random() * attacker.taunts.length)]);
         }
       } else if (e.type === 'ko') {
         const p = players.find((q) => q.id === e.id);
-        for (let i = 0; i < 28; i++) {
+        for (let i = 0; i < 26; i++) {
           const a = Math.random() * TAU;
-          const sp = 90 + Math.random() * 320;
+          const sp = 100 + Math.random() * 320;
           particles.push({
             x: e.x,
-            y: e.y,
-            z: 50,
+            y: (Math.random() - 0.5) * 50,
+            h: 60,
             vx: Math.cos(a) * sp,
-            vy: Math.sin(a) * sp,
-            vz: 60 + Math.random() * 180,
+            vy: (Math.random() - 0.5) * 140,
+            vh: Math.sin(a) * sp,
             life: 0.6 + Math.random() * 0.4,
             max: 1,
             size: 3 + Math.random() * 4,
             color: p ? p.colors.accent : '#fff'
           });
         }
-        rings.push({ x: e.x, y: e.y, z: 40, r: 12, max: 170, life: 0.5, maxLife: 0.5, color: '#ffd166' });
+        rings.push({ x: e.x, h: 40, r: 12, max: 110, life: 0.38, maxLife: 0.38, color: '#ffd166' });
         shake = Math.min(24, shake + 16);
         if (p && p.taunts && p.taunts.length) say(p.id, p.taunts[0]);
       } else if (e.type === 'super' || e.type === 'superstart') {
         const p = players.find((q) => q.id === e.id);
         rings.push({
           x: e.x,
-          y: e.y,
-          z: 55,
+          h: 55,
           r: 14,
           max: e.r || 190,
           life: 0.5,
@@ -1872,13 +2066,28 @@ function createRenderer(canvas) {
           thick: true
         });
         shake = Math.min(20, shake + 10);
+      } else if (e.type === 'land') {
+        for (let i = 0; i < 6; i++) {
+          particles.push({
+            x: e.x + (Math.random() - 0.5) * 30,
+            y: (Math.random() - 0.5) * 30,
+            h: 4,
+            vx: (Math.random() - 0.5) * 90,
+            vy: (Math.random() - 0.5) * 40,
+            vh: 40 + Math.random() * 60,
+            life: 0.3,
+            max: 0.3,
+            size: 2 + Math.random() * 2,
+            color: 'rgba(220,200,180,0.8)'
+          });
+        }
       }
     }
   }
 
   function say(id, text) {
     bubbles.length = 0;
-    bubbles.push({ id, text, life: 2.0, max: 2.0 });
+    bubbles.push({ id, text, life: 1.9, max: 1.9 });
   }
 
   function step(dt) {
@@ -1895,14 +2104,14 @@ function createRenderer(canvas) {
       }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.z += p.vz * dt;
-      p.vz -= 420 * dt;
-      if (p.z < 2) {
-        p.z = 2;
-        p.vz *= -0.35;
+      p.h += p.vh * dt;
+      p.vh -= 900 * dt;
+      if (p.h < 2) {
+        p.h = 2;
+        p.vh *= -0.3;
       }
-      p.vx *= Math.pow(0.1, dt);
-      p.vy *= Math.pow(0.1, dt);
+      p.vx *= Math.pow(0.12, dt);
+      p.vy *= Math.pow(0.12, dt);
     }
     for (let i = rings.length - 1; i >= 0; i--) {
       const r = rings[i];
@@ -1921,27 +2130,26 @@ function createRenderer(canvas) {
 
   function drawEffects() {
     for (const r of rings) {
-      const pr = project([r.x, r.y, r.z]);
+      const pr = project([r.x, 0, r.h]);
       if (!pr) continue;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = Math.max(0, r.life / r.maxLife) * 0.85;
+      ctx.globalAlpha = Math.max(0, r.life / r.maxLife) * 0.8;
       ctx.strokeStyle = r.color;
-      ctx.lineWidth = (r.thick ? 9 : 4) * pr.s;
+      ctx.lineWidth = (r.thick ? 8 : 4) * pr.s;
       ctx.beginPath();
-      ctx.ellipse(pr.x, pr.y, r.r * pr.s, r.r * pr.s * 0.42, 0, 0, TAU);
+      ctx.arc(pr.x, pr.y, r.r * pr.s, 0, TAU);
       ctx.stroke();
       ctx.restore();
     }
-
     for (const p of particles) {
-      const pr = project([p.x, p.y, p.z]);
+      const pr = project([p.x, p.y, p.h]);
       if (!pr) continue;
       ctx.save();
       ctx.globalAlpha = Math.max(0, p.life / p.max);
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(pr.x, pr.y, Math.max(1, p.size * pr.s * 1.6), 0, TAU);
+      ctx.arc(pr.x, pr.y, Math.max(1, p.size * pr.s * 1.5), 0, TAU);
       ctx.fill();
       ctx.restore();
     }
@@ -1951,23 +2159,22 @@ function createRenderer(canvas) {
     for (const b of bubbles) {
       const p = players.find((q) => q.id === b.id);
       if (!p || !p.alive) continue;
-      const pr = project([p.x, p.y, 140]);
+      const pr = project([p.x, 0, p.h + 150]);
       if (!pr) continue;
       const alpha = Math.min(1, b.life / 0.4);
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.font = '600 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-      const text = b.text;
-      const tw = ctx.measureText(text).width;
-      const padX = 9;
-      const padY = 7;
+      ctx.font = '600 12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+      const tw = ctx.measureText(b.text).width;
+      const padX = 10;
       const bw = tw + padX * 2;
-      const bh = 24;
+      const bh = 26;
       const bx = clamp(pr.x - bw / 2, 6, W - bw - 6);
-      const by = pr.y - bh - 10;
+      /* keep the bubble clear of the top HUD */
+      const by = Math.max(118, pr.y - bh - 8);
       ctx.fillStyle = '#fdfaf3';
       ctx.beginPath();
-      ctx.roundRect(bx, by, bw, bh, 8);
+      ctx.roundRect(bx, by, bw, bh, 9);
       ctx.fill();
       ctx.beginPath();
       ctx.moveTo(pr.x - 5, by + bh);
@@ -1977,48 +2184,51 @@ function createRenderer(canvas) {
       ctx.fill();
       ctx.fillStyle = '#1a1a1a';
       ctx.textAlign = 'left';
-      ctx.fillText(text, bx + padX, by + bh / 2 + 4);
+      ctx.fillText(b.text, bx + padX, by + bh / 2 + 4);
       ctx.restore();
     }
   }
-
-  /* --------------------------------------------------------------- draw */
 
   function draw(view) {
     for (const p of view.players) {
       const m = motion.get(p.id);
       if (!m) {
-        motion.set(p.id, { x: p.x, y: p.y, phase: 0 });
+        motion.set(p.id, { x: p.x, phase: 0 });
         continue;
       }
-      const d = Math.hypot(p.x - m.x, p.y - m.y);
-      m.phase += d * 0.14;
+      m.phase += Math.abs(p.x - m.x) * 0.16;
       m.x = p.x;
-      m.y = p.y;
     }
 
     updateCamera(view);
 
     ctx.save();
-    if (shake > 0.2) {
-      ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    if (shake > 0.2) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+
+    drawBackdrop();
+
+    /* shadows first, on the floor */
+    for (const p of view.players) {
+      const ground = project([p.x, 0, 0]);
+      if (!ground) continue;
+      const lift = clamp(1 - p.h / 260, 0.35, 1);
+      ctx.save();
+      ctx.globalAlpha = 0.42 * lift * (p.alive ? 1 : 0.5);
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(ground.x, ground.y, PLAYER_R * 1.2 * ground.s * lift, 8 * ground.s * lift, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
     }
 
-    drawSkyAndGround();
-    drawBackdrop();
-    drawArena();
+    const order = view.players
+      .map((p) => ({ p, foot: project([p.x, 0, p.h]) }))
+      .filter((o) => o.foot)
+      .sort((a, b) => b.foot.z - a.foot.z);
 
-    const withDepth = view.players
-      .map((p) => ({ p, pr: project([p.x, p.y, 0]) }))
-      .filter((o) => o.pr)
-      .sort((a, b) => b.pr.z - a.pr.z);
-
-    for (const { p, pr } of withDepth) drawShadow(p, pr);
-
-    /* keep the local player's identity available to the rig */
-    for (const { p, pr } of withDepth) {
+    for (const { p, foot } of order) {
       p.isLocal = p.id === view.localId;
-      drawFighter(p, pr);
+      drawFighter(p, foot, foot.s);
     }
 
     drawEffects();
@@ -2030,23 +2240,45 @@ function createRenderer(canvas) {
 }
 
 /* ===================== ai ===================== */
-/* Bot opponent. Runs only on the host / in solo mode, so a bit of randomness
-   here never desyncs anything. */
+/* Bot opponent for the side-view engine. Runs only on the host or in solo,
+   so a little randomness here never desyncs anything.
+
+   Two separate clocks matter:
+     mem.timer     — how often the bot re-picks a target
+     mem.actTimer  — how often it may start an attack
+   Without the second clock a bot rolls for an attack 30 times a second and
+   turns into a machine gun. */
+
+const NEUTRAL = {
+  mx: 0,
+  punch: false,
+  kick: false,
+  jump: false,
+  crouch: false,
+  dash: false,
+  super: false
+};
 
 function botInput(p, m) {
-  const out = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
-  if (!p.alive || m.over) return out;
+  const out = { ...NEUTRAL };
+  if (!p.alive || m.over || p.downT > 0 || p.hitstun > 0) return out;
 
-  const mem = p.ai || (p.ai = { timer: 0, targetId: null });
-  mem.timer -= 1 / 30;
+  const mem = p.ai || (p.ai = {});
+  /* older saves and hand-built players may not carry these yet */
+  if (mem.timer === undefined) mem.timer = 0;
+  if (mem.actTimer === undefined) mem.actTimer = 0;
+  if (mem.actionT === undefined) mem.actionT = 0;
+  if (mem.action === undefined) mem.action = null;
+  const dt = 1 / 30;
 
+  mem.timer -= dt;
   if (mem.timer <= 0) {
-    mem.timer = 0.22 + Math.random() * 0.22;
+    mem.timer = 0.4 + Math.random() * 0.4;
     let best = null;
     let bd = Infinity;
     for (const q of m.players) {
       if (q === p || !q.alive) continue;
-      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      const d = Math.abs(q.x - p.x);
       if (d < bd) {
         bd = d;
         best = q;
@@ -2059,36 +2291,59 @@ function botInput(p, m) {
   if (!target || !target.alive) return out;
 
   const dx = target.x - p.x;
-  const dy = target.y - p.y;
-  const d = Math.hypot(dx, dy) || 1;
+  const dist = Math.abs(dx);
+  const dir = dx >= 0 ? 1 : -1;
+  out.mx = dir;
 
-  out.mx = dx / d;
-  out.my = dy / d;
+  /* --- decide --- */
+  mem.actTimer -= dt;
+  if (mem.actTimer <= 0) {
+    mem.actTimer = 0.55 + Math.random() * 0.45;
+    mem.action = null;
 
-  const punchReach = p.moves.punch.range + 18;
-  const kickReach = p.moves.kick.range + 18;
+    const reach = p.attacks.kick.range;
+    const hurt = p.hp < p.maxHp * 0.25;
 
-  if (d < punchReach) {
-    /* close in but stop crowding, then throw something */
-    out.mx *= 0.35;
-    out.my *= 0.35;
-    if (p.meter >= 100 && Math.random() < 0.9) out.super = true;
-    else if (d < punchReach && Math.random() < 0.5) out.punch = true;
-    else if (d < kickReach && Math.random() < 0.4) out.kick = true;
-  } else if (d < kickReach) {
-    if (Math.random() < 0.45) out.kick = true;
-    else if (Math.random() < 0.2) out.dash = true;
-  } else if (d > 230 && p.cd.dash <= 0 && Math.random() < 0.06) {
-    out.dash = true;
+    if (p.meter >= 100 && dist < p.moves.super.range * 0.8) {
+      mem.action = 'super';
+    } else if (target.attack && dist < 150) {
+      /* defend: duck a high strike, hop a sweep */
+      const kind = target.attack.type;
+      if ((kind === 'punch' || kind === 'kick') && Math.random() < 0.45) mem.action = 'crouch';
+      else if (kind === 'sweep' && Math.random() < 0.4) mem.action = 'jump';
+    } else if (dist < reach - 6) {
+      if (target.crouching) mem.action = 'sweep';
+      else if (Math.random() < 0.38) mem.action = 'punch';
+      else if (Math.random() < 0.3) mem.action = 'kick';
+    } else if (dist < reach + 80) {
+      if (Math.random() < 0.22) mem.action = 'kick';
+      else if (Math.random() < 0.12) mem.action = 'jump';
+    } else if (dist > 300 && p.onGround && p.cd.dash <= 0 && Math.random() < 0.2) {
+      mem.action = 'dash';
+    }
+
+    /* a hurt bot backs off instead of trading */
+    if (hurt && dist < 140 && Math.random() < 0.5) mem.action = 'retreat';
+
+    mem.actionT = mem.action ? 0.14 : 0;
   }
 
-  /* back off when badly hurt, so bots are not just punching bags */
-  if (p.hp < p.maxHp * 0.22 && d < 130 && Math.random() < 0.35) {
-    out.mx = -dx / d;
-    out.my = -dy / d;
-    out.punch = false;
-    out.kick = false;
+  if (mem.actionT > 0) {
+    mem.actionT -= dt;
+    if (mem.action === 'punch') out.punch = true;
+    else if (mem.action === 'kick') out.kick = true;
+    else if (mem.action === 'sweep') {
+      out.crouch = true;
+      out.kick = true;
+    } else if (mem.action === 'jump') out.jump = true;
+    else if (mem.action === 'crouch') out.crouch = true;
+    else if (mem.action === 'dash') out.dash = true;
+    else if (mem.action === 'super') out.super = true;
+    else if (mem.action === 'retreat') out.mx = -dir;
   }
+
+  /* drift back to a fighting distance when very close and not attacking */
+  if (dist < 42 && !mem.actionT) out.mx = dir * 0.2;
 
   return out;
 }
@@ -2098,7 +2353,7 @@ function inputsForMatch(m, humanId, humanInput) {
   for (const p of m.players) {
     if (p.id === humanId) inputs[p.id] = humanInput;
     else if (p.isBot) inputs[p.id] = botInput(p, m);
-    else inputs[p.id] = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
+    else inputs[p.id] = { ...NEUTRAL };
   }
   return inputs;
 }
@@ -2389,7 +2644,7 @@ let renderer = null;
 const S = {
   mode: 'solo',
   me: { name: 'You', charId: CHARACTERS[0].id },
-  botCount: 2,
+  botCount: 1,
   match: null,
   localId: 'p0',
   running: false,
@@ -2409,6 +2664,20 @@ const S = {
 let rafId = 0;
 let lastTs = 0;
 let acc = 0;
+
+/* The fight needs landscape. In portrait we freeze the simulation behind the
+   rotate prompt so nobody takes a beating while turning their phone. */
+const portraitQuery = window.matchMedia('(orientation: portrait)');
+let heldInPortrait = portraitQuery.matches;
+if (portraitQuery.addEventListener) {
+  portraitQuery.addEventListener('change', (e) => {
+    heldInPortrait = e.matches;
+  });
+} else if (portraitQuery.addListener) {
+  portraitQuery.addListener((e) => {
+    heldInPortrait = e.matches;
+  });
+}
 
 /* ------------------------------------------------------------------ screens */
 
@@ -2784,15 +3053,19 @@ function loop(ts) {
   lastTs = ts;
   if (dt > 0.1) dt = 0.1;
   if (dt < 0) dt = 0;
-  acc += dt;
 
-  let guard = 0;
-  while (acc >= TICK && guard < 6) {
-    simulate();
-    acc -= TICK;
-    guard++;
+  if (heldInPortrait) {
+    acc = 0;
+  } else {
+    acc += dt;
+    let guard = 0;
+    while (acc >= TICK && guard < 6) {
+      simulate();
+      acc -= TICK;
+      guard++;
+    }
+    if (guard >= 6) acc = 0;
   }
-  if (guard >= 6) acc = 0;
 
   if (S.mode === 'guest') smoothGuest(dt);
   if (renderer) {
@@ -3109,7 +3382,12 @@ window.__kursi = () =>
           id: p.id,
           name: p.name,
           x: Math.round(p.x),
-          y: Math.round(p.y),
+          h: Math.round(p.h),
+          onGround: p.onGround,
+          crouching: p.crouching,
+          down: p.downT > 0,
+          atk: p.attack ? p.attack.type : null,
+          stun: Math.round(p.hitstun * 100) / 100,
           hp: Math.round(p.hp),
           meter: Math.round(p.meter),
           alive: p.alive

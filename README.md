@@ -1,0 +1,248 @@
+# Kursi Kombat
+
+A side-view office-politics fighting game, played in landscape. Pick a
+colleague-caricature, then punch, kick, sweep, jump and air-kick your way to a
+knockout. Fighters are drawn as articulated skeletons, so the limbs actually
+move — no sprite swapping.
+
+- **Play solo** against 1–3 bots.
+- **Host a game** and up to three friends join from their own phones — 1v1 or a
+  four-way free-for-all.
+- **Real depth:** a perspective camera beside the lane, a colonnade, a crowd and
+  a painted stage. Drawn with the 2D canvas API, so there is no 3D library to
+  download and the page still opens by double-click.
+- **Height matters:** a punch sails over a crouching opponent, a sweep goes under
+  a jumping one, and an air kick only connects while you are off the ground.
+- **No backend.** No Firestore, no Supabase, no accounts, no keys, no database.
+  Gameplay packets travel phone-to-phone.
+- **One file per character.** Adding a colleague is a copy, an edit and one line.
+
+---
+
+## Try it
+
+**Double-click `index.html`.** That is all — no server, no install, no build step.
+
+If you prefer a local URL (handy for testing multiplayer on one machine):
+
+```bash
+python3 -m http.server 8080
+# then open http://localhost:8080
+```
+
+---
+
+## The files
+
+| File | What it is | Do you edit it? |
+| --- | --- | --- |
+| `index.html` | The whole game: styles, 3D rendering, controls, sound, bots, networking, screens | Only for look-and-feel or core changes |
+| `js/fighters/*.js` | **One file per character** — six are included | **Yes — this is where you work** |
+| `js/characters.js` | Collects the fighter files; holds the headlines and ticker lines | Sometimes |
+| `js/engine.js` | The rules: movement, hits, damage, knockback, knockout | Rarely |
+
+`README.md`, `package.json`, `tools/` and `.github/` are support files — you never
+need them on your phone.
+
+---
+
+## Add a character
+
+Each fighter is its own file. To add someone:
+
+1. Copy `js/fighters/intern.js` to `js/fighters/<their-id>.js`.
+2. Change the values inside — `id` must be unique, lowercase, no spaces.
+3. Open `index.html` and add one line beside the other fighters:
+
+   ```html
+   <script src="js/fighters/<their-id>.js"></script>
+   ```
+
+That is the whole process. Order in `index.html` is roster order.
+
+A finished file looks like this:
+
+```js
+(globalThis.KK_FIGHTERS = globalThis.KK_FIGHTERS || []).push({
+  id: 'rahul',
+  name: 'Rahul',
+  tagline: 'Let us take this offline',
+  colors: { body: '#7c3aed', accent: '#f0abfc', skin: '#e3b489', hair: '#241d33' },
+  stats: { speed: 1.1, power: 0.95, weight: 0.9, hp: 92 },
+  moves: {
+    punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
+    kick:  { damage: 13, range: 100, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
+    dash:  { speed: 700, dur: 0.15, cd: 2.0 },
+    super: { damage: 26, range: 180, knock: 600 }
+  },
+  taunts: ['This could have been an email.'],
+  passive: { id: 'quick', text: 'Quick: moves 14% faster.' }
+});
+```
+
+**The numbers**
+
+| Field | Meaning |
+| --- | --- |
+| `stats.speed` | 1.0 normal, 1.15 quick, 0.9 slow |
+| `stats.power` | multiplies every hit you land |
+| `stats.weight` | higher = you get knocked back less |
+| `stats.hp` | 100 normal, 130 tank, 80 fragile |
+| `range` | pixels from your centre (a body is about 52 wide) |
+| `arc` | the cone you hit in, in radians (1.2 ≈ 70°) |
+| `dur` / `hitAt` | how long the move takes, and when inside it the hit lands |
+| `knock` | knockback strength |
+| `cd` | cooldown, seconds |
+
+**Passives** (`passive.id`): `none`, `tank` (+30% health), `quick` (+14% speed),
+`heavy` (+18% damage, −8% speed), `shover` (+35% knockback), `charged` (+50% meter
+gain), `slippery` (dash recharges almost twice as fast). Unknown ids fall back to
+`none`.
+
+`taunts` are the speech bubbles that pop up mid-fight — one or two lines each is
+plenty.
+
+Aim for caricature, not likeness, and get a yes from anyone you put in the game.
+
+---
+
+## How multiplayer works with no server
+
+WebRTC needs one thing from outside the two phones: a way to swap connection
+descriptions. There is no signalling server here, so **you swap them by hand**,
+once per friend:
+
+1. Host taps **Generate invite code** for a slot and sends that code on Slack or
+   WhatsApp.
+2. The friend opens the game, taps **Join a game**, pastes the code, and gets a
+   **reply code**.
+3. They send the reply code back. The host pastes it into the slot and taps
+   **Connect**.
+4. Repeat for each extra player. Then **Start fight**.
+
+After that handshake, every gameplay packet goes directly between the phones.
+Nothing is stored anywhere, and the codes are single-use for that session.
+
+### Why both phones must be on the same Wi-Fi
+
+The trade for "strictly zero third-party" is that no STUN or TURN server is
+contacted, so the phones can only find each other on the same local network.
+That is fine for an office. A phone hotspot works too — both phones join it.
+
+If you later want players on different networks, open the `net` section of
+`index.html` and set:
+
+```js
+const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+```
+
+A STUN server only reports a device's public address — no game data passes
+through it. Even then, roughly one connection in five still needs a TURN relay.
+
+---
+
+## Put it on GitHub Pages
+
+1. Push these files to the `main` branch.
+
+   ```bash
+   git init
+   git add .
+   git commit -m "kursi kombat"
+   git branch -M main
+   git remote add origin https://github.com/<you>/kursi-kombat.git
+   git push -u origin main
+   ```
+
+2. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+   The included workflow publishes the site on every push to `main`.
+
+3. Your game is at `https://<you>.github.io/kursi-kombat/`.
+
+No secrets, no environment variables, no build step.
+
+> Prefer not to use Actions? Delete `.github/` and set
+> **Settings → Pages → Deploy from a branch → main / (root)** instead.
+
+---
+
+## Controls
+
+The fight is played in **landscape**. Held in portrait, the game pauses behind a
+"rotate your phone" prompt.
+
+**Phone**
+
+| Control | Does |
+| --- | --- |
+| Drag left thumb left/right | walk |
+| Double-tap the left or right half of the stick area | dash that way |
+| PUNCH | fast high strike |
+| KICK | slower, longer strike |
+| JUMP | hop; press PUNCH or KICK in the air for an air attack |
+| CROUCH | duck (hold) — a punch goes over your head |
+| CROUCH + KICK | low sweep: hits crouching opponents and knocks down |
+| SUPER | appears at full meter; a radial blast |
+
+**Desktop:** `A`/`D` or arrows walk, `W`/`Up` jump, `S`/`Down` crouch, `J` punch,
+`K` kick, `L` dash, `Space` super.
+
+Rounds last 75 seconds or until one fighter is left standing. Most HP wins on
+time.
+
+### How the heights interact
+
+- A **punch** sweeps chest-to-head height, so it misses a crouching opponent.
+- A **kick** covers waist-to-chest and hits crouchers.
+- A **sweep** stays at ankle height: it hits crouchers and knocks them down, but
+  a jumping opponent clears it.
+- An **air kick** travels with you, so you can jump in and strike from above.
+- A knockdown leaves you on the floor for about a second. Free hits.
+
+---
+
+## Checks
+
+```bash
+npm test
+```
+
+31 checks run against the same files the browser loads: hits connect at the right
+range, a punch sails over a crouch, a sweep lands on a croucher, a sweep passes
+under a jump, an air kick registers only in the air, jumps arc and land, sweeps
+knock down, super needs a full meter, a four-player round finishes, nobody leaves
+the lane or falls through the floor, snapshots carry position and height, and
+every fighter file is complete.
+
+Debug helper in the browser console: `__kursi()` prints the live match state,
+which is handy while you tune numbers.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| "This network is blocking direct phone-to-phone connections" | The phones cannot see each other. Same Wi-Fi, VPN off, or use a phone hotspot. |
+| Invite code pasted and nothing happens | The friend must send back the **reply** code and you must paste it and tap **Connect**. |
+| Works on one phone, not the other | Some corporate Wi-Fi isolates clients (AP isolation). Use a hotspot. |
+| Blank page | The page must sit next to its `js/` folder. Copy the whole folder, not just `index.html`. |
+| "Rotate your phone" will not go away | The fight only runs in landscape. Turn the phone sideways. |
+| New fighter does not appear | Check the `<script>` line is in `index.html` **above** `js/characters.js`, and the `id` is unique. |
+| Two phones connect but the fight never starts | Only the host can press **Start fight**. |
+| iOS: no sound | Audio starts on your first tap; tap a button once. |
+
+---
+
+## Limits, honestly
+
+- No client-side prediction: on a slow link you may feel your own move land a
+  moment late. On the same Wi-Fi this is not noticeable.
+- The host's phone does the work. Four players on a very old phone will run hot.
+- The fighters are stylised skeletons built from limbs and a head, not sculpted
+  models. Real character art would need a proper 3D asset pipeline.
+- No blocking or throws yet. Crouching is the defensive option.
+- No ranked matchmaking, no accounts, no persistent leaderboard — all of which
+  would need the server you asked not to have.
+- No installable-app manifest: dropped to keep the file count down. Add a
+  `manifest.webmanifest` and an icon if you want "Add to Home Screen".
