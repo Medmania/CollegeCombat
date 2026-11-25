@@ -1,0 +1,19 @@
+{
+  "name": "Kursi Kombat",
+  "short_name": "Kursi Kombat",
+  "description": "Office politics, settled properly. A tiny fighting game for you and your colleagues.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0e15",
+  "theme_color": "#0b0e15",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
