@@ -6,8 +6,712 @@
     <meta name="theme-color" content="#0b0e15" />
     <meta name="description" content="A tiny office-politics fighting game. You vs bots, or up to four phones on the same Wi-Fi. No servers, no accounts." />
     <title>Kursi Kombat — office politics, settled properly</title>
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/style.css?v=1" />
+    <style>
+:root {
+  --bg: #0b0e15;
+  --bg2: #05070b;
+  --ink: #eef2f8;
+  --muted: #94a0b4;
+  --gold: #ffd166;
+  --line: rgba(255, 255, 255, 0.1);
+  --card: rgba(255, 255, 255, 0.05);
+  --punch: #f87171;
+  --kick: #60a5fa;
+  --dash: #34d399;
+  --super: #ffd166;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  overscroll-behavior: none;
+}
+
+body {
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  height: 100dvh;
+  height: 100vh;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: radial-gradient(120% 90% at 50% 0%, #141a26 0%, var(--bg) 45%, var(--bg2) 100%);
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ---------- menu ---------- */
+
+.brand {
+  text-align: center;
+  margin-top: 8vh;
+}
+
+.logo {
+  font-size: clamp(38px, 13vw, 58px);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  font-weight: 900;
+  margin: 0 0 10px;
+  color: #fff;
+  text-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
+}
+
+.logo span {
+  color: var(--gold);
+}
+
+.tagline {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+
+.roster-strip {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin: 26px 0 0;
+  flex-wrap: wrap;
+}
+
+.roster-strip .sw {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.18);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 16px;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease;
+  width: 100%;
+}
+
+.btn small {
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.btn:active {
+  transform: scale(0.985);
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #ffd977, var(--gold));
+  color: #17130a;
+  border-color: #ffe6a3;
+}
+
+.btn.primary small {
+  color: rgba(23, 19, 10, 0.65);
+}
+
+.btn.small {
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 12px;
+  text-align: center;
+  align-items: center;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+  margin: 16px 0 0;
+}
+
+.hint strong {
+  color: #d7dee9;
+}
+
+.stamp {
+  text-align: center;
+  color: rgba(148, 160, 180, 0.55);
+  font-size: 11px;
+  margin-top: 10px;
+}
+
+/* ---------- generic bars ---------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex: 0 0 auto;
+}
+
+.bar h2 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.ghost {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 6px;
+  cursor: pointer;
+}
+
+.field {
+  margin-bottom: 16px;
+  flex: 0 0 auto;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+
+input[type='text'],
+textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid rgba(255, 209, 102, 0.5);
+  outline-offset: 1px;
+}
+
+/* ---------- roster ---------- */
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.card {
+  appearance: none;
+  text-align: left;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 104px;
+}
+
+.card.selected {
+  border-color: var(--gold);
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  margin-bottom: 4px;
+}
+
+.cname {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.ctag {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.cpass {
+  font-size: 10.5px;
+  color: rgba(148, 160, 180, 0.85);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+/* ---------- chips ---------- */
+
+.chips {
+  display: flex;
+  gap: 8px;
+}
+
+.chip {
+  flex: 1;
+  appearance: none;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 11px 6px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--gold);
+  background: rgba(255, 209, 102, 0.14);
+  color: var(--gold);
+}
+
+/* ---------- lobby ---------- */
+
+.steps {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  flex: 0 0 auto;
+}
+
+.steps strong {
+  color: #d7dee9;
+}
+
+.slots {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.slot {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slot-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex: 0 0 auto;
+}
+
+.dot.on {
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+}
+
+.code-area {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: #9fb0c7;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 8px;
+  max-height: 90px;
+  overflow: auto;
+  word-break: break-all;
+  display: none;
+}
+
+.code-area.show {
+  display: block;
+}
+
+.slot-msg {
+  font-size: 11.5px;
+  color: var(--muted);
+  min-height: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  flex: 0 0 auto;
+}
+
+.msg {
+  font-size: 12.5px;
+  color: #fca5a5;
+  min-height: 16px;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+/* ---------- game ---------- */
+
+#screen-game {
+  padding: 0;
+  overflow: hidden;
+  background: #05070b;
+}
+
+.game-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(6px + env(safe-area-inset-top)) 12px 4px;
+  flex: 0 0 auto;
+}
+
+.timer {
+  font-size: 20px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  min-width: 44px;
+}
+
+.net-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.net-badge.bad {
+  color: #fca5a5;
+  border-color: rgba(252, 165, 165, 0.4);
+}
+
+.game-top .ghost {
+  margin-left: auto;
+}
+
+.ticker {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: rgba(148, 160, 180, 0.9);
+  padding: 0 12px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 100%;
+  aspect-ratio: 5 / 6;
+  max-height: 58vh;
+  position: relative;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.controls {
+  flex: 1 1 auto;
+  min-height: 148px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+  touch-action: none;
+  user-select: none;
+}
+
+.stick-zone {
+  flex: 1 1 45%;
+  position: relative;
+  height: 100%;
+  max-height: 240px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 70%);
+  touch-action: none;
+}
+
+.stick-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 92px;
+  height: 92px;
+  margin: -46px 0 0 -46px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.3);
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.stick-hint.hidden {
+  opacity: 0;
+}
+
+.stick {
+  position: absolute;
+  width: 104px;
+  height: 104px;
+  margin: -52px 0 0 -52px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+
+.stick.visible {
+  opacity: 1;
+}
+
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(255, 209, 102, 0.85);
+  box-shadow: 0 0 16px rgba(255, 209, 102, 0.35);
+}
+
+.pad {
+  flex: 1 1 55%;
+  height: 100%;
+  max-height: 240px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+}
+
+.pad-btn {
+  appearance: none;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  touch-action: none;
+  transition: transform 0.06s ease, background 0.1s ease;
+}
+
+.pad-btn.pressed {
+  transform: scale(0.94);
+}
+
+.pad-btn.punch {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: var(--punch);
+}
+
+.pad-btn.kick {
+  border-color: rgba(96, 165, 250, 0.55);
+  color: var(--kick);
+}
+
+.pad-btn.dash {
+  border-color: rgba(52, 211, 153, 0.55);
+  color: var(--dash);
+}
+
+.pad-btn.super {
+  border-color: rgba(255, 209, 102, 0.6);
+  color: var(--super);
+}
+
+.pad-btn.super.ready {
+  background: rgba(255, 209, 102, 0.22);
+  box-shadow: 0 0 18px rgba(255, 209, 102, 0.4);
+}
+
+/* ---------- result ---------- */
+
+#screen-result {
+  justify-content: center;
+  gap: 4px;
+}
+
+.paper {
+  background: #f4efe3;
+  color: #1a1a1a;
+  border-radius: 4px;
+  padding: 18px 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  transform: rotate(-1.2deg);
+}
+
+.paper-top {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b6355;
+  border-bottom: 1px solid #cfc7b6;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.paper h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(20px, 6.4vw, 26px);
+  line-height: 1.15;
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
+.rule {
+  height: 3px;
+  background: #1a1a1a;
+  margin-bottom: 10px;
+}
+
+.paper p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.paper-foot {
+  font-size: 9.5px;
+  color: #6b6355;
+  font-style: italic;
+  border-top: 1px solid #cfc7b6;
+  padding-top: 6px;
+}
+
+/* ---------- toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 20px);
+  background: rgba(20, 24, 33, 0.96);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  max-width: 88vw;
+  text-align: center;
+  z-index: 50;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (min-width: 620px) {
+  .roster {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+    </style>
   </head>
   <body>
     <div id="app">
@@ -164,6 +868,1819 @@
 
     <div class="toast" id="toast"></div>
 
-    <script type="module" src="js/main.js?v=1"></script>
+    <script src="js/characters.js"></script>
+    <script src="js/engine.js"></script>
+    <script>
+'use strict';
+/* Everything below used to be six files. It is inline so that index.html
+   opens by double-click, with no web server. Only js/characters.js (your
+   roster) and js/engine.js (the rules) stay separate. */
+
+const { TICK, ARENA, PLAYER_R, SUPER_COST, createMatch, stepMatch, packSnapshot } = globalThis.KK_Engine;
+const { CHARACTERS, getCharacter, HEADLINES, TICKER } = globalThis.KK_Roster;
+
+
+/* ===================== audio ===================== */
+/* Tiny WebAudio blips — no asset files, nothing to download. */
+
+function createAudio() {
+  let ctx = null;
+
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function tone({ freq = 220, dur = 0.08, type = 'square', gain = 0.05, slide = 0 }) {
+    const c = ensure();
+    if (!c) return;
+    const t = c.currentTime;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(c.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  function noise(dur = 0.12, gain = 0.05) {
+    const c = ensure();
+    if (!c) return;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource();
+    const g = c.createGain();
+    g.gain.value = gain;
+    src.buffer = buf;
+    src.connect(g).connect(c.destination);
+    src.start();
+  }
+
+  return {
+    ensure,
+    punch: () => tone({ freq: 320, dur: 0.05, type: 'square', gain: 0.03, slide: -120 }),
+    kick: () => tone({ freq: 180, dur: 0.09, type: 'sawtooth', gain: 0.035, slide: -80 }),
+    hit: (big = false) => {
+      noise(big ? 0.16 : 0.09, big ? 0.07 : 0.04);
+      tone({ freq: big ? 110 : 170, dur: 0.07, type: 'triangle', gain: 0.04, slide: -60 });
+    },
+    ko: () => {
+      tone({ freq: 300, dur: 0.35, type: 'sawtooth', gain: 0.05, slide: -240 });
+      noise(0.3, 0.05);
+    },
+    superMove: () => {
+      tone({ freq: 90, dur: 0.4, type: 'sine', gain: 0.07, slide: 380 });
+      noise(0.25, 0.04);
+    },
+    click: () => tone({ freq: 520, dur: 0.04, type: 'square', gain: 0.025 }),
+    win: () => {
+      tone({ freq: 440, dur: 0.12, type: 'square', gain: 0.04 });
+      setTimeout(() => tone({ freq: 660, dur: 0.14, type: 'square', gain: 0.04 }), 120);
+      setTimeout(() => tone({ freq: 880, dur: 0.22, type: 'square', gain: 0.04 }), 260);
+    }
+  };
+}
+
+/* ===================== input ===================== */
+/* Touch + keyboard input. One local player per device.
+   Phone: left-half virtual stick, right-side action buttons.
+   Desktop: WASD / arrows to move, J punch, K kick, L dash, Space super. */
+
+const KEYS = {
+  up: ['ArrowUp', 'KeyW'],
+  down: ['ArrowDown', 'KeyS'],
+  left: ['ArrowLeft', 'KeyA'],
+  right: ['ArrowRight', 'KeyD'],
+  punch: ['KeyJ'],
+  kick: ['KeyK'],
+  dash: ['KeyL'],
+  super: ['Space']
+};
+
+function createInput(doc = document) {
+  const held = new Set();
+  const state = {
+    mx: 0,
+    my: 0,
+    punch: false,
+    kick: false,
+    dash: false,
+    superQueued: false
+  };
+
+  const touch = { active: false, id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
+  const buttons = { punch: false, kick: false, dash: false };
+
+  const stickEl = doc.getElementById('stick');
+  const knobEl = doc.getElementById('stick-knob');
+  const stickZone = doc.getElementById('stick-zone');
+  const RADIUS = 52;
+
+  function setKnob(dx, dy) {
+    if (!knobEl) return;
+    knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+
+  const hintEl = doc.getElementById('stick-hint');
+
+  function showStick(on, ox = 0, oy = 0) {
+    if (!stickEl) return;
+    stickEl.classList.toggle('visible', on);
+    if (hintEl) hintEl.classList.toggle('hidden', on);
+    if (on) {
+      stickEl.style.left = `${ox}px`;
+      stickEl.style.top = `${oy}px`;
+      setKnob(0, 0);
+    }
+  }
+
+  if (stickZone) {
+    stickZone.addEventListener('pointerdown', (e) => {
+      if (touch.active) return;
+      touch.active = true;
+      touch.id = e.pointerId;
+      const r = stickZone.getBoundingClientRect();
+      touch.ox = e.clientX;
+      touch.oy = e.clientY;
+      touch.baseX = e.clientX - r.left;
+      touch.baseY = e.clientY - r.top;
+      showStick(true, touch.baseX, touch.baseY);
+      stickZone.setPointerCapture(e.pointerId);
+    });
+
+    stickZone.addEventListener('pointermove', (e) => {
+      if (!touch.active || e.pointerId !== touch.id) return;
+      let dx = e.clientX - touch.ox;
+      let dy = e.clientY - touch.oy;
+      const d = Math.hypot(dx, dy);
+      if (d > RADIUS) {
+        dx = (dx / d) * RADIUS;
+        dy = (dy / d) * RADIUS;
+      }
+      touch.dx = dx / RADIUS;
+      touch.dy = dy / RADIUS;
+      setKnob(dx, dy);
+    });
+
+    const end = (e) => {
+      if (!touch.active || (e && e.pointerId !== touch.id)) return;
+      touch.active = false;
+      touch.dx = 0;
+      touch.dy = 0;
+      showStick(false);
+    };
+    stickZone.addEventListener('pointerup', end);
+    stickZone.addEventListener('pointercancel', end);
+    /* Listen on the window too: with pointer capture the thumb often drifts
+       outside the zone, and losing the drag there would freeze movement. */
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  }
+
+  function bindButton(id, key) {
+    const el = doc.getElementById(id);
+    if (!el) return;
+    const down = (e) => {
+      e.preventDefault();
+      buttons[key] = true;
+      el.classList.add('pressed');
+      if (key === 'super') state.superQueued = true;
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch (_) {
+        /* ignore */
+      }
+    };
+    const up = (e) => {
+      if (e) e.preventDefault();
+      buttons[key] = false;
+      el.classList.remove('pressed');
+    };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerleave', up);
+  }
+
+  bindButton('btn-punch', 'punch');
+  bindButton('btn-kick', 'kick');
+  bindButton('btn-dash', 'dash');
+  bindButton('btn-super', 'super');
+
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    held.add(e.code);
+    if (KEYS.super.includes(e.code)) {
+      state.superQueued = true;
+      e.preventDefault();
+    }
+    if (KEYS.punch.includes(e.code) || KEYS.kick.includes(e.code) || KEYS.dash.includes(e.code)) {
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (e) => held.delete(e.code));
+  window.addEventListener('blur', () => {
+    held.clear();
+    buttons.punch = buttons.kick = buttons.dash = false;
+  });
+
+  const anyHeld = (list) => list.some((k) => held.has(k));
+
+  function getInput() {
+    let mx = 0;
+    let my = 0;
+
+    if (touch.active) {
+      mx = touch.dx;
+      my = touch.dy;
+    } else {
+      if (anyHeld(KEYS.left)) mx -= 1;
+      if (anyHeld(KEYS.right)) mx += 1;
+      if (anyHeld(KEYS.up)) my -= 1;
+      if (anyHeld(KEYS.down)) my += 1;
+    }
+
+    const input = {
+      mx,
+      my,
+      punch: buttons.punch || anyHeld(KEYS.punch),
+      kick: buttons.kick || anyHeld(KEYS.kick),
+      dash: buttons.dash || anyHeld(KEYS.dash),
+      super: state.superQueued
+    };
+    state.superQueued = false;
+    return input;
+  }
+
+  function reset() {
+    held.clear();
+    buttons.punch = buttons.kick = buttons.dash = false;
+    touch.active = false;
+    touch.dx = 0;
+    touch.dy = 0;
+    state.superQueued = false;
+    showStick(false);
+  }
+
+  return { getInput, reset };
+}
+
+/* ===================== render ===================== */
+/* Canvas renderer. Takes a plain "view" object (already interpolated by the
+   caller) and draws it. Knows nothing about networking or match rules. */
+
+
+const TAU = Math.PI * 2;
+
+function shade(hex, amt) {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  const r = Math.max(0, Math.min(255, ((n >> 16) & 255) + amt));
+  const g = Math.max(0, Math.min(255, ((n >> 8) & 255) + amt));
+  const b = Math.max(0, Math.min(255, (n & 255) + amt));
+  return `rgb(${r},${g},${b})`;
+}
+
+function createRenderer(canvas) {
+  const ctx = canvas.getContext('2d');
+  const cam = { s: 1, tx: 0, ty: 0 };
+  const particles = [];
+  const rings = [];
+  let W = 1;
+  let H = 1;
+  let shake = 0;
+  let time = 0;
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = Math.max(1, rect.width);
+    H = Math.max(1, rect.height);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function updateCam() {
+    const pad = 60;
+    cam.s = Math.min(W, H) / (ARENA.r * 2 + pad);
+    cam.tx = W / 2 - ARENA.cx * cam.s;
+    cam.ty = H / 2 - ARENA.cy * cam.s;
+  }
+
+  const sx = (x) => x * cam.s + cam.tx;
+  const sy = (y) => y * cam.s + cam.ty;
+
+  function feed(events, players) {
+    for (const e of events || []) {
+      if (e.type === 'hit') {
+        const target = players.find((p) => p.id === e.on);
+        const color = target ? target.colors.accent : '#ffffff';
+        const big = e.kind === 'kick' || e.kind === 'super';
+        const n = big ? 14 : 8;
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * TAU;
+          const sp = 80 + Math.random() * (big ? 320 : 180);
+          particles.push({
+            x: e.x,
+            y: e.y,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp,
+            life: 0.35 + Math.random() * 0.3,
+            max: 0.65,
+            size: 2 + Math.random() * 3,
+            color: i % 3 === 0 ? '#ffffff' : color
+          });
+        }
+        rings.push({ x: e.x, y: e.y, r: 6, max: big ? 90 : 52, life: 0.28, maxLife: 0.28, color });
+        shake = Math.min(16, shake + (big ? 9 : 4));
+      } else if (e.type === 'ko') {
+        const p = players.find((q) => q.id === e.id);
+        const color = p ? p.colors.accent : '#ffffff';
+        for (let i = 0; i < 26; i++) {
+          const a = Math.random() * TAU;
+          const sp = 120 + Math.random() * 380;
+          particles.push({
+            x: e.x,
+            y: e.y,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp,
+            life: 0.5 + Math.random() * 0.4,
+            max: 0.9,
+            size: 3 + Math.random() * 4,
+            color
+          });
+        }
+        rings.push({ x: e.x, y: e.y, r: 10, max: 150, life: 0.5, maxLife: 0.5, color });
+        shake = Math.min(22, shake + 14);
+      } else if (e.type === 'super' || e.type === 'superstart') {
+        const p = players.find((q) => q.id === e.id);
+        const color = p ? p.colors.accent : '#ffffff';
+        rings.push({
+          x: e.x,
+          y: e.y,
+          r: 10,
+          max: e.r || 190,
+          life: 0.45,
+          maxLife: 0.45,
+          color,
+          thick: true
+        });
+        shake = Math.min(20, shake + 10);
+      }
+    }
+  }
+
+  function step(dt) {
+    time += dt;
+    shake *= Math.pow(0.001, dt);
+    if (shake < 0.2) shake = 0;
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= Math.pow(0.06, dt);
+      p.vy *= Math.pow(0.06, dt);
+    }
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const r = rings[i];
+      r.life -= dt;
+      if (r.life <= 0) {
+        rings.splice(i, 1);
+        continue;
+      }
+      r.r += (r.max - r.r) * Math.min(1, dt * 9);
+    }
+  }
+
+  function drawFloor() {
+    const g = ctx.createRadialGradient(ARENA.cx, ARENA.cy, 40, ARENA.cx, ARENA.cy, ARENA.r);
+    g.addColorStop(0, '#1b2233');
+    g.addColorStop(0.65, '#151a26');
+    g.addColorStop(1, '#0e1119');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(ARENA.cx, ARENA.cy, ARENA.r, 0, TAU);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+    ctx.lineWidth = 2;
+    for (const f of [0.35, 0.62, 0.85]) {
+      ctx.beginPath();
+      ctx.arc(ARENA.cx, ARENA.cy, ARENA.r * f, 0, TAU);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    for (let i = 0; i < 16; i++) {
+      const a = (TAU * i) / 16;
+      ctx.beginPath();
+      ctx.moveTo(ARENA.cx + Math.cos(a) * ARENA.r * 0.35, ARENA.cy + Math.sin(a) * ARENA.r * 0.35);
+      ctx.lineTo(ARENA.cx + Math.cos(a) * ARENA.r, ARENA.cy + Math.sin(a) * ARENA.r);
+      ctx.stroke();
+    }
+
+    /* centre emblem */
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = 'rgba(255,209,102,0.35)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ARENA.cx, ARENA.cy, 54, 0, TAU);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(ARENA.cx, ARENA.cy, 40, 0, TAU);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,209,102,0.10)';
+    ctx.beginPath();
+    ctx.arc(ARENA.cx, ARENA.cy, 40, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
+    /* boundary */
+    const pulse = 0.55 + Math.sin(time * 2) * 0.08;
+    ctx.strokeStyle = `rgba(255,209,102,${pulse})`;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(ARENA.cx, ARENA.cy, ARENA.r, 0, TAU);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(ARENA.cx, ARENA.cy, ARENA.r - 10, 0, TAU);
+    ctx.stroke();
+  }
+
+  function drawAttack(p, t) {
+    const a = p.attack;
+    if (!a) return;
+    const prog = Math.min(1, a.t / a.dur);
+    const colors = p.colors;
+
+    if (a.type === 'super') {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.55 * (1 - prog);
+      ctx.fillStyle = colors.accent;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.moves.super.range * (0.4 + prog * 0.7), 0, TAU);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    const mv = p.moves[a.type];
+    const reach = mv.range * (0.55 + 0.45 * Math.min(1, prog * 2.2));
+    const swing = Math.sin(Math.min(1, prog) * Math.PI);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.face);
+    ctx.globalAlpha = 0.34 + 0.5 * swing;
+
+    if (a.type === 'punch') {
+      ctx.fillStyle = colors.accent;
+      const w = reach;
+      ctx.beginPath();
+      ctx.roundRect(PLAYER_R * 0.4, -11, w - PLAYER_R * 0.4, 22, 11);
+      ctx.fill();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(w, 0, 9, 0, TAU);
+      ctx.fill();
+    } else {
+      const g = ctx.createRadialGradient(0, 0, PLAYER_R * 0.5, 0, 0, reach);
+      g.addColorStop(0, 'rgba(255,255,255,0.75)');
+      g.addColorStop(0.55, colors.accent);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, reach, -mv.arc / 2, mv.arc / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, reach, -mv.arc / 2, mv.arc / 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawFighter(p) {
+    const c = p.colors;
+    const ko = !p.alive;
+    const hitFlash = p.hitstun > 0.02;
+
+    ctx.save();
+    ctx.globalAlpha = ko ? 0.3 : 1;
+
+    /* shadow */
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y + PLAYER_R * 0.85, PLAYER_R * 0.95, PLAYER_R * 0.4, 0, 0, TAU);
+    ctx.fill();
+
+    if (ko) {
+      ctx.translate(p.x, p.y);
+      ctx.scale(1, 0.55);
+      ctx.translate(-p.x, -p.y);
+    }
+
+    const bodyColor = hitFlash ? '#ffffff' : c.body;
+
+    /* arms */
+    ctx.fillStyle = shade(c.body, -30);
+    const perp = p.face + Math.PI / 2;
+    const armSpread = PLAYER_R * 0.78;
+    for (const side of [-1, 1]) {
+      const ax = p.x + Math.cos(perp) * armSpread * side + Math.cos(p.face) * 6;
+      const ay = p.y + Math.sin(perp) * armSpread * side + Math.sin(p.face) * 6;
+      ctx.beginPath();
+      ctx.arc(ax, ay, PLAYER_R * 0.26, 0, TAU);
+      ctx.fill();
+    }
+
+    /* torso */
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PLAYER_R, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = c.accent;
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+
+    /* collar */
+    ctx.fillStyle = shade(c.body, 26);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PLAYER_R * 0.62, 0, TAU);
+    ctx.fill();
+
+    /* head */
+    const hx = p.x + Math.cos(p.face) * 5;
+    const hy = p.y + Math.sin(p.face) * 5 - 4;
+    ctx.fillStyle = c.skin;
+    ctx.beginPath();
+    ctx.arc(hx, hy, PLAYER_R * 0.56, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* hair cap */
+    ctx.fillStyle = c.hair || '#222';
+    ctx.beginPath();
+    ctx.arc(hx, hy - 2, PLAYER_R * 0.56, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.fill();
+
+    /* eyes */
+    const eyeDist = PLAYER_R * 0.2;
+    const ex = hx + Math.cos(p.face) * PLAYER_R * 0.22;
+    const ey = hy + Math.sin(p.face) * PLAYER_R * 0.22;
+    ctx.fillStyle = '#14161b';
+    if (ko) {
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#14161b';
+      for (const s of [-1, 1]) {
+        const px = ex + Math.cos(perp) * eyeDist * s;
+        const py = ey + Math.sin(perp) * eyeDist * s;
+        ctx.beginPath();
+        ctx.moveTo(px - 4, py - 4);
+        ctx.lineTo(px + 4, py + 4);
+        ctx.moveTo(px + 4, py - 4);
+        ctx.lineTo(px - 4, py + 4);
+        ctx.stroke();
+      }
+    } else {
+      for (const s of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(ex + Math.cos(perp) * eyeDist * s, ey + Math.sin(perp) * eyeDist * s, 3.1, 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+
+    if (!ko) drawAttack(p);
+  }
+
+  /* Health bars sit above each fighter, but nudged up when two would overlap,
+     so a crowded scrum never produces unreadable stacked names. */
+  function layoutHud(players) {
+    const items = [];
+    for (const p of players) {
+      if (!p.alive) continue;
+      items.push({
+        p,
+        x: Math.max(34, Math.min(W - 34, sx(p.x))),
+        y: Math.max(40, sy(p.y) - 54),
+        w: 62,
+        h: 26
+      });
+    }
+    const placed = [];
+    for (const it of items) {
+      let guard = 0;
+      while (
+        guard++ < 10 &&
+        placed.some((o) => Math.abs(o.x - it.x) < (o.w + it.w) / 2 && Math.abs(o.y - it.y) < (o.h + it.h) / 2)
+      ) {
+        it.y -= 26;
+      }
+      placed.push(it);
+    }
+    return items;
+  }
+
+  function drawHud(p, isLocal, x, y) {
+    if (!p.alive) return;
+    const w = 58;
+    const h = 6;
+    const hpFrac = Math.max(0, p.hp / p.maxHp);
+    const meterFrac = Math.max(0, Math.min(1, p.meter / 100));
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2 - 1, y - 1, w + 2, h + 2, 4);
+    ctx.fill();
+
+    ctx.fillStyle = hpFrac > 0.5 ? '#4ade80' : hpFrac > 0.22 ? '#facc15' : '#f87171';
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y, w * hpFrac, h, 3);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y + h + 3, w, 3.5, 2);
+    ctx.fill();
+    if (meterFrac >= 1) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 + Math.sin(time * 6) * 0.25;
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.roundRect(x - w / 2 - 3, y - 4, w + 6, h + 14, 6);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = meterFrac >= 1 ? '#ffd166' : '#7dd3fc';
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y + h + 3, w * meterFrac, 3.5, 2);
+    ctx.fill();
+
+    ctx.font = '600 11px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillStyle = isLocal ? '#ffd166' : '#ffffff';
+    const label = p.name;
+    ctx.strokeText(label, x, y - 6);
+    ctx.fillText(label, x, y - 6);
+
+    if (isLocal) {
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.moveTo(x, y - 15);
+      ctx.lineTo(x - 5, y - 22);
+      ctx.lineTo(x + 5, y - 22);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function draw(view) {
+    updateCam();
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0b0e15');
+    g.addColorStop(1, '#05070b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    if (shake > 0.2) {
+      ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    }
+    ctx.save();
+    ctx.translate(cam.tx, cam.ty);
+    ctx.scale(cam.s, cam.s);
+
+    drawFloor();
+
+    const sorted = view.players.slice().sort((a, b) => a.y - b.y);
+    for (const p of sorted) drawFighter(p);
+
+    for (const r of rings) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, r.life / r.maxLife) * 0.8;
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = r.thick ? 9 : 4;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    for (const p of particles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    for (const it of layoutHud(view.players)) {
+      drawHud(it.p, it.p.id === view.localId, it.x, it.y);
+    }
+
+    ctx.restore();
+  }
+
+  return { resize, draw, step, feed };
+}
+
+/* ===================== ai ===================== */
+/* Bot opponent. Runs only on the host / in solo mode, so a bit of randomness
+   here never desyncs anything. */
+
+function botInput(p, m) {
+  const out = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
+  if (!p.alive || m.over) return out;
+
+  const mem = p.ai || (p.ai = { timer: 0, targetId: null });
+  mem.timer -= 1 / 30;
+
+  if (mem.timer <= 0) {
+    mem.timer = 0.22 + Math.random() * 0.22;
+    let best = null;
+    let bd = Infinity;
+    for (const q of m.players) {
+      if (q === p || !q.alive) continue;
+      const d = Math.hypot(q.x - p.x, q.y - p.y);
+      if (d < bd) {
+        bd = d;
+        best = q;
+      }
+    }
+    mem.targetId = best ? best.id : null;
+  }
+
+  const target = m.players.find((q) => q.id === mem.targetId);
+  if (!target || !target.alive) return out;
+
+  const dx = target.x - p.x;
+  const dy = target.y - p.y;
+  const d = Math.hypot(dx, dy) || 1;
+
+  out.mx = dx / d;
+  out.my = dy / d;
+
+  const punchReach = p.moves.punch.range + 18;
+  const kickReach = p.moves.kick.range + 18;
+
+  if (d < punchReach) {
+    /* close in but stop crowding, then throw something */
+    out.mx *= 0.35;
+    out.my *= 0.35;
+    if (p.meter >= 100 && Math.random() < 0.9) out.super = true;
+    else if (d < punchReach && Math.random() < 0.5) out.punch = true;
+    else if (d < kickReach && Math.random() < 0.4) out.kick = true;
+  } else if (d < kickReach) {
+    if (Math.random() < 0.45) out.kick = true;
+    else if (Math.random() < 0.2) out.dash = true;
+  } else if (d > 230 && p.cd.dash <= 0 && Math.random() < 0.06) {
+    out.dash = true;
+  }
+
+  /* back off when badly hurt, so bots are not just punching bags */
+  if (p.hp < p.maxHp * 0.22 && d < 130 && Math.random() < 0.35) {
+    out.mx = -dx / d;
+    out.my = -dy / d;
+    out.punch = false;
+    out.kick = false;
+  }
+
+  return out;
+}
+
+function inputsForMatch(m, humanId, humanInput) {
+  const inputs = {};
+  for (const p of m.players) {
+    if (p.id === humanId) inputs[p.id] = humanInput;
+    else if (p.isBot) inputs[p.id] = botInput(p, m);
+    else inputs[p.id] = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
+  }
+  return inputs;
+}
+
+/* ===================== net ===================== */
+/* Zero-server networking.
+
+   WebRTC needs one thing from outside the two phones: a way to swap connection
+   descriptions (SDP). There is no server here. Instead the two players swap
+   those descriptions themselves as short text codes — host pastes theirs into
+   Slack, the guest pastes back the answer.
+
+   Once that handshake is done, every gameplay packet travels directly between
+   the phones. Nothing is stored anywhere, and there is no account, no key and
+   no database.
+
+   ICE SERVERS
+   -----------
+   Deliberately empty: no third-party service is contacted at all.
+   Consequence: this only connects when both players are on the same Wi-Fi
+   network (or the same hotspot). That is the trade for "strictly zero
+   third-party".
+
+   If you later want players on different networks, add one line here:
+       export const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+   A STUN server only reports a device's public address; no game data passes
+   through it. Even then, roughly one connection in five needs a TURN relay.
+*/
+
+const ICE_SERVERS = [];
+
+const PREFIX = 'KK1:';
+
+function encodeBlob(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return PREFIX + btoa(bin);
+}
+
+function decodeBlob(text) {
+  if (!text) throw new Error('Paste the code first.');
+  const clean = String(text).trim().replace(/\s+/g, '');
+  const body = clean.startsWith(PREFIX) ? clean.slice(PREFIX.length) : clean;
+  let bin;
+  try {
+    bin = atob(body);
+  } catch (_) {
+    throw new Error('That code looks incomplete. Copy the whole thing, including the KK1: start.');
+  }
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch (_) {
+    throw new Error('That code could not be read. Ask for a fresh one.');
+  }
+}
+
+/* A description with no ICE candidate can never connect. Catching it here
+   turns a ten-minute silent hang into an instant, readable message. */
+function hasCandidates(desc) {
+  return !!desc && /^a=candidate:/m.test(desc.sdp || '');
+}
+
+const NO_CANDIDATES_MSG =
+  'This network is blocking direct phone-to-phone connections. Both phones must be on the same Wi-Fi, and any VPN must be switched off. If it keeps failing, try a phone hotspot instead.';
+
+function waitForIce(pc, timeoutMs = 4000) {
+  if (pc.iceGatheringState === 'complete') return Promise.resolve();
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      pc.removeEventListener('icegatheringstatechange', check);
+      resolve();
+    };
+    const check = () => {
+      if (pc.iceGatheringState === 'complete') finish();
+    };
+    pc.addEventListener('icegatheringstatechange', check);
+    setTimeout(finish, timeoutMs);
+  });
+}
+
+function emitter(target) {
+  target.handlers = {};
+  target.on = (evt, fn) => {
+    (target.handlers[evt] = target.handlers[evt] || []).push(fn);
+    return target;
+  };
+  target.emit = (evt, ...args) => {
+    (target.handlers[evt] || []).forEach((fn) => fn(...args));
+  };
+  return target;
+}
+
+class HostSession {
+  constructor() {
+    this.slots = [];
+    emitter(this);
+  }
+
+  /* Creates one invite for slot `index` (0..3). Returns the code to send. */
+  async createInvite(index) {
+    if (this.slots[index]) {
+      try {
+        this.slots[index].dc.close();
+        this.slots[index].pc.close();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const dc = pc.createDataChannel('game', { ordered: true });
+    const slot = { index, pc, dc, open: false, name: '', charId: null };
+
+    dc.onopen = () => {
+      slot.open = true;
+      this.emit('open', index);
+    };
+    dc.onmessage = (e) => this.handle(slot, e.data);
+    dc.onclose = () => {
+      slot.open = false;
+      this.emit('close', index);
+    };
+    pc.onconnectionstatechange = () => {
+      const s = pc.connectionState;
+      if (s === 'failed') this.emit('fail', index, s);
+      if (s === 'disconnected' || s === 'closed') this.emit('close', index);
+    };
+
+    this.slots[index] = slot;
+    await pc.setLocalDescription(await pc.createOffer());
+    await waitForIce(pc);
+    if (!hasCandidates(pc.localDescription)) {
+      try {
+        pc.close();
+      } catch (_) {
+        /* ignore */
+      }
+      delete this.slots[index];
+      throw new Error(NO_CANDIDATES_MSG);
+    }
+    return encodeBlob(pc.localDescription);
+  }
+
+  /* Paste the guest's answer code here. */
+  async acceptAnswer(index, blob) {
+    const slot = this.slots[index];
+    if (!slot) throw new Error('Generate an invite for this slot first.');
+    const desc = decodeBlob(blob);
+    if (!desc || desc.type !== 'answer') {
+      throw new Error('That is an invite code, not an answer code. You need the one your friend sends back.');
+    }
+    await slot.pc.setRemoteDescription(desc);
+  }
+
+  send(index, msg) {
+    const slot = this.slots[index];
+    if (slot && slot.dc.readyState === 'open') slot.dc.send(JSON.stringify(msg));
+  }
+
+  broadcast(msg) {
+    const raw = JSON.stringify(msg);
+    for (const slot of this.slots) {
+      if (slot && slot.dc.readyState === 'open') slot.dc.send(raw);
+    }
+  }
+
+  handle(slot, raw) {
+    let msg;
+    try {
+      msg = JSON.parse(raw);
+    } catch (_) {
+      return;
+    }
+    if (msg && msg.t === 'hello') {
+      slot.name = String(msg.name || 'Guest').slice(0, 18);
+      slot.charId = msg.charId;
+      this.emit('hello', slot.index, msg);
+      return;
+    }
+    this.emit('message', slot.index, msg);
+  }
+
+  closeAll() {
+    for (const slot of this.slots) {
+      if (!slot) continue;
+      try {
+        slot.dc.close();
+        slot.pc.close();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    this.slots = [];
+  }
+}
+
+class GuestSession {
+  constructor() {
+    this.pc = null;
+    this.dc = null;
+    emitter(this);
+  }
+
+  /* Paste the host's invite code. Returns your answer code to send back. */
+  async join(offerBlob) {
+    const desc = decodeBlob(offerBlob);
+    if (!desc || desc.type !== 'offer') {
+      throw new Error('That is an answer code. You need the invite code the host generated.');
+    }
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    this.pc = pc;
+
+    pc.ondatachannel = (e) => this.attach(e.channel);
+    pc.onconnectionstatechange = () => {
+      const s = pc.connectionState;
+      if (s === 'failed') this.emit('fail', s);
+      if (s === 'disconnected' || s === 'closed') this.emit('close', s);
+    };
+
+    await pc.setRemoteDescription(desc);
+    await pc.setLocalDescription(await pc.createAnswer());
+    await waitForIce(pc);
+    if (!hasCandidates(pc.localDescription)) {
+      throw new Error(NO_CANDIDATES_MSG);
+    }
+    return encodeBlob(pc.localDescription);
+  }
+
+  attach(dc) {
+    this.dc = dc;
+    dc.onopen = () => this.emit('open');
+    dc.onmessage = (e) => {
+      let msg;
+      try {
+        msg = JSON.parse(e.data);
+      } catch (_) {
+        return;
+      }
+      this.emit('message', msg);
+    };
+    dc.onclose = () => this.emit('close', 'closed');
+  }
+
+  send(msg) {
+    if (this.dc && this.dc.readyState === 'open') this.dc.send(JSON.stringify(msg));
+  }
+
+  close() {
+    try {
+      if (this.dc) this.dc.close();
+      if (this.pc) this.pc.close();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+}
+
+function supportsWebRTC() {
+  return typeof RTCPeerConnection !== 'undefined';
+}
+
+/* ===================== main ===================== */
+/* Screen flow, lobby, match lifecycle and the game loop. */
+
+
+
+
+
+
+
+
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const EMPTY = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
+
+const esc = (s) =>
+  String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const audio = createAudio();
+const input = createInput(document);
+let renderer = null;
+
+const S = {
+  mode: 'solo',
+  me: { name: 'You', charId: CHARACTERS[0].id },
+  botCount: 2,
+  match: null,
+  localId: 'p0',
+  running: false,
+  ended: false,
+  host: null,
+  guest: null,
+  lobby: [],
+  remoteInputs: {},
+  codes: {},
+  answers: {},
+  slotMsg: {},
+  tickerAt: 0,
+  tickerIndex: 0
+};
+
+let rafId = 0;
+let lastTs = 0;
+let acc = 0;
+
+/* ------------------------------------------------------------------ screens */
+
+function show(id) {
+  $$('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${id}`));
+}
+
+function toast(text, ms = 2600) {
+  const el = $('#toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/* ------------------------------------------------------------------- roster */
+
+function buildRoster(container, onPick, selectedId) {
+  container.innerHTML = '';
+  for (const c of CHARACTERS) {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = `card${c.id === selectedId ? ' selected' : ''}`;
+    el.dataset.id = c.id;
+    el.innerHTML = `
+      <span class="swatch" style="background:${esc(c.colors.body)};border-color:${esc(c.colors.accent)}"></span>
+      <span class="cname">${esc(c.name)}</span>
+      <span class="ctag">${esc(c.tagline)}</span>
+      <span class="cpass">${esc(c.passive.text)}</span>`;
+    el.addEventListener('click', () => onPick(c.id));
+    container.appendChild(el);
+  }
+}
+
+function refreshRoster() {
+  buildRoster(
+    $('#roster'),
+    (id) => {
+      S.me.charId = id;
+      refreshRoster();
+      audio.click();
+    },
+    S.me.charId
+  );
+}
+
+/* --------------------------------------------------------------- pick screen */
+
+function openPick(mode) {
+  S.mode = mode;
+  $('#bot-row').hidden = mode !== 'solo';
+  $('#pick-msg').textContent = '';
+  $('#pick-title').textContent =
+    mode === 'solo' ? 'Choose your fighter' : mode === 'host' ? 'Pick your fighter' : 'Pick your fighter';
+  $('#pick-start').textContent =
+    mode === 'solo' ? 'Fight' : mode === 'host' ? 'Create lobby' : 'Continue';
+  $('#player-name').value = S.me.name;
+  refreshRoster();
+  show('pick');
+}
+
+/* ---------------------------------------------------------------- solo match */
+
+function startSolo() {
+  const char = getCharacter(S.me.charId);
+  const fighters = [{ id: 'p0', name: S.me.name || 'You', char, isBot: false }];
+  const pool = CHARACTERS.filter((c) => c.id !== char.id);
+  for (let i = 0; i < S.botCount; i++) {
+    const c = pool[i % pool.length];
+    fighters.push({ id: `b${i}`, name: c.name, char: c, isBot: true });
+  }
+  S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
+  S.localId = 'p0';
+  S.remoteInputs = {};
+  beginMatch();
+}
+
+/* -------------------------------------------------------------------- lobby */
+
+function renderLobby() {
+  const box = $('#lobby-slots');
+  if (!box) return;
+  const parts = [];
+  for (let i = 0; i < 3; i++) {
+    const entry = S.lobby.find((l) => l.slot === i);
+    if (entry && entry.connected) {
+      parts.push(`
+        <div class="slot">
+          <div class="slot-head"><span class="dot on"></span>${esc(entry.name)} — ${esc(
+        getCharacter(entry.charId).name
+      )}</div>
+        </div>`);
+      continue;
+    }
+    const code = S.codes[i] || '';
+    parts.push(`
+      <div class="slot">
+        <div class="slot-head"><span class="dot"></span>Slot ${i + 1} — empty</div>
+        <button class="btn small" data-gen="${i}">${code ? 'New invite code' : 'Generate invite code'}</button>
+        <div class="code-area ${code ? 'show' : ''}" data-code="${i}">${esc(code)}</div>
+        <textarea data-answer="${i}" rows="2" placeholder="Paste your friend's reply code here">${esc(
+      S.answers[i] || ''
+    )}</textarea>
+        <button class="btn small" data-accept="${i}">Connect</button>
+        <div class="slot-msg">${esc(S.slotMsg[i] || '')}</div>
+      </div>`);
+  }
+  box.innerHTML = parts.join('');
+  updateLobbyStart();
+}
+
+function updateLobbyStart() {
+  const btn = $('#lobby-start');
+  if (btn) btn.disabled = S.lobby.filter((l) => l.connected).length === 0;
+}
+
+function setSlotMsg(i, text) {
+  S.slotMsg[i] = text;
+  const el = document.querySelector(`[data-code="${i}"]`);
+  const holder = el ? el.parentElement.querySelector('.slot-msg') : null;
+  if (holder) holder.textContent = text;
+}
+
+function beginHost() {
+  if (!supportsWebRTC()) {
+    toast('This browser cannot do peer-to-peer play. Try Chrome, Safari or Edge.');
+    return;
+  }
+  S.mode = 'host';
+  S.lobby = [];
+  S.remoteInputs = {};
+  S.codes = {};
+  S.answers = {};
+  S.slotMsg = {};
+  if (S.host) S.host.closeAll();
+
+  S.host = new HostSession();
+
+  S.host.on('hello', (index, msg) => {
+    const id = `g${index}`;
+    const existing = S.lobby.find((l) => l.slot === index);
+    const entry = existing || { slot: index, id };
+    entry.id = id;
+    entry.name = msg.name || 'Guest';
+    entry.charId = msg.charId || CHARACTERS[0].id;
+    entry.connected = true;
+    if (!existing) S.lobby.push(entry);
+    S.host.send(index, { t: 'welcome', id });
+    renderLobby();
+    toast(`${entry.name} joined`);
+  });
+
+  S.host.on('message', (index, msg) => {
+    if (msg && msg.t === 'in') S.remoteInputs[`g${index}`] = msg.i;
+  });
+
+  S.host.on('close', (index) => {
+    S.lobby = S.lobby.filter((l) => l.slot !== index);
+    delete S.remoteInputs[`g${index}`];
+    renderLobby();
+  });
+
+  S.host.on('fail', (index) => {
+    setSlotMsg(index, 'Connection failed. Both phones must be on the same Wi-Fi network.');
+  });
+
+  renderLobby();
+  show('lobby');
+}
+
+async function generateInvite(i) {
+  try {
+    setSlotMsg(i, 'Creating invite…');
+    const code = await S.host.createInvite(i);
+    S.codes[i] = code;
+    S.slotMsg[i] = 'Invite ready. Send this whole code to your friend.';
+    renderLobby();
+  } catch (err) {
+    setSlotMsg(i, err.message || 'Could not create an invite.');
+  }
+}
+
+async function acceptAnswer(i) {
+  const blob = (S.answers[i] || '').trim();
+  if (!blob) {
+    setSlotMsg(i, 'Paste your friend\'s reply code first.');
+    return;
+  }
+  try {
+    await S.host.acceptAnswer(i, blob);
+    setSlotMsg(i, 'Connecting… waiting for your friend.');
+  } catch (err) {
+    setSlotMsg(i, err.message || 'That code did not work.');
+  }
+}
+
+function startHostMatch() {
+  const fighters = [
+    { id: 'p0', name: S.me.name || 'Host', char: getCharacter(S.me.charId), isBot: false }
+  ];
+  for (const entry of S.lobby.filter((l) => l.connected)) {
+    fighters.push({
+      id: entry.id,
+      name: entry.name,
+      char: getCharacter(entry.charId || CHARACTERS[0].id),
+      isBot: false
+    });
+  }
+  S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
+  S.localId = 'p0';
+  S.host.broadcast({
+    t: 'start',
+    fighters: fighters.map((f) => ({ id: f.id, name: f.name, charId: f.char.id, isBot: f.isBot }))
+  });
+  beginMatch();
+}
+
+/* --------------------------------------------------------------------- guest */
+
+function beginJoin() {
+  S.mode = 'guest';
+  $('#join-step1').hidden = false;
+  $('#join-step2').hidden = true;
+  $('#join-answer').value = '';
+  $('#join-msg').textContent = '';
+  show('join');
+}
+
+async function doJoin() {
+  const blob = $('#join-offer').value.trim();
+  const btn = $('#join-go');
+  $('#join-msg').textContent = '';
+  if (!blob) {
+    $('#join-msg').textContent = 'Paste the host\'s invite code first.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Working…';
+  try {
+    if (S.guest) S.guest.close();
+    S.guest = new GuestSession();
+    S.guest.on('open', () => {
+      S.guest.send({ t: 'hello', name: S.me.name || 'Guest', charId: S.me.charId });
+      $('#join-msg').textContent = 'Connected. Waiting for the host to start…';
+    });
+    S.guest.on('message', onGuestMessage);
+    S.guest.on('close', () => {
+      if (!S.ended && S.running) toast('Connection lost. Ask the host to re-invite you.');
+    });
+    S.guest.on('fail', () => {
+      $('#join-msg').textContent =
+        'Connection failed. Both phones must be on the same Wi-Fi network.';
+    });
+    const answer = await S.guest.join(blob);
+    $('#join-answer').value = answer;
+    $('#join-step2').hidden = false;
+    $('#join-msg').textContent = 'Now send that reply code to the host.';
+  } catch (err) {
+    $('#join-msg').textContent = err.message || 'That code did not work.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate my reply code';
+  }
+}
+
+function onGuestMessage(msg) {
+  if (!msg) return;
+  if (msg.t === 'welcome') {
+    S.localId = msg.id;
+    return;
+  }
+  if (msg.t === 'start') {
+    const fighters = msg.fighters.map((f) => ({
+      id: f.id,
+      name: f.name,
+      char: getCharacter(f.charId),
+      isBot: false
+    }));
+    S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
+    if (!S.match.players.some((p) => p.id === S.localId)) S.localId = 'p0';
+    beginMatch();
+    return;
+  }
+  if (msg.t === 'snap') applySnapshot(msg);
+}
+
+function applySnapshot(snap) {
+  const m = S.match;
+  if (!m) return;
+  for (const sp of snap.p) {
+    const p = m.players.find((q) => q.id === sp.i);
+    if (!p) continue;
+    p._tx = sp.x;
+    p._ty = sp.y;
+    p._tf = sp.f;
+    p.hp = sp.h;
+    p.meter = sp.m;
+    p.alive = !!sp.a;
+    p.dashT = sp.d ? 0.1 : 0;
+    p.attack = sp.at ? { type: sp.at, t: sp.ap * 0.4, dur: 0.4, hit: true } : null;
+  }
+  m.tick = snap.k;
+  m.timeLeft = snap.tl;
+  m.events = snap.e.map((e) => ({
+    type: e.y,
+    x: e.x,
+    y: e.y2,
+    id: e.id,
+    on: e.on,
+    kind: e.k,
+    r: e.r
+  }));
+  handleEvents(m.events);
+  if (snap.ov && !S.ended) {
+    m.over = true;
+    m.winner = snap.w || null;
+    finishMatch();
+  }
+}
+
+/* ---------------------------------------------------------------- match flow */
+
+function beginMatch() {
+  S.ended = false;
+  S.running = true;
+  S.tickerIndex = 0;
+  S.tickerAt = 0;
+  $('#hud-ticker').textContent = 'Fight!';
+  $('#net-badge').hidden = S.mode === 'solo';
+  input.reset();
+  audio.ensure();
+  show('game');
+  requestAnimationFrame(() => {
+    if (renderer) renderer.resize();
+  });
+  cancelAnimationFrame(rafId);
+  lastTs = 0;
+  acc = 0;
+  rafId = requestAnimationFrame(loop);
+}
+
+function stopLoop() {
+  S.running = false;
+  cancelAnimationFrame(rafId);
+}
+
+function loop(ts) {
+  if (!S.running) return;
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000;
+  lastTs = ts;
+  if (dt > 0.1) dt = 0.1;
+  if (dt < 0) dt = 0;
+  acc += dt;
+
+  let guard = 0;
+  while (acc >= TICK && guard < 6) {
+    simulate();
+    acc -= TICK;
+    guard++;
+  }
+  if (guard >= 6) acc = 0;
+
+  if (S.mode === 'guest') smoothGuest(dt);
+  if (renderer) {
+    renderer.step(dt);
+    drawFrame();
+  }
+  updateHud();
+  rafId = requestAnimationFrame(loop);
+}
+
+function simulate() {
+  const m = S.match;
+  if (!m) return;
+
+  if (S.mode === 'guest') {
+    if (S.guest) S.guest.send({ t: 'in', i: input.getInput() });
+    return;
+  }
+
+  if (m.over) return;
+
+  let inputs;
+  if (S.mode === 'solo') {
+    inputs = inputsForMatch(m, S.localId, input.getInput());
+  } else {
+    inputs = {};
+    const localInput = input.getInput();
+    for (const p of m.players) {
+      if (p.id === S.localId) inputs[p.id] = localInput;
+      else if (p.isBot) inputs[p.id] = botInput(p, m);
+      else inputs[p.id] = S.remoteInputs[p.id] || EMPTY;
+    }
+  }
+
+  stepMatch(m, inputs);
+  handleEvents(m.events);
+
+  if (S.mode === 'host' && m.tick % 2 === 0 && S.host) {
+    S.host.broadcast(packSnapshot(m));
+  }
+  if (m.over) finishMatch();
+}
+
+function smoothGuest(dt) {
+  const m = S.match;
+  if (!m) return;
+  const k = Math.min(1, dt * 14);
+  for (const p of m.players) {
+    if (p._tx == null) continue;
+    p.x += (p._tx - p.x) * k;
+    p.y += (p._ty - p.y) * k;
+    let df = p._tf - p.face;
+    while (df > Math.PI) df -= Math.PI * 2;
+    while (df < -Math.PI) df += Math.PI * 2;
+    p.face += df * k;
+  }
+}
+
+function handleEvents(events) {
+  const m = S.match;
+  if (!m) return;
+  for (const e of events) {
+    if (e.type === 'hit') {
+      audio.hit(e.kind === 'kick' || e.kind === 'super');
+      if (S.mode === 'guest') {
+        const t = m.players.find((p) => p.id === e.on);
+        if (t) t.hitstun = 0.12;
+      }
+    } else if (e.type === 'swing') {
+      if (e.kind === 'punch') audio.punch();
+      else audio.kick();
+    } else if (e.type === 'ko') {
+      audio.ko();
+    } else if (e.type === 'super' || e.type === 'superstart') {
+      audio.superMove();
+    }
+  }
+  if (renderer) renderer.feed(events, m.players);
+}
+
+function drawFrame() {
+  const m = S.match;
+  if (!m) return;
+  renderer.draw({ players: m.players, localId: S.localId });
+}
+
+function updateHud() {
+  const m = S.match;
+  if (!m) return;
+  const t = Math.max(0, Math.ceil(m.timeLeft));
+  const el = $('#hud-time');
+  if (el.textContent !== String(t)) el.textContent = String(t);
+
+  const now = performance.now();
+  if (now - S.tickerAt > 7000) {
+    S.tickerAt = now;
+    S.tickerIndex = (S.tickerIndex + 1) % TICKER.length;
+    $('#hud-ticker').textContent = TICKER[S.tickerIndex];
+  }
+
+  const local = m.players.find((p) => p.id === S.localId);
+  $('#btn-super').classList.toggle('ready', !!local && local.meter >= SUPER_COST);
+}
+
+function finishMatch() {
+  if (S.ended) return;
+  S.ended = true;
+  const m = S.match;
+  audio.win();
+
+  const winner = m.players.find((p) => p.id === m.winner);
+  if (winner) {
+    const head = HEADLINES[Math.floor(Math.random() * HEADLINES.length)];
+    $('#result-headline').textContent = head.replace('{winner}', winner.name);
+  } else {
+    $('#result-headline').textContent = 'Draw. Everyone blames the process.';
+  }
+
+  const order = m.players.slice().sort((a, b) => {
+    if (a.alive !== b.alive) return a.alive ? -1 : 1;
+    return b.hp - a.hp;
+  });
+  $('#result-body').textContent = order
+    .map((p) => `${p.name} — ${p.alive ? `${Math.round(p.hp)} HP left` : 'knocked out'}`)
+    .join('  ·  ');
+
+  setTimeout(() => {
+    stopLoop();
+    show('result');
+  }, 1400);
+}
+
+/* ------------------------------------------------------------------ plumbing */
+
+function quitToMenu() {
+  stopLoop();
+  S.ended = true;
+  if (S.host) {
+    S.host.closeAll();
+    S.host = null;
+  }
+  if (S.guest) {
+    S.guest.close();
+    S.guest = null;
+  }
+  S.match = null;
+  S.lobby = [];
+  S.remoteInputs = {};
+  input.reset();
+  show('menu');
+}
+
+function wire() {
+  $$('[data-action]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      audio.ensure();
+      audio.click();
+      openPick(btn.dataset.action);
+    });
+  });
+
+  $$('[data-nav="menu"]').forEach((btn) => btn.addEventListener('click', quitToMenu));
+
+  $('#player-name').addEventListener('input', (e) => {
+    S.me.name = e.target.value.trim().slice(0, 14);
+    try {
+      localStorage.setItem('kk.name', S.me.name);
+    } catch (_) {
+      /* private mode, ignore */
+    }
+  });
+
+  $('#bot-count').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-bots]');
+    if (!chip) return;
+    S.botCount = Number(chip.dataset.bots);
+    $$('#bot-count .chip').forEach((c) => c.classList.toggle('active', c === chip));
+    audio.click();
+  });
+
+  $('#pick-start').addEventListener('click', () => {
+    audio.ensure();
+    S.me.name = ($('#player-name').value || 'You').trim().slice(0, 14) || 'You';
+    try {
+      localStorage.setItem('kk.name', S.me.name);
+    } catch (_) {
+      /* ignore */
+    }
+    if (S.mode === 'solo') startSolo();
+    else if (S.mode === 'host') beginHost();
+    else beginJoin();
+  });
+
+  $('#lobby-slots').addEventListener('input', (e) => {
+    const area = e.target.closest('[data-answer]');
+    if (!area) return;
+    S.answers[area.dataset.answer] = area.value;
+  });
+
+  $('#lobby-slots').addEventListener('click', (e) => {
+    const gen = e.target.closest('[data-gen]');
+    if (gen) {
+      generateInvite(Number(gen.dataset.gen));
+      return;
+    }
+    const acc2 = e.target.closest('[data-accept]');
+    if (acc2) acceptAnswer(Number(acc2.dataset.accept));
+  });
+
+  $('#lobby-start').addEventListener('click', () => {
+    audio.ensure();
+    startHostMatch();
+  });
+
+  $('#join-go').addEventListener('click', doJoin);
+
+  $('#join-copy').addEventListener('click', async () => {
+    const val = $('#join-answer').value;
+    try {
+      await navigator.clipboard.writeText(val);
+      toast('Reply code copied');
+    } catch (_) {
+      const el = $('#join-answer');
+      el.removeAttribute('readonly');
+      el.select();
+      document.execCommand('copy');
+      el.setAttribute('readonly', 'readonly');
+      toast('Reply code copied');
+    }
+  });
+
+  $('#btn-quit').addEventListener('click', () => {
+    quitToMenu();
+    toast('Match abandoned');
+  });
+
+  $('#result-again').addEventListener('click', () => {
+    audio.ensure();
+    if (S.mode === 'solo') {
+      startSolo();
+    } else if (S.mode === 'host') {
+      if (S.lobby.filter((l) => l.connected).length === 0) {
+        toast('Nobody is connected. Invite someone first.');
+        quitToMenu();
+        return;
+      }
+      startHostMatch();
+    } else {
+      toast('Waiting for the host to start the rematch');
+      show('join');
+    }
+  });
+
+  $('#result-menu').addEventListener('click', quitToMenu);
+
+  const onResize = () => {
+    if (renderer) renderer.resize();
+  };
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
+}
+
+function boot() {
+  const stamp = $('#build-stamp');
+  if (stamp) {
+    const d = new Date();
+    stamp.textContent = `built ${d.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+  }
+
+  try {
+    const saved = localStorage.getItem('kk.name');
+    if (saved) S.me.name = saved;
+  } catch (_) {
+    /* ignore */
+  }
+
+  const strip = $('#roster-strip');
+  if (strip) {
+    strip.innerHTML = CHARACTERS.map(
+      (c) =>
+        `<span class="sw" title="${esc(c.name)}" style="background:${esc(c.colors.body)};border-color:${esc(
+          c.colors.accent
+        )}"></span>`
+    ).join('');
+  }
+
+  renderer = createRenderer($('#game-canvas'));
+  renderer.resize();
+  wire();
+  refreshRoster();
+  show('menu');
+}
+
+/* Debug helper: window.__kursi() returns the live match state. Useful while
+   you are tuning numbers in characters.js. It does nothing on its own. */
+window.__kursi = () =>
+  S.match
+    ? {
+        mode: S.mode,
+        tick: S.match.tick,
+        over: S.match.over,
+        winner: S.match.winner,
+        players: S.match.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          x: Math.round(p.x),
+          y: Math.round(p.y),
+          hp: Math.round(p.hp),
+          meter: Math.round(p.meter),
+          alive: p.alive
+        }))
+      }
+    : null;
+
+boot();
+    </script>
   </body>
 </html>
