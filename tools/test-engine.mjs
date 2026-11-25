@@ -3,6 +3,10 @@
    Loads the same two files the browser loads (js/characters.js and
    js/engine.js), so this tests the real code, not a copy of it. */
 
+/* fighters first, exactly as index.html loads them, then the roster */
+for (const f of ['manager', 'intern', 'deadline', 'replyall', 'sixpm', 'founder']) {
+  await import(`../js/fighters/${f}.js`);
+}
 await import('../js/characters.js');
 await import('../js/engine.js');
 
