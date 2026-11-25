@@ -1,16 +1,20 @@
+/* global IIFE: keeps this file's names off the window */
+(function () {
+'use strict';
+
 /* Simulation engine. Pure functions over a plain match object, so the same
    code runs on the host phone and in headless tests. Fixed 30 Hz timestep. */
 
-export const TICK = 1 / 30;
-export const ARENA = { cx: 300, cy: 300, r: 300 };
-export const PLAYER_R = 26;
-export const ROUND_TIME = 75;
-export const SUPER_COST = 100;
+const TICK = 1 / 30;
+const ARENA = { cx: 300, cy: 300, r: 300 };
+const PLAYER_R = 26;
+const ROUND_TIME = 75;
+const SUPER_COST = 100;
 
-export const EMPTY_INPUT = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
+const EMPTY_INPUT = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
 
 const TAU = Math.PI * 2;
-export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 function norm(a) {
   while (a > Math.PI) a -= TAU;
@@ -38,7 +42,7 @@ function spawnPoint(slot, count) {
   };
 }
 
-export function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
+function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
   const pm = PASSIVES[char.passive && char.passive.id] || PASSIVES.none;
   const maxHp = Math.round(char.stats.hp * (pm.hp || 1));
   const sp = spawnPoint(slot, count);
@@ -81,7 +85,7 @@ export function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 
   };
 }
 
-export function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
+function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
   const count = fighters.length;
   const players = fighters.map((f, i) =>
     makePlayer({ id: f.id, name: f.name, char: f.char, isBot: f.isBot, slot: i, count })
@@ -98,7 +102,7 @@ export function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) 
   };
 }
 
-export function stepMatch(m, inputs) {
+function stepMatch(m, inputs) {
   if (m.over) return m;
   m.tick++;
   m.events = [];
@@ -305,12 +309,12 @@ function checkEnd(m) {
   }
 }
 
-export function playerById(m, id) {
+function playerById(m, id) {
   return m.players.find((p) => p.id === id) || null;
 }
 
 /* Compact wire format for a snapshot, to keep packets small on mobile. */
-export function packSnapshot(m) {
+function packSnapshot(m) {
   return {
     t: 'snap',
     k: m.tick,
@@ -341,7 +345,7 @@ export function packSnapshot(m) {
   };
 }
 
-export function unpackSnapshot(snap, match) {
+function unpackSnapshot(snap, match) {
   for (const sp of snap.p) {
     const p = playerById(match, sp.i);
     if (!p) continue;
@@ -369,3 +373,9 @@ export function unpackSnapshot(snap, match) {
   }));
   return match;
 }
+
+  globalThis.KK_Engine = {
+    TICK, ARENA, PLAYER_R, ROUND_TIME, SUPER_COST, EMPTY_INPUT,
+    makePlayer, createMatch, stepMatch, playerById, packSnapshot, unpackSnapshot
+  };
+})();
