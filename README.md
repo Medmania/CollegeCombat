@@ -171,18 +171,31 @@ No secrets, no environment variables, no build step.
 The fight is played in **landscape**. Held in portrait, the game pauses behind a
 "rotate your phone" prompt.
 
-**Phone**
+There are only **two buttons**. Everything else is on the stick.
 
-| Control | Does |
+**The stick (left thumb)**
+
+| Gesture | Does |
 | --- | --- |
-| Drag left thumb left/right | walk |
-| Double-tap the left or right half of the stick area | dash that way |
-| PUNCH | fast high strike |
-| KICK | slower, longer strike |
-| JUMP | hop; press PUNCH or KICK in the air for an air attack |
-| CROUCH | duck (hold) — a punch goes over your head |
-| CROUCH + KICK | low sweep: hits crouching opponents and knocks down |
-| SUPER | appears at full meter; a radial blast |
+| Slide left / right | walk |
+| Slide **up** | jump straight up |
+| Slide **up + forward** | jump obliquely — forward and up together |
+| Slide **down** | crouch (hold) |
+| Double-tap a side | dash that way |
+
+**The buttons (right thumb)**
+
+PUNCH and KICK. They combine with whatever the stick is doing, and the engine
+picks the move:
+
+| Stick | PUNCH | KICK |
+| --- | --- | --- |
+| neutral | **jab** — fast, chest height | **roundhouse** — slower, longer |
+| down (crouch) | **uppercut** — drives up from low | **sweep** — hits crouchers, knocks down |
+| up (in the air) | **overhead** — hammer from above | **flying kick** — leg thrown forward |
+| holding away | jab | **back kick** — turning kick, huge knockback |
+
+SUPER appears at full meter: a radial blast.
 
 **Desktop:** `A`/`D` or arrows walk, `W`/`Up` jump, `S`/`Down` crouch, `J` punch,
 `K` kick, `L` dash, `Space` super.
@@ -192,14 +205,15 @@ time.
 
 ### How the heights interact
 
-- A **punch** sweeps chest-to-head height, so it misses a crouching opponent.
-- A **kick** covers waist-to-chest and hits crouchers.
+- A **jab** sweeps chest-to-head height, so it misses a crouching opponent.
+- A **roundhouse** covers waist-to-chest and hits crouchers.
 - A **sweep** stays at ankle height: it hits crouchers and knocks them down, but
   a jumping opponent clears it.
-- An **air kick** travels with you, so you can jump in and strike from above.
+- An **overhead** or **flying kick** travels with you, so you can jump in and
+  strike from above.
+- An **uppercut** starts low and rises, so it catches someone standing right in
+  front of you.
 - A knockdown leaves you on the floor for about a second. Free hits.
-
----
 
 ## Checks
 
@@ -207,12 +221,14 @@ time.
 npm test
 ```
 
-31 checks run against the same files the browser loads: hits connect at the right
-range, a punch sails over a crouch, a sweep lands on a croucher, a sweep passes
-under a jump, an air kick registers only in the air, jumps arc and land, sweeps
-knock down, super needs a full meter, a four-player round finishes, nobody leaves
-the lane or falls through the floor, snapshots carry position and height, and
-every fighter file is complete.
+40 checks run against the same files the browser loads: hits connect at the right
+range, stick-up jumps and stick-down crouches, up+forward jumps obliquely, one
+swipe gives exactly one jump, a jab sails over a crouch, a sweep lands on a
+croucher and passes under a jump, crouch+punch becomes an uppercut that connects,
+air punch and air kick register only in the air, holding away turns a kick into a
+back kick, sweeps knock down, super needs a full meter, a four-player round
+finishes, nobody leaves the lane or falls through the floor, snapshots carry
+position and height, and every fighter file is complete.
 
 Debug helper in the browser console: `__kursi()` prints the live match state,
 which is handy while you tune numbers.
@@ -241,7 +257,7 @@ which is handy while you tune numbers.
 - The host's phone does the work. Four players on a very old phone will run hot.
 - The fighters are stylised skeletons built from limbs and a head, not sculpted
   models. Real character art would need a proper 3D asset pipeline.
-- No blocking or throws yet. Crouching is the defensive option.
+- No blocking or throws yet. Crouching and jumping are the defensive options.
 - No ranked matchmaking, no accounts, no persistent leaderboard — all of which
   would need the server you asked not to have.
 - No installable-app manifest: dropped to keep the file count down. Add a
