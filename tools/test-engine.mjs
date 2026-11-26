@@ -373,6 +373,51 @@ console.log('\nnetcode');
   check('snapshot is small enough for mobile', JSON.stringify(wire).length < 900, `${JSON.stringify(wire).length} bytes`);
 }
 
+console.log('\nblocking and hit stop');
+{
+  /* holding away is a guard: the hit is chipped, not eaten */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 60;
+  b.facing = -1;
+  const hp0 = b.hp;
+  /* b stands to a's right and faces him, so away from a is mx = +1 */
+  stepMatch(m, { p0: idle, p1: act({ mx: 1 }) });
+  check('holding away raises the guard', b.blocking === true, `blocking=${b.blocking}`);
+
+  a.attack = { type: 'punch', t: 0.1, dur: 0.31, hitAt: 0.11, hit: false, def: a.attacks.punch };
+  stepMatch(m, { p0: idle, p1: act({ mx: 1 }) });
+  const lost = hp0 - b.hp;
+  check('a guarded hit only chips', lost > 0 && lost < a.attacks.punch.damage * 0.5, `lost ${lost.toFixed(1)} of ${a.attacks.punch.damage}`);
+  check('a guarded hit does not knock down', b.downT === 0);
+  check('a block event is emitted', m.events.some((e) => e.type === 'block'), m.events.map((e) => e.type).join(','));
+}
+
+{
+  /* a heavy hit freezes the world for a few ticks */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 55;
+  a.attack = { type: 'kick', t: 0.15, dur: 0.6, hitAt: 0.16, hit: false, def: a.attacks.kick };
+  stepMatch(m, { p0: idle, p1: idle });
+  check('a heavy hit sets hit stop', m.hitstop > 0, `hitstop=${m.hitstop}`);
+  const t0 = m.timeLeft;
+  const hp = b.hp;
+  stepMatch(m, { p0: idle, p1: idle });
+  check('hit stop holds the world still', m.timeLeft === t0 && b.hp === hp);
+}
+
+{
+  /* a strike carries the body forward */
+  const m = makeTwo('priyank', 'apoorv');
+  const a = m.players[0];
+  const x0 = a.x;
+  a.facing = 1;
+  a.attack = { type: 'lungePunch', t: 0.14, dur: 0.5, hitAt: 0.2, hit: false, def: a.attacks.lungePunch };
+  run(m, 5, { p0: idle, p1: idle });
+  check('a lunging strike moves the attacker forward', a.x > x0 + 5, `moved ${(a.x - x0).toFixed(1)}`);
+}
+
 console.log('\nphase 0 fixes');
 {
   /* air hit boxes must travel with the attacker */

@@ -85,6 +85,7 @@ function buildAttacks(char) {
       knock: p.knock,
       cd: d(p.cd),
       hitstun: 0.16,
+      lunge: 95,
       ...BANDS.punch
     },
     crouchPunch: {
@@ -125,6 +126,7 @@ function buildAttacks(char) {
       knock: k.knock,
       cd: d(k.cd),
       hitstun: 0.26,
+      lunge: 160,
       ...BANDS.kick
     },
     sweep: {
@@ -163,6 +165,7 @@ function buildAttacks(char) {
       knock: k.knock * 1.55,
       cd: d(k.cd * 1.5),
       hitstun: 0.4,
+      lunge: 260,
       ...BANDS.spinKick
     },
     lungePunch: {
@@ -175,6 +178,7 @@ function buildAttacks(char) {
       knock: p.knock * 1.3,
       cd: d(p.cd * 1.35),
       hitstun: 0.24,
+      lunge: 310,
       ...BANDS.lungePunch
     },
     backKick: {
@@ -187,6 +191,7 @@ function buildAttacks(char) {
       knock: k.knock * 1.7,
       cd: d(k.cd * 1.5),
       hitstun: 0.36,
+      lunge: 190,
       ...BANDS.backKick
     }
   };
@@ -221,6 +226,7 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     attack: null,
     downT: 0,
     hitstun: 0,
+    blocking: false,
     lastHit: null,
     iframes: 0,
     slowT: 0,
@@ -270,6 +276,7 @@ function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
     projectiles: [],
     projSeq: 1,
     superShow: null,
+    hitstop: 0,
     outbox: [],
     rngState: (seed >>> 0) || 1,
     seed
@@ -298,6 +305,13 @@ function faceOpponents(m, p) {
 
 function stepMatch(m, inputs) {
   if (m.over) return m;
+
+  /* impact freeze frames: the whole world holds still for a beat */
+  if (m.hitstop > 0) {
+    m.hitstop--;
+    return m;
+  }
+
   m.tick++;
 
   /* the intro close-up freezes everything, the round clock included */
@@ -343,10 +357,25 @@ function stepMatch(m, inputs) {
     const backward = mxRaw * p.facing < -0.3;
     const forward = mxRaw * p.facing > 0.3;
 
+    /* holding away from your opponent is a guard */
+    p.blocking = p.onGround && !p.attack && p.hitstun <= 0 && p.downT <= 0 && backward;
+
     if (p.hitstun > 0 || p.downT > 0 || p.lockT > 0) {
       /* no control */
     } else if (p.attack) {
       p.attack.t += TICK;
+
+      /* a strike carries the body forward into the target */
+      const def = p.attack.def || {};
+      if (def.lunge && p.onGround) {
+        const from = p.attack.hitAt * 0.45;
+        if (p.attack.t >= from && p.attack.t <= p.attack.hitAt) {
+          p.vx = p.facing * def.lunge;
+        } else if (p.attack.t > p.attack.hitAt) {
+          p.vx *= Math.pow(0.02, TICK);
+        }
+      }
+
       if (!p.attack.hit && p.attack.t >= p.attack.hitAt) {
         p.attack.hit = true;
         resolveHit(m, p, p.attack);
@@ -751,6 +780,24 @@ function resolveHit(m, p, atk) {
 
 function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   if (tgt.iframes > 0) return false;
+
+  /* Guard: low hits need a crouching guard, overheads need a standing one,
+     everything else can be blocked either way. */
+  if (tgt.blocking && src !== tgt) {
+    const low = kind === 'sweep';
+    const overhead = kind === 'airPunch' || kind === 'airKick';
+    const holds = low ? tgt.crouching : overhead ? !tgt.crouching : true;
+
+    if (holds) {
+      const chip = baseDmg * 0.15;
+      tgt.hp = Math.max(0, tgt.hp - chip);
+      tgt.vx = (sign(tgt.x - src.x) || src.facing) * (knockBase * src.stats.knock * 0.45) / (tgt.stats.weight || 1) * 2.4;
+      tgt.hitstun = Math.max(tgt.hitstun, (def.hitstun || 0.18) * 0.65);
+      tgt.blockFlash = 0.22;
+      m.events.push({ type: 'block', x: tgt.x, h: tgt.h + 65, id: src.id, on: tgt.id, kind });
+      return false;
+    }
+  }
   const dmg = baseDmg * src.stats.power * (src.weakT > 0 ? 0.6 : 1);
   tgt.hp = Math.max(0, tgt.hp - dmg);
 
@@ -779,6 +826,8 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   tgt.meter = Math.min(SUPER_COST, tgt.meter + dmg * 1.0 * tgt.stats.meter);
 
   const tier = dmg >= 16 ? 'heavy' : dmg >= 8 ? 'medium' : 'light';
+  /* impact freeze frames, deterministic and identical for host and guest */
+  m.hitstop = tier === 'heavy' ? 4 : tier === 'medium' ? 2 : 0;
   m.events.push({ type: 'hit', x: tgt.x, h: tgt.h + 60, dmg: Math.round(dmg), tier, id: src.id, on: tgt.id, kind });
 
   if (tgt.hp <= 0) {
@@ -873,6 +922,7 @@ function packSnapshot(m) {
       g: p.onGround ? 1 : 0,
       c: p.crouching ? 1 : 0,
       d: p.downT > 0 ? 1 : 0,
+      bl: p.blocking ? 1 : 0,
       fl: p.flipT > 0 ? 1 : 0,
       sl: p.slowT > 0 ? 1 : 0,
       lk: p.lockT > 0 ? 1 : 0,
@@ -932,6 +982,7 @@ function unpackSnapshot(snap, match) {
     p.meter = sp.m;
     p.alive = !!sp.a;
     p.onGround = !!sp.g;
+    p.blocking = !!sp.bl;
     p.crouching = !!sp.c;
     p.downT = sp.d ? 0.5 : 0;
     p.flipT = sp.fl ? 0.35 : 0;

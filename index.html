@@ -2204,6 +2204,10 @@ function createAudio() {
         tone({ freq: 210, dur: 0.05, type: 'triangle', gain: 0.03, slide: -70 });
       }
     },
+    block: () => {
+      noise(0.05, 0.03);
+      tone({ freq: 150, dur: 0.06, type: 'sine', gain: 0.035, slide: -60 });
+    },
     ko: () => {
       tone({ freq: 300, dur: 0.35, type: 'sawtooth', gain: 0.05, slide: -240 });
       noise(0.3, 0.05);
@@ -3021,6 +3025,12 @@ function heavyLean(pose, tier) {
   return pose;
 }
 
+const GUARD_POSE = {
+  hipY: RIG.hipY - 5, lean: -0.06, headTilt: 0.14,
+  fUpper: 0.95, fFore: 2.55, bUpper: 0.75, bFore: 2.65,
+  fThigh: 0.28, fShin: 0.32, bThigh: -0.28, bShin: -0.32
+};
+
 const WIN_POSE = { fUpper: -1.05, fFore: -0.55, bUpper: -1.15, bFore: -0.5, lean: -0.08, headTilt: -0.2, hipY: RIG.hipY + 2 };
 const LOSE_POSE = { hipY: RIG.hipY - 12, lean: 0.5, fUpper: 0.9, fFore: 0.4, bUpper: 0.8, bFore: 0.5, headTilt: 0.35, fThigh: 0.3, fShin: 0.7, bThigh: -0.3, bShin: -0.7 };
 const TAUNT_POSE = { fUpper: -0.7, fFore: 0.3, bUpper: 0.5, bFore: 2.4, lean: -0.12, headTilt: -0.15, chestW: 1.1 };
@@ -3132,6 +3142,9 @@ function poseFor(p, phase, opts) {
       mixPose(P, mid, def.strike, ext);
     }
   }
+
+  /* holding away puts him behind his guard */
+  if (p.blocking && !a) mixPose(P, P, GUARD_POSE, 1);
 
   /* taking one overrides everything */
   if (p.hitstun > 0.02 && !a) {
@@ -3743,7 +3756,8 @@ function createRenderer(canvas) {
     for (const k of Object.keys(target)) rig[k] = approach(rig[k], target[k], rate, frameDt);
 
     const hitFlash = p.hitstun > 0.02;
-    const body = hitFlash ? '#ffffff' : c.body;
+    const guardFlash = (p.blockFlash || 0) > 0;
+    const body = guardFlash ? '#cfe4ff' : hitFlash ? '#ffffff' : c.body;
     const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -46);
     const outline = 'rgba(0,0,0,0.42)';
 
@@ -5812,6 +5826,7 @@ function tickGuestTimers(dt) {
     p.lockT = Math.max(0, p.lockT - dt);
     p.downT = Math.max(0, p.downT - dt);
     p.flipT = Math.max(0, p.flipT - dt);
+    p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
     if (p.attack) {
       p.attack.t += dt;
       if (p.attack.t >= p.attack.dur) p.attack = null;
@@ -6041,6 +6056,11 @@ function handleEvents(events) {
         const t = m.players.find((p) => p.id === e.on);
         if (t) t.hitstun = 0.12;
       }
+    } else if (e.type === 'block') {
+      audio.block();
+      const t = m.players.find((p) => p.id === e.on);
+      if (t) t.blockFlash = 0.22;
+      S.hitStop = Math.max(S.hitStop, 0.05);
     } else if (e.type === 'swing') {
       if (e.kind === 'punch') audio.punch();
       else audio.kick();
