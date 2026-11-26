@@ -3912,10 +3912,16 @@ function createRenderer(canvas) {
       bAnkle = P(RIG.shin, rig.bShin, bKnee);
     }
 
-    const fElbow = P(RIG.upper, rig.fUpper, shoulder);
-    const fHand = P(RIG.fore, rig.fFore, fElbow);
-    const bElbow = P(RIG.upper, rig.bUpper, shoulder);
-    const bHand = P(RIG.fore, rig.bFore, bElbow);
+    /* Where the pose wants each hand, then solve the elbow backwards from it.
+       The elbow is pushed away from the shoulder line so it never folds
+       backwards through the joint. */
+    const fHandTarget = P(RIG.upper, rig.fUpper, shoulder);
+    const fHand = P(RIG.fore, rig.fFore, fHandTarget);
+    const bHandTarget = P(RIG.upper, rig.bUpper, shoulder);
+    const bHand = P(RIG.fore, rig.bFore, bHandTarget);
+
+    const fElbow = solveKnee(shoulder, fHand, RIG.upper, RIG.fore, -dir);
+    const bElbow = solveKnee(shoulder, bHand, RIG.upper, RIG.fore, -dir);
 
     const S = (pt) => [ox + pt[0] * s, oy + pt[1] * s];
 
