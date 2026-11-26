@@ -3302,6 +3302,20 @@ const GUARD_POSE = {
   fThigh: 0.28, fShin: 0.32, bThigh: -0.28, bShin: -0.32
 };
 
+/* the guard giving a little under the impact */
+const BLOCK_PUSH_POSE = {
+  lean: -0.16, headTilt: 0.1, hipX: -6,
+  fUpper: 1.05, fFore: 2.5, bUpper: 0.85, bFore: 2.6,
+  fThigh: 0.34, fShin: 0.42, bThigh: -0.34, bShin: -0.44
+};
+
+/* a strike that hit nothing: he is over the front foot and has to catch it */
+const MISS_POSE = {
+  lean: 0.34, headTilt: 0.18, hipX: 12,
+  fUpper: 1.35, fFore: 1.9, bUpper: 0.95, bFore: 2.15,
+  fThigh: 0.55, fShin: 0.2, bThigh: -0.5, bShin: -0.6
+};
+
 const WIN_POSE = { fUpper: -1.05, fFore: -0.55, bUpper: -1.15, bFore: -0.5, lean: -0.08, headTilt: -0.2, hipY: RIG.hipY + 2 };
 const LOSE_POSE = { hipY: RIG.hipY - 12, lean: 0.5, fUpper: 0.9, fFore: 0.4, bUpper: 0.8, bFore: 0.5, headTilt: 0.35, fThigh: 0.3, fShin: 0.7, bThigh: -0.3, bShin: -0.7 };
 const TAUNT_POSE = { fUpper: -0.7, fFore: 0.3, bUpper: 0.5, bFore: 2.4, lean: -0.12, headTilt: -0.15, chestW: 1.1 };
@@ -3416,6 +3430,12 @@ function poseFor(p, phase, opts) {
 
   /* holding away puts him behind his guard */
   if (p.blocking && !a) mixPose(P, P, GUARD_POSE, 1);
+
+  /* a blocked hit shoves the guard back for a beat */
+  if (p.blockPush > 0.02) mixPose(P, P, BLOCK_PUSH_POSE, Math.min(1, p.blockPush * 5));
+
+  /* a whiffed strike leaves him leaning over the front foot */
+  if (p.missT > 0.02 && !a) mixPose(P, P, MISS_POSE, Math.min(1, p.missT * 4));
 
   /* taking one overrides everything */
   if (p.hitstun > 0.02 && !a) {

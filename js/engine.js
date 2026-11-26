@@ -266,6 +266,8 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     downT: 0,
     hitstun: 0,
     blocking: false,
+    missT: 0,
+    blockPush: 0,
     combo: 0,
     comboT: 0,
     lastHit: null,
@@ -378,6 +380,8 @@ function stepMatch(m, inputs) {
     p.cd.dash = Math.max(0, p.cd.dash - TICK);
     p.iframes = Math.max(0, p.iframes - TICK);
     p.comboT = Math.max(0, (p.comboT || 0) - TICK);
+    p.missT = Math.max(0, (p.missT || 0) - TICK);
+    p.blockPush = Math.max(0, (p.blockPush || 0) - TICK);
     if (p.comboT <= 0) p.combo = 0;
     p.hitstun = Math.max(0, p.hitstun - TICK);
     p.slowT = Math.max(0, p.slowT - TICK);
@@ -441,7 +445,11 @@ function stepMatch(m, inputs) {
           p.attack.connected = false;
         }
       }
-      if (p.attack.t >= p.attack.dur) p.attack = null;
+      if (p.attack.t >= p.attack.dur) {
+        /* a strike that never touched anyone leaves him off balance */
+        if (!p.attack.connected) p.missT = 0.26;
+        p.attack = null;
+      }
     } else {
       p.crouching = wantCrouch;
 
@@ -878,6 +886,7 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
       tgt.vx = (sign(tgt.x - src.x) || src.facing) * (knockBase * src.stats.knock * 0.45) / (tgt.stats.weight || 1) * 2.4;
       tgt.hitstun = Math.max(tgt.hitstun, (def.hitstun || 0.18) * 0.65);
       tgt.blockFlash = 0.22;
+      tgt.blockPush = 0.24;
       m.events.push({ type: 'block', x: tgt.x, h: tgt.h + 65, id: src.id, on: tgt.id, kind });
       return false;
     }
