@@ -203,8 +203,12 @@ SUPER appears at full meter: a radial blast.
 **Desktop:** `A`/`D` or arrows walk, `W`/`Up` jump, `S`/`Down` crouch, `J` punch,
 `K` kick, `L` dash, `Space` super.
 
-Rounds last 75 seconds or until one fighter is left standing. Most HP wins on
-time.
+A match is **best of three**: two rounds, and a third only if the wins are level
+after two. Each round is 99 seconds or until one fighter is left standing; most
+HP wins on time. The HUD pips next to each name show rounds won.
+
+The pace is deliberately slow — `HP_SCALE`, `PACE` and the walk speed in
+`js/engine.js` are the three dials. Raise `HP_SCALE` to make fights longer.
 
 ### How the heights interact
 

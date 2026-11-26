@@ -1127,6 +1127,68 @@ input[type='range'] {
 #screen-settings .hint {
   text-align: left;
 }
+
+
+/* ---------- rounds ---------- */
+
+.round-banner {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  transform: translate(-50%, -50%) scale(0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 20px;
+  border-radius: 12px;
+  background: rgba(10, 8, 12, 0.72);
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 12;
+  backdrop-filter: blur(4px);
+  text-align: center;
+}
+
+.round-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.round-banner strong {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.round-banner span {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.hud-pips {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.hud-pips i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: inline-block;
+}
+
+.hud-pips i.on {
+  background: var(--gold);
+  box-shadow: 0 0 5px rgba(255, 209, 102, 0.9);
+}
     </style>
   </head>
   <body>
@@ -1278,6 +1340,11 @@ input[type='range'] {
             <button class="pad-btn kick" id="btn-kick">KICK</button>
             <button class="pad-btn super" id="btn-super">SUPER</button>
           </div>
+        </div>
+
+        <div class="round-banner" id="round-banner">
+          <strong id="round-title">ROUND 1</strong>
+          <span id="round-sub">First to two rounds wins</span>
         </div>
 
         <div class="rotate-overlay" id="rotate-overlay">
@@ -1710,7 +1777,7 @@ const RIG = {
   hipY: 60,
   torso: 42,
   neck: 16,
-  headR: 15,
+  headR: 16,
   thigh: 30,
   shin: 32,
   upper: 22,
@@ -1968,7 +2035,7 @@ function createRenderer(canvas) {
     const spread = Math.max(200, maxX - minX);
 
     camX += (mid - camX) * 0.09;
-    const wantDepth = clamp((cam.f * (spread + 520)) / W, 200, 1200);
+    const wantDepth = clamp((cam.f * (spread + 430)) / W, 200, 1200);
     camDepth += (wantDepth - camDepth) * 0.07;
 
     cam.pos = [camX, -camDepth, 108];
@@ -2190,6 +2257,125 @@ function createRenderer(canvas) {
     ctx.restore();
   }
 
+  /* a tapered capsule with a lit side and a shadowed side */
+  function limb(a, b, wa, wb, base, outline) {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L;
+    const uy = dy / L;
+    const nx = -uy;
+    const ny = ux;
+
+    const a1 = [a[0] + nx * wa * 0.5, a[1] + ny * wa * 0.5];
+    const a2 = [a[0] - nx * wa * 0.5, a[1] - ny * wa * 0.5];
+    const b1 = [b[0] + nx * wb * 0.5, b[1] + ny * wb * 0.5];
+    const b2 = [b[0] - nx * wb * 0.5, b[1] - ny * wb * 0.5];
+
+    const g = ctx.createLinearGradient(a1[0], a1[1], a2[0], a2[1]);
+    g.addColorStop(0, shade(base, 38));
+    g.addColorStop(0.42, base);
+    g.addColorStop(1, shade(base, -52));
+
+    ctx.beginPath();
+    ctx.moveTo(a1[0], a1[1]);
+    ctx.lineTo(b1[0], b1[1]);
+    ctx.quadraticCurveTo(b[0] + ux * wb * 0.55, b[1] + uy * wb * 0.55, b2[0], b2[1]);
+    ctx.lineTo(a2[0], a2[1]);
+    ctx.quadraticCurveTo(a[0] - ux * wa * 0.55, a[1] - uy * wa * 0.55, a1[0], a1[1]);
+    ctx.closePath();
+    ctx.fillStyle = g;
+    ctx.fill();
+    if (outline) {
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = Math.max(0.6, wb * 0.09);
+      ctx.stroke();
+    }
+    return { nx, ny, ux, uy };
+  }
+
+  /* a side-on head: skull, jaw, nose, ear, hair mass, one eye and a brow */
+  function drawHead(hx, hy, r, dir, c, tilt) {
+    ctx.save();
+    ctx.translate(hx, hy);
+    ctx.rotate(tilt || 0);
+    ctx.scale(dir, 1);
+
+    const skin = c.skin;
+    const skinG = ctx.createLinearGradient(-r, -r, r * 0.6, r);
+    skinG.addColorStop(0, shade(skin, 26));
+    skinG.addColorStop(0.6, skin);
+    skinG.addColorStop(1, shade(skin, -34));
+
+    /* skull + jaw */
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 0.94, r, 0, 0, TAU);
+    ctx.fillStyle = skinG;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(r * 0.16, r * 0.44, r * 0.62, r * 0.5, 0, 0, TAU);
+    ctx.fill();
+
+    /* nose */
+    ctx.beginPath();
+    ctx.moveTo(r * 0.82, -r * 0.12);
+    ctx.lineTo(r * 1.14, r * 0.2);
+    ctx.lineTo(r * 0.8, r * 0.3);
+    ctx.closePath();
+    ctx.fillStyle = shade(skin, 10);
+    ctx.fill();
+
+    /* ear */
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.4, r * 0.08, r * 0.17, r * 0.23, 0, 0, TAU);
+    ctx.fillStyle = shade(skin, -22);
+    ctx.fill();
+
+    /* hair: a cap, not a helmet, so the face stays open */
+    ctx.beginPath();
+    ctx.arc(-r * 0.04, -r * 0.28, r * 0.98, Math.PI * 1.02, Math.PI * 1.98);
+    ctx.fillStyle = c.hair || '#222';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.66, -r * 0.02, r * 0.3, r * 0.46, 0, 0, TAU);
+    ctx.fill();
+
+    /* eye */
+    ctx.beginPath();
+    ctx.ellipse(r * 0.4, r * 0.1, r * 0.22, r * 0.16, 0, 0, TAU);
+    ctx.fillStyle = '#f7f3ec';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(r * 0.45, r * 0.11, r * 0.11, 0, TAU);
+    ctx.fillStyle = '#181a1f';
+    ctx.fill();
+
+    /* jaw shadow */
+    ctx.beginPath();
+    ctx.ellipse(r * 0.1, r * 0.86, r * 0.5, r * 0.16, 0, 0, TAU);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fill();
+
+    /* brow + mouth */
+    ctx.strokeStyle = c.hair || '#222';
+    ctx.lineWidth = r * 0.14;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.22, -r * 0.16);
+    ctx.lineTo(r * 0.62, -r * 0.1);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(130,70,60,0.65)';
+    ctx.lineWidth = r * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.48, r * 0.52);
+    ctx.lineTo(r * 0.74, r * 0.5);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
   function drawFighter(p, foot, s) {
     const c = p.colors;
     const dir = p.facing >= 0 ? 1 : -1;
@@ -2211,13 +2397,12 @@ function createRenderer(canvas) {
 
     const hitFlash = p.hitstun > 0.02;
     const body = hitFlash ? '#ffffff' : c.body;
-    const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -38);
-    const outline = 'rgba(0,0,0,0.45)';
+    const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -46);
+    const outline = 'rgba(0,0,0,0.42)';
 
     const ox = foot.x;
     const oy = foot.y;
 
-    /* joint positions in local units (y grows downward from the feet) */
     const P = (len, ang, from) => [from[0] + Math.sin(ang) * len * dir, from[1] + Math.cos(ang) * len];
 
     const hip = [0, -rig.hipY];
@@ -2225,8 +2410,8 @@ function createRenderer(canvas) {
       hip[0] + Math.sin(rig.lean) * RIG.torso * dir,
       hip[1] - Math.cos(rig.lean) * RIG.torso
     ];
-    const neck = [shoulder[0], shoulder[1] - RIG.neck * 0.35];
-    const head = [neck[0] + Math.sin(rig.lean + rig.headTilt) * 12 * dir, neck[1] - 13];
+    const neck = [shoulder[0] + Math.sin(rig.lean) * 7 * dir, shoulder[1] - 7];
+    const head = [neck[0] + Math.sin(rig.lean + rig.headTilt) * 11 * dir, neck[1] - 19];
 
     const fKnee = P(RIG.thigh, rig.fThigh, hip);
     const fAnkle = P(RIG.shin, rig.fShin, fKnee);
@@ -2240,82 +2425,97 @@ function createRenderer(canvas) {
 
     const S = (pt) => [ox + pt[0] * s, oy + pt[1] * s];
 
-    /* shadow already drawn by caller */
+    /* ---- back limbs, deeper in shadow ---- */
+    limb(S(hip), S(bKnee), u(17), u(13), bodyDark, outline);
+    limb(S(bKnee), S(bAnkle), u(13), u(10), bodyDark, outline);
+    ctx.fillStyle = '#1b1e24';
+    ctx.beginPath();
+    ctx.ellipse(S(bAnkle)[0] + dir * u(3), S(bAnkle)[1], u(9), u(4.5), 0, 0, TAU);
+    ctx.fill();
 
-    /* back limbs */
-    seg(S(hip), S(bKnee), u(15), bodyDark, outline);
-    seg(S(bKnee), S(bAnkle), u(13), bodyDark, outline);
-    seg(S(shoulder), S(bElbow), u(12), bodyDark, outline);
-    seg(S(bElbow), S(bHand), u(10), shade(c.skin, -40), outline);
+    limb(S(shoulder), S(bElbow), u(12), u(10), bodyDark, outline);
+    limb(S(bElbow), S(bHand), u(10), u(8), shade(c.skin, -52), outline);
 
-    /* torso */
+    /* ---- torso: hips to shoulders, lit from the upper left ---- */
     const hipS = S(hip);
     const shS = S(shoulder);
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = body;
-    ctx.lineWidth = u(RIG.chestW);
-    ctx.beginPath();
-    ctx.moveTo(hipS[0], hipS[1]);
-    ctx.lineTo(shS[0], shS[1]);
-    ctx.stroke();
-    ctx.strokeStyle = outline;
-    ctx.lineWidth = u(RIG.chestW) + u(2.5);
-    ctx.globalAlpha = 0.35;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    limb(hipS, shS, u(RIG.waistW), u(RIG.chestW), body, outline);
 
-    /* collar */
+    /* chest shading and collar */
+    const cg = ctx.createLinearGradient(shS[0], shS[1] - u(14), shS[0], shS[1] + u(18));
+    cg.addColorStop(0, 'rgba(255,255,255,0.16)');
+    cg.addColorStop(1, 'rgba(0,0,0,0.16)');
+    ctx.fillStyle = cg;
+    ctx.beginPath();
+    ctx.ellipse(shS[0], shS[1] + u(2), u(RIG.chestW * 0.5), u(9), 0, 0, TAU);
+    ctx.fill();
+
     ctx.fillStyle = c.accent;
     ctx.beginPath();
-    ctx.ellipse(shS[0], shS[1] + u(2), u(15), u(6), 0, 0, TAU);
+    ctx.ellipse(shS[0] - dir * u(2), shS[1] + u(2), u(11), u(3.5), 0, 0, TAU);
     ctx.fill();
 
-    /* head */
-    const headS = S(head);
-    ctx.fillStyle = c.skin;
+    /* belt */
+    ctx.fillStyle = shade(c.body, -62);
     ctx.beginPath();
-    ctx.arc(headS[0], headS[1], u(RIG.headR), 0, TAU);
-    ctx.fill();
-    ctx.strokeStyle = outline;
-    ctx.lineWidth = u(1.6);
-    ctx.stroke();
-
-    ctx.fillStyle = c.hair || '#222';
-    ctx.beginPath();
-    ctx.arc(headS[0], headS[1] - u(1.5), u(RIG.headR), Math.PI * 1.02, Math.PI * 1.98);
+    ctx.roundRect(hipS[0] - u(RIG.waistW * 0.5), hipS[1] - u(5), u(RIG.waistW), u(9), u(3));
     ctx.fill();
 
-    ctx.fillStyle = '#14161b';
-    for (const off of [0.35, 0.75]) {
-      ctx.beginPath();
-      ctx.arc(headS[0] + dir * u(RIG.headR * off), headS[1] + u(1.5), u(2.6), 0, TAU);
-      ctx.fill();
-    }
+    /* neck */
+    limb([neck[0], neck[1] + u(3)], [shoulder[0], shoulder[1]], u(11), u(13), shade(c.skin, -14), outline);
 
-    /* front leg */
-    seg(S(hip), S(fKnee), u(16), body, outline);
-    seg(S(fKnee), S(fAnkle), u(14), body, outline);
+    /* ---- head ---- */
+    drawHead(S(head)[0], S(head)[1], u(RIG.headR), dir, c, rig.lean * 0.5 + rig.headTilt);
+
+    /* ---- front leg ---- */
+    limb(S(hip), S(fKnee), u(18), u(14), body, outline);
+    limb(S(fKnee), S(fAnkle), u(14), u(11), body, outline);
     ctx.fillStyle = '#20242c';
     ctx.beginPath();
-    ctx.ellipse(S(fAnkle)[0] + dir * u(3), S(fAnkle)[1], u(9), u(5), 0, 0, TAU);
+    ctx.ellipse(S(fAnkle)[0] + dir * u(4), S(fAnkle)[1], u(10), u(5), 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(S(fAnkle)[0] + dir * u(5), S(fAnkle)[1] - u(1.5), u(5), u(2), 0, 0, TAU);
     ctx.fill();
 
-    /* front arm last so it reads on top */
-    seg(S(shoulder), S(fElbow), u(13), body, outline);
-    seg(S(fElbow), S(fHand), u(11), shade(c.skin, 10), outline);
+    /* ---- front arm last so it reads on top ---- */
+    limb(S(shoulder), S(fElbow), u(13), u(11), body, outline);
+    limb(S(fElbow), S(fHand), u(11), u(9), shade(c.skin, 8), outline);
+
+    /* fist */
+    const hs = S(fHand);
     ctx.fillStyle = shade(c.skin, 18);
     ctx.beginPath();
-    ctx.arc(S(fHand)[0], S(fHand)[1], u(6.5), 0, TAU);
+    ctx.arc(hs[0], hs[1], u(7), 0, TAU);
     ctx.fill();
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = u(1.1);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.beginPath();
+    ctx.arc(hs[0] - u(2), hs[1] - u(2.4), u(2.4), 0, TAU);
+    ctx.fill();
+
+    /* rim light down the facing edge */
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = u(1.6);
+    ctx.beginPath();
+    ctx.moveTo(shS[0] + dir * u(11), shS[1]);
+    ctx.lineTo(hipS[0] + dir * u(9), hipS[1]);
+    ctx.stroke();
+    ctx.restore();
 
     /* marker for the local player */
     if (p.isLocal) {
       ctx.fillStyle = '#ffd166';
-      const my = headS[1] - u(30);
+      const my = S(head)[1] - u(34);
       ctx.beginPath();
-      ctx.moveTo(headS[0], my + u(9));
-      ctx.lineTo(headS[0] - u(7), my);
-      ctx.lineTo(headS[0] + u(7), my);
+      ctx.moveTo(S(head)[0], my + u(9));
+      ctx.lineTo(S(head)[0] - u(7), my);
+      ctx.lineTo(S(head)[0] + u(7), my);
       ctx.closePath();
       ctx.fill();
     }
@@ -2407,7 +2607,7 @@ function createRenderer(canvas) {
 
   function say(id, text) {
     bubbles.length = 0;
-    bubbles.push({ id, text, life: 1.9, max: 1.9 });
+    bubbles.push({ id, text, life: 3.4, max: 3.4 });
   }
 
   function step(dt) {
@@ -2743,6 +2943,20 @@ function createRenderer(canvas) {
       .filter((o) => o.foot)
       .sort((a, b) => b.foot.z - a.foot.z);
 
+    /* a pool of stage light under each fighter */
+    for (const { p } of order) {
+      const g2 = project([p.x, 0, 0]);
+      if (!g2) continue;
+      const rad = 150 * g2.s;
+      const light = ctx.createRadialGradient(g2.x, g2.y, 4, g2.x, g2.y, rad);
+      light.addColorStop(0, 'rgba(255,214,150,0.16)');
+      light.addColorStop(1, 'rgba(255,190,120,0)');
+      ctx.fillStyle = light;
+      ctx.beginPath();
+      ctx.ellipse(g2.x, g2.y, rad, rad * 0.38, 0, 0, TAU);
+      ctx.fill();
+    }
+
     for (const { p, foot } of order) {
       p.isLocal = p.id === view.localId;
       drawFighter(p, foot, foot.s);
@@ -2753,6 +2967,13 @@ function createRenderer(canvas) {
     drawEffects();
     drawBubbles(view.players);
     ctx.restore();
+
+    /* vignette, drawn last so it sits over everything */
+    const vig = ctx.createRadialGradient(W / 2, H * 0.5, Math.min(W, H) * 0.35, W / 2, H * 0.5, Math.max(W, H) * 0.75);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.45)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
   }
 
   return { resize, draw, step, feed };
@@ -3397,6 +3618,9 @@ const S = {
   difficulty: 'normal',
   hitStop: 0,
   slotState: {},
+  fighters: null,
+  round: 1,
+  wins: {},
   match: null,
   localId: 'p0',
   running: false,
@@ -3504,10 +3728,32 @@ function startSolo() {
     const c = pool[i % pool.length];
     fighters.push({ id: `b${i}`, name: c.name, char: c, isBot: true });
   }
-  S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
   S.localId = 'p0';
+  beginSeries(fighters);
+}
+
+/* A match is best of three: two rounds, and a third if the wins are level. */
+function beginSeries(fighters) {
+  S.fighters = fighters;
+  S.round = 1;
+  S.wins = {};
+  for (const f of fighters) S.wins[f.id] = 0;
+  startRound();
+}
+
+function startRound() {
+  S.match = createMatch({ fighters: S.fighters, seed: (Date.now() & 0xffff) + S.round });
   S.remoteInputs = {};
   beginMatch();
+  showBanner(`ROUND ${S.round}`, S.round === 1 ? 'First to two rounds wins' : 'Next round');
+  if (S.mode === 'host' && S.host) {
+    S.host.broadcast({
+      t: 'start',
+      fighters: S.fighters.map((f) => ({ id: f.id, name: f.name, charId: f.char.id, isBot: f.isBot })),
+      round: S.round,
+      wins: S.wins
+    });
+  }
 }
 
 /* -------------------------------------------------------------------- lobby */
@@ -3572,6 +3818,25 @@ function renderLobby() {
 
   box.innerHTML = parts.join('');
   updateLobbyStart();
+}
+
+function updateHudPips() {
+  for (const p of (S.match ? S.match.players : [])) {
+    const el = document.querySelector(`[data-pips="${p.id}"]`);
+    if (!el) continue;
+    const won = S.wins[p.id] || 0;
+    el.innerHTML = [0, 1].map((i) => `<i class="${i < won ? 'on' : ''}"></i>`).join('');
+  }
+}
+
+function showBanner(title, sub) {
+  const el = $('#round-banner');
+  if (!el) return;
+  $('#round-title').textContent = title;
+  $('#round-sub').textContent = sub || '';
+  el.classList.add('show');
+  clearTimeout(showBanner._t);
+  showBanner._t = setTimeout(() => el.classList.remove('show'), 1600);
 }
 
 function updateLobbyStart() {
@@ -3681,13 +3946,8 @@ function startHostMatch() {
       isBot: false
     });
   }
-  S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
   S.localId = 'p0';
-  S.host.broadcast({
-    t: 'start',
-    fighters: fighters.map((f) => ({ id: f.id, name: f.name, charId: f.char.id, isBot: f.isBot }))
-  });
-  beginMatch();
+  beginSeries(fighters);
 }
 
 /* --------------------------------------------------------------------- guest */
@@ -3751,9 +4011,19 @@ function onGuestMessage(msg) {
       char: getCharacter(f.charId),
       isBot: false
     }));
+    S.fighters = fighters;
+    S.round = msg.round || 1;
+    S.wins = msg.wins || {};
     S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
     if (!S.match.players.some((p) => p.id === S.localId)) S.localId = 'p0';
     beginMatch();
+    showBanner(`ROUND ${S.round}`, 'First to two rounds wins');
+    return;
+  }
+  if (msg.t === 'roundend') {
+    S.wins = msg.wins || S.wins;
+    updateHudPips();
+    showBanner(msg.winner ? `${msg.winner} takes the round` : 'Round drawn', 'Waiting for the host');
     return;
   }
   if (msg.t === 'snap') applySnapshot(msg);
@@ -3807,7 +4077,7 @@ function buildHudStrip() {
     el.innerHTML = `
       <span class="hud-face" style="background:${esc(p.colors.body)};border-color:${esc(p.colors.accent)}"></span>
       <span class="hud-info">
-        <span class="hud-name">${esc(p.name)}</span>
+        <span class="hud-name">${esc(p.name)}<span class="hud-pips" data-pips="${p.id}"></span></span>
         <span class="hud-bar hp"><i></i></span>
         <span class="hud-bar mt"><i style="background:${esc(p.colors.accent)}"></i></span>
       </span>
@@ -3815,6 +4085,7 @@ function buildHudStrip() {
     strip.appendChild(el);
     S.hudCards.push({ id: p.id, el, hp: el.querySelector('.hp i'), mt: el.querySelector('.mt i') });
   }
+  updateHudPips();
 }
 
 function beginMatch() {
@@ -3987,32 +4258,71 @@ function updateHud() {
   }
 }
 
+/* A round just ended. Decide whether the series is over or another round starts. */
 function finishMatch() {
   if (S.ended) return;
   S.ended = true;
-  const m = S.match;
-  audio.win();
 
+  const m = S.match;
   const winner = m.players.find((p) => p.id === m.winner);
-  if (winner) {
-    const head = HEADLINES[Math.floor(Math.random() * HEADLINES.length)];
-    $('#result-headline').textContent = head.replace('{winner}', winner.name);
-  } else {
-    $('#result-headline').textContent = 'Draw. Everyone blames the process.';
+  if (winner) S.wins[winner.id] = (S.wins[winner.id] || 0) + 1;
+  audio.win();
+  updateHudPips();
+
+  const decided = Object.values(S.wins).some((w) => w >= 2);
+  const lastRound = S.round >= 3;
+  const label = winner ? `${winner.name} takes round ${S.round}` : `Round ${S.round} drawn`;
+
+  if (S.mode === 'guest') {
+    /* the host drives the series; just announce it */
+    showBanner(label, decided || lastRound ? 'Series over' : 'Waiting for the host');
+    return;
   }
 
-  const order = m.players.slice().sort((a, b) => {
-    if (a.alive !== b.alive) return a.alive ? -1 : 1;
-    return b.hp - a.hp;
-  });
-  $('#result-body').textContent = order
-    .map((p) => `${p.name} — ${p.alive ? `${Math.round(p.hp)} HP left` : 'knocked out'}`)
-    .join('  ·  ');
+  if (decided || lastRound) {
+    showBanner(label, 'Series over');
+    if (S.mode === 'host' && S.host) {
+      S.host.broadcast({ t: 'roundend', wins: S.wins, round: S.round, winner: winner ? winner.name : null });
+    }
+    setTimeout(() => {
+      stopLoop();
+      showResult();
+    }, 1700);
+    return;
+  }
 
+  S.round += 1;
+  showBanner(label, `Round ${S.round} next`);
+  if (S.mode === 'host' && S.host) {
+    S.host.broadcast({ t: 'roundend', wins: S.wins, round: S.round, winner: winner ? winner.name : null });
+  }
   setTimeout(() => {
     stopLoop();
-    show('result');
-  }, 1400);
+    startRound();
+  }, 2100);
+}
+
+/* Fill the newspaper with the series result. */
+function showResult() {
+  const m = S.match;
+  const ids = m.players.map((p) => p.id);
+  const sorted = ids.slice().sort((a, b) => (S.wins[b] || 0) - (S.wins[a] || 0));
+  const top = S.wins[sorted[0]] || 0;
+  const tied = sorted.length > 1 && (S.wins[sorted[1]] || 0) === top;
+  const champion = tied || top === 0 ? null : m.players.find((p) => p.id === sorted[0]);
+
+  if (champion) {
+    const head = HEADLINES[Math.floor(Math.random() * HEADLINES.length)];
+    $('#result-headline').textContent = head.replace('{winner}', champion.name);
+  } else {
+    $('#result-headline').textContent = 'Honours even. Nobody wins, everyone blames the process.';
+  }
+
+  $('#result-body').textContent = m.players
+    .map((p) => `${p.name} ${S.wins[p.id] || 0}`)
+    .join('  ·  ') + `   ·   ${S.round} round${S.round > 1 ? 's' : ''} played`;
+
+  show('result');
 }
 
 /* ------------------------------------------------------------------ plumbing */

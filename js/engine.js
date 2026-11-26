@@ -19,8 +19,10 @@ const STAND_H = 122;
 const CROUCH_H = 50;
 const GRAVITY = 2400;
 const JUMP_V = 760;
-const ROUND_TIME = 75;
+const ROUND_TIME = 99;
 const SUPER_COST = 100;
+/* global health multiplier — raise this to make fights last longer */
+const HP_SCALE = 1.9;
 
 const EMPTY_INPUT = {
   mx: 0,
@@ -32,7 +34,7 @@ const EMPTY_INPUT = {
 };
 
 /* One knob for the pace of every attack. Bump it up to slow the fight down. */
-const PACE = 1.14;
+const PACE = 1.3;
 
 /* How far the stick has to travel before it counts as up or down. */
 const UP_THRESHOLD = -0.55;
@@ -164,7 +166,7 @@ function buildAttacks(char) {
 
 function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
   const pm = PASSIVES[char.passive && char.passive.id] || PASSIVES.none;
-  const maxHp = Math.round(char.stats.hp * (pm.hp || 1));
+  const maxHp = Math.round(char.stats.hp * (pm.hp || 1) * HP_SCALE);
   const gap = 190;
   const mid = (LANE.min + LANE.max) / 2;
   const x = mid + (slot - (count - 1) / 2) * gap;
@@ -347,7 +349,7 @@ function stepMatch(m, inputs) {
     } else {
       const mx = clamp(inp.mx || 0, -1, 1);
       const slow = p.slowT > 0 ? 0.45 : 1;
-      const speed = p.stats.speed * 300 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
+      const speed = p.stats.speed * 262 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
       p.vx = mx * speed;
     }
 
@@ -724,7 +726,7 @@ function unpackSnapshot(snap, match) {
 }
 
   globalThis.KK_Engine = {
-    TICK, LANE, PLAYER_R, BODY_GAP, STAND_H, CROUCH_H, GRAVITY, JUMP_V, ROUND_TIME, SUPER_COST,
+    TICK, LANE, PLAYER_R, BODY_GAP, STAND_H, CROUCH_H, GRAVITY, JUMP_V, ROUND_TIME, SUPER_COST, HP_SCALE,
     EMPTY_INPUT, makePlayer, createMatch, stepMatch, playerById, packSnapshot,
     unpackSnapshot, hurtBox, buildAttacks
   };

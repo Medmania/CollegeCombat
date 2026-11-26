@@ -9,7 +9,7 @@ for (const f of ['apoorv', 'priyank', 'saurav', 'aditya', 'thirtyone', 'mohit', 
 await import('../js/characters.js');
 await import('../js/engine.js');
 
-const { createMatch, stepMatch, packSnapshot, unpackSnapshot, LANE, PLAYER_R, TICK, CROUCH_H, BODY_GAP } =
+const { createMatch, stepMatch, packSnapshot, unpackSnapshot, LANE, PLAYER_R, TICK, CROUCH_H, BODY_GAP, ROUND_TIME, HP_SCALE } =
   globalThis.KK_Engine;
 const { CHARACTERS, getCharacter } = globalThis.KK_Roster;
 
@@ -42,7 +42,8 @@ console.log('\nbasics');
   const m = makeTwo();
   run(m, 60, { p0: idle, p1: idle });
   check('idle fighters take no damage', m.players.every((p) => p.hp === p.maxHp));
-  check('clock runs down', m.timeLeft < 75);
+  check('clock runs down', m.timeLeft < ROUND_TIME);
+  check('fighters are built with the health scale', m.players[0].maxHp >= 96 * HP_SCALE - 1, `${m.players[0].maxHp}`);
   check('fighters start on the ground', m.players.every((p) => p.onGround && p.h === 0));
   check('fighters start inside the lane', m.players.every((p) => p.x >= LANE.min && p.x <= LANE.max));
   check('fighters do not start on top of each other', Math.abs(m.players[0].x - m.players[1].x) >= BODY_GAP - 1);
