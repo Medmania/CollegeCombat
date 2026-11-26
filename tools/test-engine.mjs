@@ -6,6 +6,8 @@
 for (const f of ['apoorv', 'priyank', 'saurav', 'aditya', 'thirtyone', 'mohit', 'nikhil', 'ajay', 'jeetu', 'mukesh', 'ankit', 'ansh', 'anmol', 'adnan', 'thirtytwo', 'thirtythree', 'ashish']) {
   await import(`../js/fighters/${f}.js`);
 }
+await import('../js/supers/adnan.js');
+await import('../js/supers/ankit.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
@@ -479,6 +481,84 @@ console.log('\nphase 0 fixes');
   /* every super must have a usable bot range */
   const missing = CHARACTERS.filter((c) => !c.moves.super.botRange).map((c) => c.id);
   check('every super declares a bot range', missing.length === 0, missing.join(','));
+}
+
+console.log('\ncinematic supers');
+{
+  /* Adnan: a planted bomb that goes off on schedule */
+  const m = makeTwo('adnan', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 150;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  check('the bomb is planted', !!m.superShow && m.superShow.phase === 'startup', m.superShow && m.superShow.phase);
+
+  const hp0 = b.hp;
+  const t0 = m.timeLeft;
+  run(m, 20, { p0: idle, p1: idle });
+  check('the round timer is paused during the intro', Math.abs(m.timeLeft - t0) < 0.001, `${m.timeLeft} vs ${t0}`);
+
+  /* 1 activation tick + 20 + 60 = 81 ticks = 2.7 s, still short of 3.35 s */
+  run(m, 60, { p0: idle, p1: idle });
+  check('nothing has gone off early', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
+
+  run(m, 25, { p0: idle, p1: idle });
+  check('the bomb goes off and hurts the target', b.hp < hp0 - 20, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
+  check('the owner is unhurt by his own bomb', a.hp === a.maxHp, `${Math.round(a.hp)}`);
+}
+
+{
+  /* Adnan: you can run out of the ring */
+  const m = makeTwo('adnan', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 300;               /* outside the 230 radius */
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  const hp0 = b.hp;
+  run(m, 120, { p0: idle, p1: idle });
+  check('standing outside the ring avoids the blast', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
+}
+
+{
+  /* Ankit: the panda lands where the target stood */
+  const m = makeTwo('ankit', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 120;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  check('the panda is aimed at the target', Math.abs(m.superShow.data.landX - b.x) < 1, `${m.superShow.data.landX} vs ${b.x}`);
+  const hp0 = b.hp;
+  run(m, 74, { p0: idle, p1: idle });
+  check('the stomp connects', b.hp < hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
+}
+
+{
+  /* Ankit: step away and it misses */
+  const m = makeTwo('ankit', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 120;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  const hp0 = b.hp;
+  run(m, 8, { p0: idle, p1: idle });
+  b.x = a.x + 500;               /* walk out of the footprint */
+  run(m, 70, { p0: idle, p1: idle });
+  check('stepping out of the footprint avoids the stomp', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
+}
+
+{
+  /* only one cinematic at a time, and it cleans up */
+  const m = makeTwo('adnan', 'ankit');
+  const [a, b] = m.players;
+  b.x = a.x + 140;
+  a.meter = 100;
+  b.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  const first = m.superShow && m.superShow.charId;
+  stepMatch(m, { p0: idle, p1: act({ super: true }) });
+  check('a second super cannot start over the first', m.superShow.charId === first, `${first} then ${m.superShow.charId}`);
+  run(m, 200, { p0: idle, p1: idle });
+  check('the show cleans itself up', m.superShow === null);
 }
 
 console.log('\nroster');

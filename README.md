@@ -265,6 +265,7 @@ super, built from five archetypes in `js/engine.js`:
 | `beam` | sustained damage in a line in front | Jeetu, Mohit |
 | `flurry` | sustained multi-hit at close range | Apoorv, Aditya, 32 |
 | `aura` | sustained pulse that can slow, weaken or lock | Ansh, Anmol, Ashish |
+| cinematic | a short scripted scene with its own camera | Adnan, Ankit (so far) |
 
 Super parameters live in each fighter's `moves.super`:
 
@@ -281,6 +282,39 @@ super: { kind: 'shot', name: 'Gym Ka Hisaab', damage: 24, speed: 560,
 `look` picks the shape the renderer draws: `dumbbell`, `ball`, `cloud`,
 `tripod`, `scooty`, `herd`, `haze`, `heart`, `beam`, `laser`, `ghost`, `mood`,
 `bubble`, `dark`, `panda`, `thigh`.
+
+## Cinematic supers
+
+Two fighters now have a full cinematic super instead of a shape on screen. Each
+is one file in `js/supers/`, and the framework lives in `js/engine.js`.
+
+A module declares four phases and its hit windows; the engine owns the clock,
+the freeze, the damage and the cleanup, and the module owns only how it looks:
+
+```js
+(globalThis.KK_SUPERS = globalThis.KK_SUPERS || {})['adnan'] = {
+  name: 'Final Countdown',
+  banner: 'DEADLINE',
+  phases: { startup: 0.9, action: 2.3, impact: 0.5, aftermath: 0.9 },
+  damage: 40,                       // total cap for the whole super
+  hits: [{ at: 3.35, radius: 230, damage: 40, knock: 800, knockdown: true }],
+  draw(g, s) { /* world drawing */ },
+  overlay(g, s) { /* screen-space extras */ }
+};
+```
+
+- `startup` freezes the whole simulation, the round clock included, and shows a
+  slanted banner with the super's name.
+- `hits[].at` is absolute seconds from activation, so the warning ring on the
+  floor and the damage always agree.
+- `atTarget: true` lands the hit where the target stood when the super started,
+  which is how the panda's footprint works.
+- Damage is capped by the module's `damage` field, and no target is hit twice by
+  one window.
+- Only one cinematic runs at a time, and it clears itself when it ends.
+
+Both of these can be escaped: run out of Adnan's red ring, or step out of the
+panda's footprint.
 
 ## Bots
 
@@ -318,7 +352,7 @@ networked match.
 npm test
 ```
 
-71 engine checks run against the same files the browser loads: hits connect at the right
+82 engine checks run against the same files the browser loads: hits connect at the right
 range, stick-up jumps and stick-down crouches, up+forward jumps obliquely, one
 swipe gives exactly one jump, a jab sails over a crouch, a sweep lands on a
 croucher and passes under a jump, crouch+punch becomes an uppercut that connects,

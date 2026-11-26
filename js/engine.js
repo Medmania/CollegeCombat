@@ -248,6 +248,12 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
   };
 }
 
+/* A cinematic super is one at a time: it owns the camera and the clock. */
+function superModule(charId) {
+  const all = globalThis.KK_SUPERS;
+  return all && all[charId] ? all[charId] : null;
+}
+
 function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
   const count = fighters.length;
   const players = fighters.map((f, i) =>
@@ -263,6 +269,7 @@ function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
     events: [],
     projectiles: [],
     projSeq: 1,
+    superShow: null,
     outbox: [],
     rngState: (seed >>> 0) || 1,
     seed
@@ -292,6 +299,17 @@ function faceOpponents(m, p) {
 function stepMatch(m, inputs) {
   if (m.over) return m;
   m.tick++;
+
+  /* the intro close-up freezes everything, the round clock included */
+  if (m.superShow && m.superShow.phase === 'startup') {
+    stepSuperShow(m);
+    m.events = m.events || [];
+    for (const e of m.events) {
+      m.outbox.push(e);
+      if (m.outbox.length > 40) m.outbox.shift();
+    }
+    return m;
+  }
   m.events = [];
   m.timeLeft = Math.max(0, m.timeLeft - TICK);
 
@@ -348,7 +366,13 @@ function stepMatch(m, inputs) {
       const airborne = !p.onGround;
       const ctx = { airborne, crouch: wantCrouch && p.onGround, backward, forward };
 
-      if (inp.super && p.meter >= SUPER_COST && p.onGround) {
+      if (inp.super && p.meter >= SUPER_COST && p.onGround && !m.superShow) {
+        const mod = superModule(p.charId);
+        if (mod) {
+          startCinematic(m, p, mod);
+          p.crouching = false;
+          continue;
+        }
         p.meter = 0;
         const sd = p.superDef || {};
         p.attack = {
@@ -424,6 +448,7 @@ function stepMatch(m, inputs) {
     if (p.alive && p.superLive) stepSuperLive(m, p);
   }
   stepProjectiles(m);
+  if (m.superShow) stepSuperShow(m);
 
   /* events are also queued for the next network broadcast */
   for (const e of m.events) {
@@ -560,6 +585,105 @@ function stepSuperLive(m, p) {
   }
 
   if (live.t >= live.dur) p.superLive = null;
+}
+
+/* ---------------------------------------------------------- cinematic supers
+
+   A module supplies: name, four phase durations, and hit windows expressed as
+   absolute times from activation. The engine owns the clock, the freeze, the
+   damage and the cleanup; the module owns only how it looks. */
+
+function startCinematic(m, p, mod) {
+  const ph = mod.phases;
+  m.superShow = {
+    owner: p.id,
+    charId: p.charId,
+    name: mod.name,
+    banner: mod.banner || mod.name,
+    phase: 'startup',
+    t: 0,
+    elapsed: 0,
+    total: ph.startup + ph.action + ph.impact + ph.aftermath,
+    phaseDur: ph,
+    fired: [],
+    hitIds: [],
+    dealt: 0,
+    data: { plantX: p.x, landX: p.x, plantFacing: p.facing, targetId: null },
+    mod
+  };
+
+  p.meter = 0;
+  p.attack = null;
+  /* he has to be able to run from his own bomb */
+  p.lockT = Math.max(p.lockT, ph.startup);
+
+  const foe = m.players.find((q) => q !== p && q.alive);
+  if (foe) {
+    m.superShow.data.targetId = foe.id;
+    m.superShow.data.landX = foe.x;
+  }
+
+  m.events.push({ type: 'superstart', x: p.x, h: p.h, id: p.id, kind: mod.name });
+}
+
+function stepSuperShow(m) {
+  const s2 = m.superShow;
+  if (!s2) return;
+  const dt = TICK;
+  s2.t += dt;
+  s2.elapsed += dt;
+
+  /* phase boundaries */
+  const order = ['startup', 'action', 'impact', 'aftermath'];
+  let acc = 0;
+  let phase = 'aftermath';
+  let local = 0;
+  for (const name of order) {
+    const dur = s2.phaseDur[name];
+    if (s2.elapsed < acc + dur) {
+      phase = name;
+      local = s2.elapsed - acc;
+      break;
+    }
+    acc += dur;
+    local = s2.elapsed - acc;
+  }
+  if (phase !== s2.phase) {
+    s2.phase = phase;
+    m.events.push({ type: 'superphase', x: s2.data.plantX, h: 0, id: s2.owner, kind: phase });
+  }
+
+  /* hit windows, each target struck at most once per window */
+  const hits = s2.mod.hits || [];
+  for (let i = 0; i < hits.length; i++) {
+    const h = hits[i];
+    if (s2.fired[i] || s2.elapsed < h.at) continue;
+    s2.fired[i] = true;
+
+    const origin = h.atTarget ? s2.data.landX : s2.data.plantX;
+    const owner = playerById(m, s2.owner);
+    for (const t of m.players) {
+      if (t === owner || !t.alive) continue;
+      if (Math.abs(t.x - origin) > (h.radius || 200)) continue;
+      if (s2.hitIds.indexOf(t.id) >= 0) continue;
+      s2.hitIds.push(t.id);
+      const room = Math.max(0, (s2.mod.damage || 40) - s2.dealt);
+      const dmg = Math.min(h.damage || 0, room);
+      s2.dealt += dmg;
+      if (owner) applyDamage(m, owner, t, { hitstun: h.hitstun || 0.5, knockdown: !!h.knockdown }, dmg, h.knock || 600, 'super');
+    }
+    m.events.push({ type: 'superhit', x: origin, h: 40, r: h.radius || 200, id: s2.owner, kind: 'super' });
+  }
+
+  if (s2.elapsed >= s2.total) {
+    m.events.push({ type: 'superend', x: s2.data.plantX, h: 0, id: s2.owner });
+    m.superShow = null;
+  }
+}
+
+function originOf(m, id) {
+  const p = playerById(m, id);
+  return p ? p.x : 0;
 }
 
 function stepProjectiles(m) {
@@ -731,6 +855,16 @@ function packSnapshot(m) {
         ? { k: p.superLive.kind, t: Math.round(p.superLive.t * 10) / 10, d: Math.round(p.superLive.dur * 10) / 10 }
         : 0
     })),
+    sup: m.superShow
+      ? {
+          o: m.superShow.owner,
+          c: m.superShow.charId,
+          ph: m.superShow.phase,
+          e: Math.round(m.superShow.elapsed * 100) / 100,
+          x: Math.round(m.superShow.data.plantX),
+          lx: Math.round(m.superShow.data.landX)
+        }
+      : 0,
     pr: m.projectiles.map((pr) => ({
       i: pr.id,
       o: pr.owner,
