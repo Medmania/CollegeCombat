@@ -221,6 +221,7 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     attack: null,
     downT: 0,
     hitstun: 0,
+    lastHit: null,
     iframes: 0,
     slowT: 0,
     weakT: 0,
@@ -633,6 +634,7 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
     tgt.crouching = false;
   }
   tgt.hitstun = Math.max(tgt.hitstun, def.hitstun || 0.18);
+  tgt.lastHit = kind;
   tgt.iframes = 0.08;
   tgt.attack = null;
 

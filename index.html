@@ -1917,6 +1917,73 @@ function createInput(doc = document) {
   return { getInput, reset };
 }
 
+/* ===================== anim ===================== */
+/* Animation maths.
+
+   Attacks are not one sine curve any more. Every strike runs through four
+   stages — anticipation, strike, impact hold, recovery — each with its own
+   easing, and full extension lands exactly on the frame the hit box fires.
+
+   Nothing here touches gameplay: the engine decides when a hit happens, this
+   file only decides what the body looks like at that moment. */
+
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+const easeOutCubic = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+const easeInQuad = (t) => clamp01(t) * clamp01(t);
+const easeInOutCubic = (t) => {
+  const x = clamp01(t);
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+};
+const easeOutQuint = (t) => 1 - Math.pow(1 - clamp01(t), 5);
+const easeOutBack = (t) => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  const x = clamp01(t) - 1;
+  return 1 + c3 * x * x * x + c1 * x * x;
+};
+
+/* Frame-rate independent approach: same feel at 30 and 60 fps. */
+function approach(current, target, rate, dt) {
+  const k = 1 - Math.exp(-rate * dt);
+  return current + (target - current) * k;
+}
+
+/* How far through an attack we are, as a single number.
+   -0.28 = fully wound up, 0 = neutral, 1 = fully extended.
+   Full extension lands on hitAt, exactly when the hit box fires. */
+function attackCurve(t, dur, hitAt) {
+  const hit = Math.min(hitAt, dur);
+  const windEnd = hit * 0.55;
+  const hold = Math.min(0.1, dur * 0.16);
+  const holdEnd = Math.min(dur, hit + hold);
+
+  if (t <= 0) return -0.28;
+  if (t < windEnd) return -0.28 * easeOutCubic(t / Math.max(0.001, windEnd));
+  if (t < hit) {
+    const k = (t - windEnd) / Math.max(0.001, hit - windEnd);
+    return -0.28 + 1.28 * easeOutQuint(k);
+  }
+  if (t < holdEnd) return 1;
+  const k = clamp01((t - holdEnd) / Math.max(0.001, dur - holdEnd));
+  return 1 - easeInOutCubic(k);
+}
+
+/* Blend two pose objects. Only keys present in `to` are touched. */
+function mixPose(into, from, to, w) {
+  const k = clamp01(w);
+  for (const key of Object.keys(to)) {
+    const a = from[key] !== undefined ? from[key] : to[key];
+    into[key] = a + (to[key] - a) * k;
+  }
+  return into;
+}
+
+/* Squash and stretch, used on impacts and landings. */
+function squash(amount) {
+  return { sx: 1 + amount * 0.5, sy: 1 - amount * 0.5 };
+}
+
 /* ===================== render ===================== */
 /* Side-view renderer.
 
@@ -1957,6 +2024,8 @@ function rng(seed) {
   };
 }
 
+const COMIC_WORDS = ['DHISHOOM', 'THAPPAD', 'DHADAM', 'DHADAAM'];
+
 const CROWD_COLORS = ['#e05a4a', '#3f7fbf', '#e8b64c', '#5fa86b', '#9b6bc4', '#e08a3c', '#4fb3a5'];
 
 /* skeleton proportions, in the same units as the world */
@@ -1975,9 +2044,67 @@ const RIG = {
 
 /* ---------------------------------------------------------------- poses */
 
+/* Every strike is two keyframes — a wind-up and a full extension — and the
+   animation curve blends between them. Adding a move means adding two poses. */
+const ATTACK_POSES = {
+  punch: {
+    wind: { fUpper: 0.85, fFore: 1.15, bUpper: -0.2, bFore: 2.25, lean: -0.06, hipX: -3, chestW: 0.98 },
+    strike: { fUpper: 1.52, fFore: 1.57, bUpper: -0.5, bFore: 1.9, lean: 0.2, hipX: 8, chestW: 1.18, headTilt: 0.08, fThigh: 0.34, bThigh: -0.32 }
+  },
+  lungePunch: {
+    wind: { fUpper: 0.55, fFore: 1.4, bUpper: -0.3, bFore: 2.1, lean: -0.12, hipX: -10, fThigh: 0.05, fShin: 0.55, bThigh: -0.4 },
+    strike: { fUpper: 1.56, fFore: 1.6, bUpper: -0.55, bFore: 1.75, lean: 0.34, hipX: 17, fThigh: 0.8, fShin: 0.35, bThigh: -0.6, chestW: 1.22, headTilt: 0.12 }
+  },
+  crouchPunch: {
+    wind: { hipY: 30, fUpper: 0.45, fFore: 1.55, bUpper: 0.5, bFore: 2.35, lean: 0.32, fThigh: 1.0, fShin: 1.8, bThigh: -0.95, bShin: -1.75 },
+    strike: { hipY: 54, fUpper: 2.5, fFore: 2.62, bUpper: 0.62, bFore: 2.42, lean: -0.16, fThigh: 0.5, fShin: 0.9, bThigh: -0.5, bShin: -0.9, headTilt: -0.18 }
+  },
+  airPunch: {
+    wind: { fUpper: -1.0, fFore: -0.55, bUpper: -1.1, bFore: -0.5, lean: -0.26, fThigh: 0.9, fShin: 1.85, bThigh: 0.3, bShin: 2.0 },
+    strike: { fUpper: 0.92, fFore: 0.86, bUpper: 0.82, bFore: 0.9, lean: 0.3, headTilt: 0.2, fThigh: 0.7, fShin: 1.7, bThigh: 0.25, bShin: 1.95 }
+  },
+  kick: {
+    wind: { fThigh: 0.95, fShin: 1.95, bThigh: -0.2, bShin: -0.3, lean: -0.08, fUpper: -0.1, fFore: 1.4 },
+    strike: { fThigh: 1.52, fShin: 1.55, bThigh: -0.34, bShin: -0.4, lean: -0.24, hipY: RIG.hipY + 5, fUpper: -0.45, fFore: 1.0, bUpper: -0.65, bFore: 0.9, headTilt: -0.1 }
+  },
+  spinKick: {
+    wind: { fThigh: 0.55, fShin: 1.75, bThigh: -0.4, bShin: -1.2, lean: 0.1, fUpper: -0.4, fFore: 1.0, bUpper: -0.5, bFore: 0.9 },
+    strike: { fThigh: 1.4, fShin: 1.42, bThigh: -0.55, bShin: -1.3, lean: -0.2, hipY: RIG.hipY + 6, fUpper: -0.95, fFore: 0.5, bUpper: -1.0, bFore: 0.45 }
+  },
+  backKick: {
+    wind: { bThigh: -0.55, bShin: -1.45, fThigh: -0.2, fShin: -0.1, lean: 0.18, fUpper: -0.35, fFore: 1.1, bUpper: -0.55, bFore: 1.0 },
+    strike: { bThigh: 1.18, bShin: 1.06, fThigh: -0.4, fShin: -0.2, lean: 0.55, fUpper: -0.85, fFore: 0.65, bUpper: -0.5, bFore: 1.05, headTilt: 0.22 }
+  },
+  sweep: {
+    wind: { hipY: 34, fThigh: 0.85, fShin: 1.65, bThigh: -1.0, bShin: -1.75, lean: 0.22, fUpper: 0.9, fFore: 2.2, bUpper: 0.7, bFore: 2.4 },
+    strike: { hipY: 26, fThigh: 1.52, fShin: 1.5, bThigh: -1.05, bShin: -1.8, lean: 0.38, fUpper: 1.35, fFore: 2.62, bUpper: 1.0, bFore: 2.5, headTilt: 0.2 }
+  },
+  airKick: {
+    wind: { fThigh: 1.0, fShin: 2.2, bThigh: 0.3, bShin: 2.0, lean: 0.1, fUpper: -0.5, fFore: 1.1 },
+    strike: { fThigh: 1.38, fShin: 1.3, bThigh: 0.2, bShin: 1.9, lean: -0.16, fUpper: -0.6, fFore: 1.0, bUpper: -0.8, bFore: 0.9 }
+  },
+  super: {
+    wind: { fUpper: 0.2, fFore: 1.7, bUpper: 0.1, bFore: 1.6, lean: 0.2, hipY: RIG.hipY + 3 },
+    strike: { fUpper: -0.6, fFore: 0.6, bUpper: -0.7, bFore: 0.5, lean: -0.3, hipY: RIG.hipY - 5, headTilt: -0.15 }
+  }
+};
+
+/* What the body does when it takes one, by the family of the strike. */
+const HURT_POSES = {
+  punch: { lean: -0.34, headTilt: -0.46, fUpper: -0.55, fFore: 0.9, bUpper: -0.72, bFore: 0.8 },
+  kick: { lean: 0.38, headTilt: 0.3, hipY: RIG.hipY - 5, fUpper: 0.85, fFore: 1.95, bUpper: 0.72, bFore: 1.85 },
+  super: { lean: -0.55, headTilt: -0.5, fUpper: -0.9, fFore: 0.5, bUpper: -1.0, bFore: 0.4, hipY: RIG.hipY - 8 }
+};
+
+const WIN_POSE = { fUpper: -1.05, fFore: -0.55, bUpper: -1.15, bFore: -0.5, lean: -0.08, headTilt: -0.2, hipY: RIG.hipY + 2 };
+const LOSE_POSE = { hipY: RIG.hipY - 12, lean: 0.5, fUpper: 0.9, fFore: 0.4, bUpper: 0.8, bFore: 0.5, headTilt: 0.35, fThigh: 0.3, fShin: 0.7, bThigh: -0.3, bShin: -0.7 };
+const TAUNT_POSE = { fUpper: -0.7, fFore: 0.3, bUpper: 0.5, bFore: 2.4, lean: -0.12, headTilt: -0.15, chestW: 1.1 };
+
 function basePose() {
   return {
     hipY: RIG.hipY,
+    hipX: 0,
+    chestW: 1,
     lean: 0,
     fThigh: 0.16,
     fShin: 0.08,
@@ -1991,9 +2118,17 @@ function basePose() {
   };
 }
 
-function poseFor(p, phase) {
+function familyOf(kind) {
+  if (!kind) return 'punch';
+  if (kind === 'super') return 'super';
+  if (kind === 'sweep') return 'sweep';
+  if (kind.indexOf('kick') >= 0 || kind === 'backKick') return 'kick';
+  return 'punch';
+}
+
+function poseFor(p, phase, opts) {
   const P = basePose();
-  if (!p.alive || p.downT > 0) return P;
+  if (!p.alive) return P;
 
   const moving = Math.abs(p.vx) > 40 && p.onGround && !p.attack;
 
@@ -2019,145 +2154,41 @@ function poseFor(p, phase) {
     P.bFore = 2.5;
     P.lean = 0.16;
   } else if (moving) {
-    const s = Math.sin(phase);
-    const c = Math.cos(phase);
-    P.fThigh = 0.5 * s;
-    P.bThigh = -0.5 * s;
-    P.fShin = 0.3 + Math.max(0, -c) * 0.75;
-    P.bShin = -0.3 - Math.max(0, c) * 0.75;
-    P.fUpper = 0.4 - 0.4 * s;
-    P.bUpper = 0.25 + 0.4 * s;
-    P.hipY = RIG.hipY - Math.abs(s) * 3;
+    const sw = Math.sin(phase);
+    const cw = Math.cos(phase);
+    P.fThigh = 0.5 * sw;
+    P.bThigh = -0.5 * sw;
+    P.fShin = 0.3 + Math.max(0, -cw) * 0.75;
+    P.bShin = -0.3 - Math.max(0, cw) * 0.75;
+    P.fUpper = 0.4 - 0.4 * sw;
+    P.bUpper = 0.25 + 0.4 * sw;
+    P.hipY = RIG.hipY - Math.abs(sw) * 3;
     P.lean = 0.06;
   }
 
+  /* win / lose / taunt override the idle stance */
+  if (opts && opts.won) return mixPose(P, P, WIN_POSE, 1);
+  if (opts && opts.lost) return mixPose(P, P, LOSE_POSE, 1);
+  if (opts && opts.taunt && !p.attack && p.onGround) mixPose(P, P, TAUNT_POSE, 1);
+
+  /* a strike blends wind-up into extension */
   const a = p.attack;
   if (a) {
-    const prog = clamp(a.t / a.dur, 0, 1);
-    const ext = Math.sin(Math.min(1, prog * 1.5) * Math.PI);
-
-    if (a.type === 'punch') {
-      /* straight jab at shoulder height */
-      P.fUpper = 1.5;
-      P.fFore = 1.57;
-      P.bUpper = -0.15;
-      P.bFore = 2.0;
-      P.lean = 0.12 * ext;
-      P.fThigh = 0.3;
-      P.bThigh = -0.3;
-    } else if (a.type === 'crouchPunch') {
-      /* uppercut: stays low, fist drives upward */
-      P.hipY = 33;
-      P.fUpper = 1.1 + 1.35 * ext;
-      P.fFore = 1.3 + 1.25 * ext;
-      P.bUpper = 0.5;
-      P.bFore = 2.4;
-      P.lean = 0.2 - 0.25 * ext;
-      P.fThigh = 1.0;
-      P.fShin = 1.8;
-      P.bThigh = -0.95;
-      P.bShin = -1.75;
-    } else if (a.type === 'airPunch') {
-      /* overhead hammer from the air */
-      P.hipY = 62;
-      P.fUpper = 1.05;
-      P.fFore = 1.15;
-      P.bUpper = -0.6;
-      P.bFore = 1.0;
-      P.lean = 0.2 * ext;
-      P.fThigh = 0.8;
-      P.fShin = 1.7;
-      P.bThigh = 0.3;
-      P.bShin = 1.95;
-    } else if (a.type === 'kick') {
-      /* roundhouse off the front leg */
-      P.fThigh = 0.5 + 1.0 * ext;
-      P.fShin = 0.6 + 0.95 * ext;
-      P.bThigh = -0.3;
-      P.bShin = -0.35;
-      P.lean = -0.18 * ext;
-      P.hipY = RIG.hipY + 4 * ext;
-      P.fUpper = -0.3;
-      P.fFore = 1.2;
-      P.bUpper = -0.5;
-      P.bFore = 1.0;
-    } else if (a.type === 'sweep') {
-      /* low sweep along the floor */
-      P.hipY = 33;
-      P.fThigh = 1.15 + 0.5 * ext;
-      P.fShin = 1.25 + 0.4 * ext;
-      P.bThigh = -1.0;
-      P.bShin = -1.75;
-      P.lean = 0.28;
-      P.fUpper = 0.6;
-      P.fFore = 2.3;
-      P.bUpper = 0.9;
-      P.bFore = 2.5;
-    } else if (a.type === 'airKick') {
-      /* flying kick, leg thrown forward in the air */
-      P.hipY = 62;
-      P.fThigh = 1.05 + 0.45 * ext;
-      P.fShin = 1.15 + 0.4 * ext;
-      P.bThigh = 0.25;
-      P.bShin = 1.95;
-      P.lean = -0.12;
-      P.fUpper = -0.55;
-      P.fFore = 1.05;
-      P.bUpper = -0.75;
-      P.bFore = 0.9;
-    } else if (a.type === 'spinKick') {
-      /* whole body turns through the kick */
-      P.fThigh = 0.55 + 1.15 * ext;
-      P.fShin = 0.7 + 1.05 * ext;
-      P.bThigh = -0.5;
-      P.bShin = -1.2;
-      P.fUpper = -0.8;
-      P.fFore = 0.8;
-      P.bUpper = -0.9;
-      P.bFore = 0.6;
-      P.lean = -0.2 * ext;
-      P.hipY = RIG.hipY + 6 * ext;
-    } else if (a.type === 'lungePunch') {
-      /* stepping straight, shoulder behind it */
-      P.fUpper = 1.55;
-      P.fFore = 1.58;
-      P.bUpper = -0.45;
-      P.bFore = 1.7;
-      P.lean = 0.3 * ext;
-      P.fThigh = 0.55;
-      P.fShin = 0.5;
-      P.bThigh = -0.45;
-      P.bShin = -0.25;
-      P.hipY = RIG.hipY - 3;
-    } else if (a.type === 'backKick') {
-      /* turning kick: torso swings away, the trailing leg whips round */
-      P.lean = 0.5 * ext;
-      P.bThigh = 0.55 + 0.95 * ext;
-      P.bShin = 0.75 + 0.85 * ext;
-      P.fThigh = -0.35;
-      P.fShin = -0.15;
-      P.fUpper = -0.7 * ext;
-      P.fFore = 0.9;
-      P.bUpper = -0.5;
-      P.bFore = 1.1;
-      P.hipY = RIG.hipY - 2;
-    } else if (a.type === 'super') {
-      P.fUpper = 0.15;
-      P.fFore = 1.6;
-      P.bUpper = 0.05;
-      P.bFore = 1.5;
-      P.lean = -0.22 * ext;
-      P.hipY = RIG.hipY - 4 * ext;
+    const def = ATTACK_POSES[a.type] || ATTACK_POSES.punch;
+    const ext = a.ext !== undefined ? a.ext : 1;
+    if (ext < 0) {
+      mixPose(P, P, def.wind, -ext);
+    } else {
+      const mid = mixPose({ ...P }, P, def.wind, 1);
+      mixPose(P, mid, def.strike, ext);
     }
   }
 
-  if (p.hitstun > 0.02) {
-    P.lean = -0.34;
-    P.fUpper = -0.5;
-    P.fFore = 1.0;
-    P.bUpper = -0.7;
-    P.bFore = 0.9;
-    P.headTilt = -0.25;
+  /* taking one overrides everything */
+  if (p.hitstun > 0.02 && !a) {
+    const fam = familyOf(p.lastHit);
+    const hurt = HURT_POSES[fam] || HURT_POSES.punch;
+    mixPose(P, P, hurt, Math.min(1, p.hitstun * 6));
   }
 
   return P;
@@ -2170,11 +2201,14 @@ function createRenderer(canvas) {
   let W = 1;
   let H = 1;
   let time = 0;
+  let frameDt = 1 / 60;
   let shake = 0;
 
   const particles = [];
   const rings = [];
   const bubbles = [];
+  const words = [];
+  let lastWord = '';
   const motion = new Map();
   const rigs = new Map();
   const downed = new Map();
@@ -2539,7 +2573,7 @@ function createRenderer(canvas) {
   }
 
   /* a side-on head: skull, jaw, nose, ear, hair mass, one eye and a brow */
-  function drawHead(hx, hy, r, dir, c, tilt) {
+  function drawHead(hx, hy, r, dir, c, tilt, expr) {
     ctx.save();
     ctx.translate(hx, hy);
     ctx.rotate(tilt || 0);
@@ -2586,12 +2620,17 @@ function createRenderer(canvas) {
     ctx.fill();
 
     /* eye */
+    const hurt = expr === 'hurt';
+    const angry = expr === 'angry';
+    const win = expr === 'win';
+    const eyeH = hurt ? r * 0.22 : win ? r * 0.1 : r * 0.16;
+
     ctx.beginPath();
-    ctx.ellipse(r * 0.4, r * 0.1, r * 0.22, r * 0.16, 0, 0, TAU);
+    ctx.ellipse(r * 0.4, r * 0.1, r * 0.22, eyeH, 0, 0, TAU);
     ctx.fillStyle = '#f7f3ec';
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(r * 0.45, r * 0.11, r * 0.11, 0, TAU);
+    ctx.arc(r * 0.45, r * 0.11, hurt ? r * 0.09 : r * 0.11, 0, TAU);
     ctx.fillStyle = '#181a1f';
     ctx.fill();
 
@@ -2601,21 +2640,39 @@ function createRenderer(canvas) {
     ctx.fillStyle = 'rgba(0,0,0,0.12)';
     ctx.fill();
 
-    /* brow + mouth */
+    /* brow: angled down when angry, raised when hurt */
     ctx.strokeStyle = c.hair || '#222';
     ctx.lineWidth = r * 0.14;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(r * 0.22, -r * 0.16);
-    ctx.lineTo(r * 0.62, -r * 0.1);
+    if (angry) {
+      ctx.moveTo(r * 0.2, -r * 0.24);
+      ctx.lineTo(r * 0.64, -r * 0.06);
+    } else if (hurt) {
+      ctx.moveTo(r * 0.22, -r * 0.3);
+      ctx.lineTo(r * 0.62, -r * 0.26);
+    } else {
+      ctx.moveTo(r * 0.22, -r * 0.16);
+      ctx.lineTo(r * 0.62, -r * 0.1);
+    }
     ctx.stroke();
 
-    ctx.strokeStyle = 'rgba(130,70,60,0.65)';
+    /* mouth */
+    ctx.strokeStyle = 'rgba(130,70,60,0.7)';
     ctx.lineWidth = r * 0.1;
     ctx.beginPath();
-    ctx.moveTo(r * 0.48, r * 0.52);
-    ctx.lineTo(r * 0.74, r * 0.5);
-    ctx.stroke();
+    if (hurt) {
+      ctx.ellipse(r * 0.6, r * 0.52, r * 0.11, r * 0.14, 0, 0, TAU);
+      ctx.fillStyle = 'rgba(90,40,40,0.8)';
+      ctx.fill();
+    } else if (win) {
+      ctx.arc(r * 0.6, r * 0.42, r * 0.2, 0.15, Math.PI - 0.15);
+      ctx.stroke();
+    } else {
+      ctx.moveTo(r * 0.48, r * 0.52);
+      ctx.lineTo(r * 0.74, r * 0.5);
+      ctx.stroke();
+    }
 
     ctx.restore();
   }
@@ -2630,14 +2687,26 @@ function createRenderer(canvas) {
       return;
     }
 
-    /* smooth the rig toward the target pose */
-    const target = poseFor(p, motion.get(p.id) ? motion.get(p.id).phase : 0);
+    /* where the strike is in its arc, this frame */
+    if (p.attack) {
+      p.attack.ext = attackCurve(p.attack.t, p.attack.dur, p.attack.hitAt || p.attack.dur * 0.4);
+    }
+
+    const opts = {
+      won: !!p._won,
+      lost: !!p._lost,
+      taunt: bubbles.some((b) => b.id === p.id)
+    };
+    const target = poseFor(p, motion.get(p.id) ? motion.get(p.id).phase : 0, opts);
+
     let rig = rigs.get(p.id);
     if (!rig) {
       rig = { ...target };
       rigs.set(p.id, rig);
     }
-    for (const k of Object.keys(target)) rig[k] += (target[k] - rig[k]) * 0.28;
+    /* frame-rate independent, and snappier while a strike is live */
+    const rate = p.attack ? 46 : 18;
+    for (const k of Object.keys(target)) rig[k] = approach(rig[k], target[k], rate, frameDt);
 
     const hitFlash = p.hitstun > 0.02;
     const body = hitFlash ? '#ffffff' : c.body;
@@ -2649,7 +2718,7 @@ function createRenderer(canvas) {
 
     const P = (len, ang, from) => [from[0] + Math.sin(ang) * len * dir, from[1] + Math.cos(ang) * len];
 
-    const hip = [0, -rig.hipY];
+    const hip = [rig.hipX || 0, -rig.hipY];
     const shoulder = [
       hip[0] + Math.sin(rig.lean) * RIG.torso * dir,
       hip[1] - Math.cos(rig.lean) * RIG.torso
@@ -2700,7 +2769,7 @@ function createRenderer(canvas) {
     /* ---- torso: hips to shoulders, lit from the upper left ---- */
     const hipS = S(hip);
     const shS = S(shoulder);
-    limb(hipS, shS, u(RIG.waistW), u(RIG.chestW), body, outline);
+    limb(hipS, shS, u(RIG.waistW), u(RIG.chestW * (rig.chestW || 1)), body, outline);
 
     /* chest shading and collar */
     const cg = ctx.createLinearGradient(shS[0], shS[1] - u(14), shS[0], shS[1] + u(18));
@@ -2708,7 +2777,7 @@ function createRenderer(canvas) {
     cg.addColorStop(1, 'rgba(0,0,0,0.16)');
     ctx.fillStyle = cg;
     ctx.beginPath();
-    ctx.ellipse(shS[0], shS[1] + u(2), u(RIG.chestW * 0.5), u(9), 0, 0, TAU);
+    ctx.ellipse(shS[0], shS[1] + u(2), u(RIG.chestW * 0.5 * (rig.chestW || 1)), u(9), 0, 0, TAU);
     ctx.fill();
 
     ctx.fillStyle = c.accent;
@@ -2726,7 +2795,11 @@ function createRenderer(canvas) {
     limb([neck[0], neck[1] + u(3)], [shoulder[0], shoulder[1]], u(11), u(13), shade(c.skin, -14), outline);
 
     /* ---- head ---- */
-    drawHead(S(head)[0], S(head)[1], u(RIG.headR), dir, c, rig.lean * 0.5 + rig.headTilt);
+    let expr = 'idle';
+    if (p._won) expr = 'win';
+    else if (p.hitstun > 0.02) expr = 'hurt';
+    else if (p.attack) expr = 'angry';
+    drawHead(S(head)[0], S(head)[1], u(RIG.headR), dir, c, rig.lean * 0.5 + rig.headTilt, expr);
 
     /* ---- front leg ---- */
     limb(S(hip), S(fKnee), u(18), u(14), body, outline);
@@ -2739,6 +2812,14 @@ function createRenderer(canvas) {
     ctx.beginPath();
     ctx.ellipse(S(fAnkle)[0] + dir * u(5), S(fAnkle)[1] - u(1.5), u(5), u(2), 0, 0, TAU);
     ctx.fill();
+
+    /* ---- motion smear on a fast strike ---- */
+    if (p.attack && p.attack.ext > 0.55) {
+      const fade = (p.attack.ext - 0.55) / 0.45;
+      const fast = p.attack.type === 'punch' || p.attack.type === 'kick' || p.attack.type === 'lungePunch' ||
+        p.attack.type === 'spinKick' || p.attack.type === 'airKick' || p.attack.type === 'backKick';
+      if (fast) smear(S(shoulder), S(fHand), u(20), c.accent, 0.28 * fade);
+    }
 
     /* ---- front arm last so it reads on top ---- */
     limb(S(shoulder), S(fElbow), u(13), u(11), body, outline);
@@ -2810,6 +2891,7 @@ function createRenderer(canvas) {
           });
         }
         rings.push({ x: e.x, h: e.h, r: 8, max: big ? 110 : 64, life: 0.3, maxLife: 0.3, color });
+        comicWord(e.x, e.h + 30, big);
         shake = Math.min(20, shake + (big ? 12 : 5));
         cheer = Math.max(cheer, big ? 0.55 : 0.3);
 
@@ -2871,6 +2953,34 @@ function createRenderer(canvas) {
     }
   }
 
+  /* heavy hits only, and never the same word twice in a row */
+  function comicWord(x, h, heavy) {
+    if (!heavy) return;
+    const pool = COMIC_WORDS.filter((w) => w !== lastWord);
+    const text = pool[Math.floor(Math.random() * pool.length)];
+    lastWord = text;
+    words.push({ x, h, text, life: 0.9, max: 0.9 });
+  }
+
+  /* a translucent wedge trailing a fast limb */
+  function smear(a, b, w, color, alpha) {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L;
+    const uy = dy / L;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(a[0] - uy * w * 0.5, a[1] + ux * w * 0.5);
+    ctx.lineTo(a[0] + uy * w * 0.5, a[1] - ux * w * 0.5);
+    ctx.lineTo(b[0] + ux * L * 0.3, b[1] + uy * L * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   function say(id, text) {
     bubbles.length = 0;
     bubbles.push({ id, text, life: 3.4, max: 3.4 });
@@ -2878,6 +2988,7 @@ function createRenderer(canvas) {
 
   function step(dt) {
     time += dt;
+    frameDt = dt;
     cheer = Math.max(0, cheer - dt * 0.55);
     shake *= Math.pow(0.0015, dt);
     if (shake < 0.2) shake = 0;
@@ -2913,6 +3024,10 @@ function createRenderer(canvas) {
       bubbles[i].life -= dt;
       if (bubbles[i].life <= 0) bubbles.splice(i, 1);
     }
+    for (let i = words.length - 1; i >= 0; i--) {
+      words[i].life -= dt;
+      if (words[i].life <= 0) words.splice(i, 1);
+    }
   }
 
   function drawEffects() {
@@ -2938,6 +3053,24 @@ function createRenderer(canvas) {
       ctx.beginPath();
       ctx.arc(pr.x, pr.y, Math.max(1, p.size * pr.s * 1.5), 0, TAU);
       ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawComicWords() {
+    for (const w of words) {
+      const rise = (1 - w.life / w.max) * 46;
+      const pr = project([w.x, 0, w.h + rise]);
+      if (!pr) continue;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, w.life / 0.35);
+      ctx.font = `900 ${Math.round(20 * pr.s)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.lineWidth = Math.max(2, 5 * pr.s);
+      ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+      ctx.strokeText(w.text, pr.x, pr.y);
+      ctx.fillStyle = '#ffd166';
+      ctx.fillText(w.text, pr.x, pr.y);
       ctx.restore();
     }
   }
@@ -3154,6 +3287,11 @@ function createRenderer(canvas) {
       m.x = p.x;
     }
 
+    for (const p of view.players) {
+      p._won = !!(view.over && view.winnerId && p.id === view.winnerId);
+      p._lost = !!(view.over && (!view.winnerId || p.id !== view.winnerId));
+    }
+
     updateCamera(view);
 
     ctx.save();
@@ -3233,6 +3371,7 @@ function createRenderer(canvas) {
     drawProjectiles(view);
     drawEffects();
     drawBubbles(view.players);
+    drawComicWords();
     ctx.restore();
 
     /* vignette, drawn last so it sits over everything */
@@ -4505,7 +4644,13 @@ function handleEvents(events) {
 function drawFrame() {
   const m = S.match;
   if (!m) return;
-  renderer.draw({ players: m.players, localId: S.localId, projectiles: m.projectiles || [] });
+  renderer.draw({
+    players: m.players,
+    localId: S.localId,
+    projectiles: m.projectiles || [],
+    over: m.over,
+    winnerId: m.winner
+  });
 }
 
 function updateHud() {

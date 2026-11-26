@@ -202,6 +202,25 @@ picks the move:
 Leaning into or away from your opponent with the stick changes what a button
 does, so ten moves come out of two buttons and one stick.
 
+### Combat feel
+
+Every strike runs four stages — anticipation, strike, impact hold, recovery —
+with its own easing, and the pose reaches full extension on the exact frame the
+hit box fires (`attackCurve` in the animation section of `index.html`). The rig blends frame-rate
+independently, so it plays the same at 30 and 60 fps.
+
+Each of the nine attacks is built from two keyframes (wind-up and extension) and
+reads differently in silhouette: a punch snaps with a shoulder roll, the
+stepping straight puts the whole body behind the fist, the uppercut coils and
+rises, the roundhouse chambers the knee first, the spin kick turns through the
+whole body, the back kick drives the heel backwards, the sweep puts a hand on
+the floor.
+
+Victims react by what hit them — head snap for punches, fold for kicks, launch
+for supers — with faces that change (angry, hurt, dizzy, delighted). Heavy hits
+throw a comic word (DHISHOOM, THAPPAD, DHADAM), never the same one twice in a
+row. Winners raise their arms, losers slump.
+
 SUPER appears at full meter: a radial blast.
 
 **Desktop:** `A`/`D` or arrows walk, `W`/`Up` jump, `S`/`Down` crouch, `J` punch,
@@ -299,7 +318,7 @@ networked match.
 npm test
 ```
 
-71 checks run against the same files the browser loads: hits connect at the right
+71 engine checks run against the same files the browser loads: hits connect at the right
 range, stick-up jumps and stick-down crouches, up+forward jumps obliquely, one
 swipe gives exactly one jump, a jab sails over a crouch, a sweep lands on a
 croucher and passes under a jump, crouch+punch becomes an uppercut that connects,
