@@ -78,16 +78,48 @@
         ctx.fill();
       }
 
-      /* cape, flying */
-      ctx.globalAlpha = 0.45 * fade;
-      ctx.fillStyle = '#2a1f38';
+      /* cape, flying, with folds that move */
+      ctx.globalAlpha = 0.5 * fade;
       const flap = Math.sin(el * 7) * 20 * u;
+      const capeG = ctx.createLinearGradient(bx - 110 * u, by - hgt * 0.7, bx - 40 * u, by - hgt * 0.2);
+      capeG.addColorStop(0, '#1a1226');
+      capeG.addColorStop(1, '#3a2c4e');
+      ctx.fillStyle = capeG;
       ctx.beginPath();
       ctx.moveTo(bx - 42 * u, by - hgt * 0.8);
       ctx.quadraticCurveTo(bx - 118 * u + flap, by - hgt * 0.5, bx - 96 * u + flap, by - hgt * 0.1);
       ctx.quadraticCurveTo(bx - 62 * u, by - hgt * 0.3, bx - 30 * u, by - hgt * 0.5);
       ctx.closePath();
       ctx.fill();
+
+      /* folds */
+      ctx.strokeStyle = 'rgba(150,120,200,0.28)';
+      ctx.lineWidth = 2 * u;
+      for (let i = 1; i <= 3; i++) {
+        const f = i / 4;
+        ctx.beginPath();
+        ctx.moveTo(bx - (42 + f * 46) * u, by - hgt * (0.78 - f * 0.2));
+        ctx.quadraticCurveTo(
+          bx - (70 + f * 40) * u + flap * f,
+          by - hgt * (0.5 - f * 0.1),
+          bx - (60 + f * 34) * u + flap * f,
+          by - hgt * (0.2 - f * 0.08)
+        );
+        ctx.stroke();
+      }
+
+      /* rim light down the lit edge of the silhouette */
+      ctx.globalAlpha = 0.5 * fade;
+      ctx.strokeStyle = 'rgba(190,150,255,0.75)';
+      ctx.lineWidth = 3 * u;
+      ctx.beginPath();
+      ctx.moveTo(bx - 34 * u, by);
+      ctx.quadraticCurveTo(bx - 74 * u, by - hgt * 0.5, bx - 48 * u, by - hgt * 0.84);
+      ctx.stroke();
+
+      /* a soft smoky halo so the edge is not a hard cut-out */
+      ctx.globalAlpha = 0.18 * fade;
+      softPuff(ctx, bx, by - hgt * 0.6, hgt * 0.55, 0.5, 'rgba(90,60,140,0.9)', 2.2);
       ctx.restore();
     }
 

@@ -49,7 +49,7 @@
         ctx.fillStyle = '#ff8fb0';
         ctx.save();
         ctx.translate(px, py);
-        ctx.rotate(el * 2 + p.d * 6);
+        ctx.rotate(el * 2.6 + p.d * 6 + t * 4);
         ctx.beginPath();
         ctx.ellipse(0, 0, 7 * u * p.s, 4 * u * p.s, 0.5, 0, Math.PI * 2);
         ctx.fill();
@@ -100,6 +100,11 @@
       ctx.globalAlpha = Math.min(1, k * 2);
       ctx.translate(land.x, hy);
       drawHeartBig(ctx, 0, 0, size, '#ff6b9d');
+
+      /* shards on the break */
+      if (el > dropAt) {
+        drawShards(ctx, land.x, hy + size * 0.2, size, Math.min(1, (el - dropAt) / 0.9));
+      }
 
       /* the crack appears on contact */
       if (el > dropAt) {
@@ -153,15 +158,69 @@ function drawHeartSmall(ctx, x, y, r) {
 function drawHeartBig(ctx, x, y, r, colour) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.fillStyle = colour;
-  ctx.strokeStyle = 'rgba(90,10,40,0.5)';
-  ctx.lineWidth = 3;
+
+  /* thick glass: a lit core, a darker rim, an edge highlight and a specular */
+  const g = ctx.createRadialGradient(-r * 0.35, -r * 0.45, r * 0.08, 0, 0, r * 1.6);
+  g.addColorStop(0, '#ffd0e2');
+  g.addColorStop(0.45, colour);
+  g.addColorStop(1, '#a8224f');
+  ctx.fillStyle = g;
   ctx.beginPath();
   ctx.moveTo(0, r * 0.75);
   ctx.bezierCurveTo(-r * 1.6, -r * 0.3, -r * 0.6, -r * 1.45, 0, -r * 0.5);
   ctx.bezierCurveTo(r * 0.6, -r * 1.45, r * 1.6, -r * 0.3, 0, r * 0.75);
   ctx.closePath();
   ctx.fill();
+
+  /* thick edge */
+  ctx.strokeStyle = 'rgba(255,220,235,0.85)';
+  ctx.lineWidth = 4;
   ctx.stroke();
+
+  /* inner edge, for the thickness of glass */
+  ctx.strokeStyle = 'rgba(150,20,60,0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, r * 0.55);
+  ctx.bezierCurveTo(-r * 1.3, -r * 0.28, -r * 0.5, -r * 1.2, 0, -r * 0.4);
+  ctx.bezierCurveTo(r * 0.5, -r * 1.2, r * 1.3, -r * 0.28, 0, r * 0.55);
+  ctx.stroke();
+
+  /* specular highlights */
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.45, -r * 0.55, r * 0.26, r * 0.16, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(r * 0.34, -r * 0.5, r * 0.12, r * 0.08, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/* shards thrown out when the heart breaks */
+function drawShards(ctx, x, y, r, t) {
+  ctx.save();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + 0.3;
+    const dist = r * (0.4 + t * 1.6);
+    const px = x + Math.cos(a) * dist;
+    const py = y + Math.sin(a) * dist * 0.8 + t * t * r * 0.9;
+    ctx.globalAlpha = Math.max(0, 1 - t * 1.1);
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(a + t * 6);
+    ctx.fillStyle = '#ff6b9d';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.12, -r * 0.16);
+    ctx.lineTo(r * 0.14, -r * 0.05);
+    ctx.lineTo(-r * 0.03, r * 0.18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,220,235,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
   ctx.restore();
 }

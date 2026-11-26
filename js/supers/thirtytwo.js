@@ -56,13 +56,45 @@
       ctx.save();
       ctx.translate(pr.x - 26 * u, pr.y - 96 * u);
       ctx.rotate(-0.25);
-      ctx.fillStyle = '#1b1e24';
+      /* console body with a bevel */
+      const bodyG = ctx.createLinearGradient(0, -9 * u, 0, 9 * u);
+      bodyG.addColorStop(0, '#2c313a');
+      bodyG.addColorStop(1, '#12151a');
+      ctx.fillStyle = bodyG;
       ctx.beginPath();
       ctx.roundRect(-14 * u, -9 * u, 28 * u, 18 * u, 4 * u);
       ctx.fill();
-      ctx.fillStyle = '#8ad4ff';
+      ctx.strokeStyle = '#4a525d';
+      ctx.lineWidth = 1 * u;
+      ctx.stroke();
+
+      /* lit screen */
+      const scr = ctx.createLinearGradient(-9 * u, -6 * u, 9 * u, 6 * u);
+      scr.addColorStop(0, '#bfeaff');
+      scr.addColorStop(1, '#5aa8d8');
+      ctx.fillStyle = scr;
       ctx.beginPath();
       ctx.roundRect(-9 * u, -6 * u, 18 * u, 12 * u, 2 * u);
+      ctx.fill();
+
+      /* glare across the glass */
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(-8 * u, -6 * u);
+      ctx.lineTo(-2 * u, -6 * u);
+      ctx.lineTo(-7 * u, 6 * u);
+      ctx.lineTo(-9 * u, 6 * u);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      /* buttons */
+      ctx.fillStyle = '#6d7681';
+      ctx.beginPath();
+      ctx.arc(9 * u, 3 * u, 1.6 * u, 0, Math.PI * 2);
+      ctx.arc(12 * u, 0, 1.6 * u, 0, Math.PI * 2);
       ctx.fill();
       /* blinking pixel */
       ctx.fillStyle = '#e6362e';
@@ -120,6 +152,19 @@
         ctx.fillStyle = '#8ad4ff';
         ctx.fillRect(cx + 14 * u, cy - 74 * u, (12 + swing * 16) * u, 7 * u);
         ctx.fillRect(cx - 26 * u - swing * 16 * u, cy - 60 * u, (12 + swing * 16) * u, 7 * u);
+      }
+      ctx.restore();
+    }
+
+    /* ---- glitch slices, a couple of frames only, never a strobe ---- */
+    if (el > 2.5 && el < 2.62) {
+      ctx.save();
+      ctx.globalAlpha = 0.6;
+      for (let i = 0; i < 4; i++) {
+        const sy = land.y - (30 + i * 22) * u;
+        const off = Math.sin(el * 90 + i * 2.1) * 14 * u;
+        ctx.fillStyle = i % 2 ? 'rgba(138,212,255,0.8)' : 'rgba(255,255,255,0.6)';
+        ctx.fillRect(land.x - 50 * u + off, sy, 100 * u, 4 * u);
       }
       ctx.restore();
     }
