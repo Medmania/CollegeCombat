@@ -2025,6 +2025,10 @@ table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
             <tr><td>Jump / crouch</td><td>stick up / down</td></tr>
             <tr><td>Dash</td><td>double-tap toward</td></tr>
             <tr><td>Backflip</td><td>double-tap away</td></tr>
+            <tr><td>Backfist</td><td>hold away + punch</td></tr>
+            <tr><td>Rising elbow</td><td>stick up + punch</td></tr>
+            <tr><td>Axe kick</td><td>stick up + kick</td></tr>
+            <tr><td>Jumping knee</td><td>dash, then kick</td></tr>
             <tr><td>Super</td><td>full meter, then Super</td></tr>
           </table>
           <p class="sheet-note">Keyboard: A/D move, W jump, S crouch, J punch, K kick, L dash, Space super. Double-tap A or D to dash or backflip.</p>
@@ -3220,6 +3224,26 @@ const ATTACK_POSES = {
   crouchPunch: {
     wind: { hipY: 30, fUpper: 0.45, fFore: 1.55, bUpper: 0.5, bFore: 2.35, lean: 0.32, fThigh: 1.0, fShin: 1.8, bThigh: -0.95, bShin: -1.75 },
     strike: { hipY: 54, fUpper: 2.5, fFore: 2.62, bUpper: 0.62, bFore: 2.42, lean: -0.16, fThigh: 0.5, fShin: 0.9, bThigh: -0.5, bShin: -0.9, headTilt: -0.18 }
+  },
+  uraken: {
+    /* backfist: the shoulder turns the arm out and across */
+    wind: { fUpper: 0.3, fFore: 2.2, bUpper: -0.2, bFore: 2.3, lean: 0.16, hipX: -4, chestW: 0.85, headTilt: 0.12 },
+    strike: { fUpper: -0.55, fFore: 0.35, bUpper: 0.5, bFore: 2.3, lean: 0.1, hipX: 6, chestW: 1.1, headTilt: 0.2 }
+  },
+  ageEmpi: {
+    /* rising elbow: coil low, then drive the point of the elbow up */
+    wind: { hipY: RIG.hipY + 4, fUpper: 0.7, fFore: 2.6, bUpper: 0.5, bFore: 2.5, lean: 0.22, fThigh: 0.4, fShin: 0.7 },
+    strike: { hipY: RIG.hipY + 10, fUpper: -1.5, fFore: 0.2, bUpper: -0.2, bFore: 2.2, lean: -0.24, headTilt: -0.2, fThigh: 0.2, fShin: 0.3 }
+  },
+  axeKick: {
+    /* axe kick: the leg goes up straight, then chops down */
+    wind: { fThigh: -0.7, fShin: 0.15, bThigh: -0.2, bShin: -0.2, lean: -0.3, fUpper: -0.7, fFore: 0.9, hipY: RIG.hipY + 2 },
+    strike: { fThigh: 1.15, fShin: 1.05, bThigh: -0.35, bShin: -0.3, lean: 0.3, fUpper: 0.2, fFore: 1.9, bUpper: 0.1, bFore: 2.0, headTilt: 0.18 }
+  },
+  hizaGeri: {
+    /* jumping knee: knee drives up into the target */
+    wind: { fThigh: 0.4, fShin: 1.5, bThigh: -0.3, bShin: -0.5, lean: 0.1, fUpper: 0.9, fFore: 2.0, hipY: RIG.hipY + 4 },
+    strike: { fThigh: 1.85, fShin: 2.15, bThigh: -0.5, bShin: -0.6, lean: -0.1, hipY: RIG.hipY + 12, fUpper: -0.3, fFore: 1.2, bUpper: -0.5, bFore: 1.0 }
   },
   airPunch: {
     wind: { fUpper: -1.0, fFore: -0.55, bUpper: -1.1, bFore: -0.5, lean: -0.26, fThigh: 0.9, fShin: 1.85, bThigh: 0.3, bShin: 2.0 },
@@ -5361,6 +5385,17 @@ function botInput(p, m) {
     if (dist > ideal + 30) out.mx = dir;
     else if (dist < ideal - 40) out.mx = -dir;
     else out.mx = 0;
+  }
+
+  /* Guard: if a strike is on its way and it is close enough to land, hold
+     away from it and drop the attack. Holding away is what raises the guard. */
+  const incoming = target && target.attack && target.attack.t < target.attack.hitAt + 0.04;
+  const near = target && Math.abs(target.x - p.x) < 150;
+  if (incoming && near && p.hitstun <= 0 && p.downT <= 0 && !p.attack && p.onGround) {
+    out.mx = -dir;
+    out.punch = false;
+    out.kick = false;
+    out.super = false;
   }
 
   return out;

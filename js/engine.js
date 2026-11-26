@@ -180,6 +180,61 @@ function buildAttacksRaw(char) {
       knockdown: true,
       ...BANDS.sweep
     },
+    uraken: {
+      family: 'punch', type: 'uraken',
+      style: arch.style,
+      damage: p.damage * 1.1,
+      range: p.range * 1.02,
+      dur: d(p.dur * 1.1),
+      hitAt: p.hitAt * PACE * 1.1,
+      knock: p.knock * 1.15,
+      cd: d(p.cd * 1.1),
+      hitstun: 0.2,
+      lunge: 120,
+      block: 'any',
+      ...BANDS.punch
+    },
+    ageEmpi: {
+      family: 'punch', type: 'ageEmpi',
+      style: arch.style,
+      damage: p.damage * 1.25,
+      range: p.range * 0.82,
+      dur: d(p.dur * 1.25),
+      hitAt: p.hitAt * PACE * 1.15,
+      knock: p.knock * 1.4,
+      cd: d(p.cd * 1.3),
+      hitstun: 0.26,
+      block: 'stand',
+      ...BANDS.airPunch
+    },
+    axeKick: {
+      family: 'kick', type: 'axeKick',
+      style: arch.style,
+      damage: p.damage * 1.2,
+      range: p.range * 1.0,
+      dur: d(p.dur * 1.3),
+      hitAt: p.hitAt * PACE * 1.25,
+      knock: p.knock * 1.1,
+      cd: d(p.cd * 1.35),
+      hitstun: 0.3,
+      lunge: 60,
+      block: 'stand',
+      ...BANDS.airKick
+    },
+    hizaGeri: {
+      family: 'kick', type: 'hizaGeri',
+      style: arch.style,
+      damage: p.damage * 1.15,
+      range: p.range * 0.88,
+      dur: d(p.dur * 0.95),
+      hitAt: p.hitAt * PACE * 0.9,
+      knock: p.knock * 1.2,
+      cd: d(p.cd * 1.0),
+      hitstun: 0.28,
+      lunge: 240,
+      block: 'any',
+      ...BANDS.kick
+    },
     airKick: {
       style: arch.style,
       family: 'kick',
@@ -266,6 +321,8 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     downT: 0,
     hitstun: 0,
     blocking: false,
+    dashT: 0,
+    dashRecent: 0,
     missT: 0,
     blockPush: 0,
     combo: 0,
@@ -381,6 +438,8 @@ function stepMatch(m, inputs) {
     p.iframes = Math.max(0, p.iframes - TICK);
     p.comboT = Math.max(0, (p.comboT || 0) - TICK);
     p.missT = Math.max(0, (p.missT || 0) - TICK);
+    p.dashRecent = Math.max(0, (p.dashRecent || 0) - TICK);
+    p.dashT = Math.max(0, (p.dashT || 0) - TICK);
     p.blockPush = Math.max(0, (p.blockPush || 0) - TICK);
     if (p.comboT <= 0) p.combo = 0;
     p.hitstun = Math.max(0, p.hitstun - TICK);
@@ -462,7 +521,7 @@ function stepMatch(m, inputs) {
       }
 
       const airborne = !p.onGround;
-      const ctx = { airborne, crouch: wantCrouch && p.onGround, backward, forward };
+      const ctx = { airborne, crouch: wantCrouch && p.onGround, backward, forward, upHeld, dash: p.dashT > 0 || p.dashRecent > 0 };
 
       if (inp.super && p.meter >= SUPER_COST && p.onGround && !m.superShow) {
         const mod = superModule(p.charId);
@@ -501,6 +560,7 @@ function stepMatch(m, inputs) {
         } else {
           const dir = Math.abs(inp.mx) > 0.1 ? sign(inp.mx) : -p.facing;
           p.dashT = 0.16;
+        p.dashRecent = 0.3;
           p.dashDir = dir;
           p.iframes = Math.max(p.iframes, 0.1);
         }
@@ -564,11 +624,16 @@ function pickAttack(p, family, ctx) {
   const A = p.attacks;
   if (ctx.airborne) return family === 'punch' ? A.airPunch : A.airKick;
   if (ctx.crouch) return family === 'punch' ? A.crouchPunch : A.sweep;
+  /* up + button is a ground move; up alone jumps */
+  if (ctx.upHeld) return family === 'punch' ? A.ageEmpi : A.axeKick;
   if (family === 'kick') {
+    if (ctx.dash) return A.hizaGeri;       /* jumping knee off a dash */
     if (ctx.backward) return A.backKick;   /* turning back kick */
     if (ctx.forward) return A.spinKick;    /* turn and kick */
     return A.kick;
   }
+  if (ctx.dash) return A.lungePunch;       /* charging lunge */
+  if (ctx.backward) return A.uraken;       /* turning backfist */
   if (ctx.forward) return A.lungePunch;    /* stepping straight */
   return A.punch;
 }
