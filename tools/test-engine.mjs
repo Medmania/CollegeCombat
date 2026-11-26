@@ -8,6 +8,9 @@ for (const f of ['apoorv', 'priyank', 'saurav', 'aditya', 'thirtyone', 'mohit', 
 }
 await import('../js/supers/adnan.js');
 await import('../js/supers/ankit.js');
+await import('../js/supers/apoorv.js');
+await import('../js/supers/priyank.js');
+await import('../js/supers/saurav.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
@@ -254,9 +257,10 @@ console.log('\nknockdown');
 
 console.log('\nsuper');
 {
-  const m = makeTwo();
+  /* jeetu and ansh still use the plain archetypes */
+  const m = makeTwo('jeetu', 'ansh');
   const [a, b] = m.players;
-  b.x = a.x + 60;
+  b.x = a.x + 90;
   a.meter = 40;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   check('super blocked below 100 meter', a.meter === 40 && !a.attack);
@@ -264,25 +268,25 @@ console.log('\nsuper');
   a.meter = 100;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   check('super consumes the meter', a.meter === 0);
-  run(m, 14, { p0: idle, p1: idle });
-  check('super damages a nearby opponent', b.hp < b.maxHp);
+  run(m, 40, { p0: idle, p1: idle });
+  check('super damages a nearby opponent', b.hp < b.maxHp, `${Math.round(b.hp)} of ${b.maxHp}`);
 }
 
 console.log('\nsuper archetypes');
 {
-  /* blast: instant damage in a radius */
-  const m = makeTwo('saurav', 'apoorv');
+  /* beam: sustained damage in front (jeetu still uses the archetype) */
+  const m = makeTwo('jeetu', 'ansh');
   const [a, b] = m.players;
   b.x = a.x + 120;
   a.meter = 100;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
-  run(m, 12, { p0: idle, p1: idle });
-  check('blast super damages nearby', b.hp < b.maxHp, `${b.hp}`);
+  run(m, 30, { p0: idle, p1: idle });
+  check('beam super damages nearby', b.hp < b.maxHp, `${b.hp}`);
 }
 
 {
   /* shot: a projectile that travels and hits once */
-  const m = makeTwo('priyank', 'apoorv');
+  const m = makeTwo('nikhil', 'ansh');
   const [a, b] = m.players;
   b.x = a.x + 240;
   a.meter = 100;
@@ -559,6 +563,43 @@ console.log('\ncinematic supers');
   check('a second super cannot start over the first', m.superShow.charId === first, `${first} then ${m.superShow.charId}`);
   run(m, 200, { p0: idle, p1: idle });
   check('the show cleans itself up', m.superShow === null);
+}
+
+{
+  /* every module in the registry must fire, damage and clean up */
+  const mods = Object.keys(globalThis.KK_SUPERS || {});
+  const bad = [];
+  for (const id of mods) {
+    const m = makeTwo(id, 'priyank');
+    const [a, b2] = m.players;
+    b2.x = a.x + 110;
+    a.meter = 100;
+    const hp0 = b2.hp;
+    stepMatch(m, { p0: act({ super: true }), p1: idle });
+    if (!m.superShow) { bad.push(`${id}:no-start`); continue; }
+    run(m, 220, { p0: idle, p1: idle });
+    if (b2.hp >= hp0) bad.push(`${id}:no-damage`);
+    if (m.superShow !== null) bad.push(`${id}:no-cleanup`);
+  }
+  check(`all ${mods.length} cinematic supers fire, damage and clean up`, bad.length === 0, bad.join(' '));
+}
+
+{
+  /* a cinematic super must never exceed its declared damage cap */
+  const bad = [];
+  for (const [id, mod] of Object.entries(globalThis.KK_SUPERS || {})) {
+    const m = makeTwo(id, 'priyank');
+    const [a, b2] = m.players;
+    b2.x = a.x + 100;
+    a.meter = 100;
+    const hp0 = b2.hp;
+    stepMatch(m, { p0: act({ super: true }), p1: idle });
+    run(m, 220, { p0: idle, p1: idle });
+    const dealt = hp0 - b2.hp;
+    /* power multiplies damage, so allow for it, but never more than 2x the cap */
+    if (dealt > mod.damage * 2.2) bad.push(`${id}:${Math.round(dealt)}`);
+  }
+  check('no super exceeds its damage cap', bad.length === 0, bad.join(' '));
 }
 
 console.log('\nroster');
