@@ -34,15 +34,37 @@
       ctx.save();
       ctx.translate(pr.x - 22 * u, pr.y - 118 * u);
       ctx.rotate(-0.7 - chug * 0.5);
-      ctx.fillStyle = '#3f7d4a';
-      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-      ctx.lineWidth = 1.8 * u;
+      /* see-through glass with the liquid level falling as he drinks */
+      const glassGrad = ctx.createLinearGradient(-7 * u, 0, 7 * u, 0);
+      glassGrad.addColorStop(0, 'rgba(220,240,235,0.65)');
+      glassGrad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+      glassGrad.addColorStop(1, 'rgba(200,225,220,0.6)');
+      ctx.fillStyle = glassGrad;
       ctx.beginPath();
       ctx.roundRect(-7 * u, -26 * u, 14 * u, 40 * u, 5 * u);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 1.2 * u;
       ctx.stroke();
-      ctx.fillStyle = '#e8f0ff';
-      ctx.fillRect(-7 * u, -18 * u, 14 * u, 12 * u);
+
+      /* the drink, draining as he chugs */
+      const level = 14 - chug * 10;
+      const drink = ctx.createLinearGradient(0, -26 * u + (26 - level) * u, 0, 14 * u);
+      drink.addColorStop(0, '#7ddc8a');
+      drink.addColorStop(1, '#2f6b3a');
+      ctx.fillStyle = drink;
+      ctx.beginPath();
+      ctx.roundRect(-6 * u, (-26 + (14 - level)) * u, 12 * u, level * u, 4 * u);
+      ctx.fill();
+
+      /* bubbles rising through it */
+      ctx.fillStyle = 'rgba(230,255,235,0.8)';
+      for (let b = 0; b < 3; b++) {
+        const by = (el * 22 + b * 9) % level;
+        ctx.beginPath();
+        ctx.arc(-2 * u + (b % 2) * 4 * u, (-26 + (14 - level) + by) * u, 1.2 * u, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.fillStyle = '#2b2f36';
       ctx.beginPath();
       ctx.roundRect(-4 * u, -32 * u, 8 * u, 8 * u, 2 * u);
@@ -143,11 +165,22 @@
     const after = el - landAt;
     ctx.save();
     const spread = Math.min(1, after / 0.35);
-    ctx.globalAlpha = Math.max(0, 0.55 - after * 0.18);
-    ctx.fillStyle = '#5fc272';
+    ctx.globalAlpha = Math.max(0, 0.6 - after * 0.18);
+    /* a glossy puddle: bright core, darker rim, a specular streak */
+    const pud = ctx.createRadialGradient(land.x - 40 * u, land.y - 8 * u, 4, land.x, land.y, 170 * u * spread);
+    pud.addColorStop(0, '#a8f0b4');
+    pud.addColorStop(0.55, '#5fc272');
+    pud.addColorStop(1, '#2c6b3a');
+    ctx.fillStyle = pud;
     ctx.beginPath();
     ctx.ellipse(land.x, land.y, 170 * u * spread, 170 * u * 0.34 * spread, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.globalAlpha = Math.max(0, 0.5 - after * 0.15);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 3 * u;
+    ctx.beginPath();
+    ctx.ellipse(land.x - 40 * u, land.y - 6 * u, 46 * u * spread, 12 * u * spread, -0.15, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
 
     /* puddle bubbles */

@@ -123,11 +123,17 @@
       ctx.save();
       ctx.translate(pr.x, y);
       ctx.rotate(0.5 + k * 1.6);
-      ctx.fillStyle = '#5a3f2a';
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      /* thick sole, upper and straps */
+      ctx.fillStyle = '#4a3322';
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
       ctx.lineWidth = 1.8 * u;
       ctx.beginPath();
-      ctx.roundRect(-16 * u, -5 * u, 32 * u, 10 * u, 5 * u);
+      ctx.roundRect(-17 * u, -3 * u, 34 * u, 8 * u, 3 * u);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#6b4c33';
+      ctx.beginPath();
+      ctx.roundRect(-16 * u, -9 * u, 32 * u, 7 * u, 4 * u);
       ctx.fill();
       ctx.stroke();
       ctx.strokeStyle = '#8a6a4a';
@@ -155,12 +161,23 @@
 function drawHeart(ctx, x, y, r) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.fillStyle = '#ff7fb8';
+
+  /* a glossy heart with a lit side and a specular spot */
+  const g = ctx.createRadialGradient(-r * 0.4, -r * 0.5, r * 0.1, 0, 0, r * 1.4);
+  g.addColorStop(0, '#ffc2dc');
+  g.addColorStop(0.55, '#ff7fb8');
+  g.addColorStop(1, '#c93f74');
+  ctx.fillStyle = g;
   ctx.beginPath();
   ctx.moveTo(0, r * 0.7);
   ctx.bezierCurveTo(-r * 1.5, -r * 0.35, -r * 0.55, -r * 1.35, 0, -r * 0.45);
   ctx.bezierCurveTo(r * 0.55, -r * 1.35, r * 1.5, -r * 0.35, 0, r * 0.7);
   ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.38, -r * 0.42, r * 0.22, r * 0.14, -0.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }

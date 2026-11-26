@@ -66,17 +66,11 @@
     /* ---- landing ---- */
     const after = el - landAt;
 
-    if (after < 0.16) {
+    if (after < 0.9) {
+      /* branching cracks that fade, not straight spokes */
       ctx.save();
-      ctx.strokeStyle = 'rgba(30,24,20,0.75)';
-      ctx.lineWidth = 2.5 * u;
-      for (let i = 0; i < 7; i++) {
-        const a = (i / 7) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.moveTo(land.x, land.y);
-        ctx.lineTo(land.x + Math.cos(a) * (60 + i * 9) * u, land.y + Math.sin(a) * (22 + i * 4) * u);
-        ctx.stroke();
-      }
+      ctx.globalAlpha = Math.max(0, 1 - after / 0.9);
+      groundCrack(ctx, land.x, land.y, 120 * u, 2.7, 'rgba(26,20,16,0.8)');
       ctx.restore();
     }
 
@@ -130,24 +124,56 @@ function drawDumbbell(ctx, x, y, u, spin) {
   ctx.translate(x, y);
   ctx.rotate(spin);
 
-  ctx.fillStyle = '#2b2f36';
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx.lineWidth = 2 * u;
+  /* the bar, with a metal gradient and a knurled grip */
+  const bar = ctx.createLinearGradient(0, -6 * u, 0, 6 * u);
+  bar.addColorStop(0, '#6c737d');
+  bar.addColorStop(0.45, '#3a4048');
+  bar.addColorStop(1, '#1b1f24');
+  ctx.fillStyle = bar;
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 1.6 * u;
   ctx.beginPath();
   ctx.roundRect(-30 * u, -6 * u, 60 * u, 12 * u, 4 * u);
   ctx.fill();
   ctx.stroke();
 
-  for (const side of [-1, 1]) {
+  /* knurling: fine crossing lines across the grip */
+  ctx.strokeStyle = 'rgba(200,206,214,0.35)';
+  ctx.lineWidth = 1;
+  for (let i = -12; i <= 12; i++) {
     ctx.beginPath();
-    ctx.roundRect(side * 30 * u - 9 * u, -26 * u, 18 * u, 52 * u, 6 * u);
-    ctx.fillStyle = '#3a4048';
-    ctx.fill();
+    ctx.moveTo(i * 2 * u, -4 * u);
+    ctx.lineTo(i * 2 * u + 3 * u, 4 * u);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  }
+
+  /* plates: bevelled, with a bright edge and a dark bevel */
+  for (const side of [-1, 1]) {
+    const px = side * 30 * u;
+    const plate = ctx.createLinearGradient(px - 9 * u, 0, px + 9 * u, 0);
+    plate.addColorStop(0, '#59606a');
+    plate.addColorStop(0.4, '#3a4048');
+    plate.addColorStop(1, '#15181d');
+    ctx.fillStyle = plate;
     ctx.beginPath();
-    ctx.roundRect(side * 30 * u - 6 * u, -22 * u, 6 * u, 44 * u, 3 * u);
+    ctx.roundRect(px - 9 * u, -26 * u, 18 * u, 52 * u, 6 * u);
     ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 1.6 * u;
+    ctx.stroke();
+
+    /* the bevel highlight */
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.beginPath();
+    ctx.roundRect(px - 6 * u, -23 * u, 5 * u, 46 * u, 2.5 * u);
+    ctx.fill();
+
+    /* inner rim */
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1.2 * u;
+    ctx.beginPath();
+    ctx.roundRect(px - 4 * u, -20 * u, 8 * u, 40 * u, 3 * u);
+    ctx.stroke();
   }
   ctx.restore();
 }

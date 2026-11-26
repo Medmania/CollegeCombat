@@ -132,14 +132,38 @@ function drawBubble(ctx, x, y, text, u, seed) {
   const w = ctx.measureText(text).width + 14 * u;
   const h = 20 * u;
 
-  /* the bubble */
-  ctx.fillStyle = seed % 3 === 0 ? '#fff3d6' : '#ffffff';
+  /* the side face first, so the bubble has thickness */
+  ctx.fillStyle = 'rgba(150,150,165,0.55)';
+  ctx.beginPath();
+  ctx.roundRect(x - w / 2 + 2.5 * u, y - h / 2 + 3 * u, w, h, 7 * u);
+  ctx.fill();
+
+  /* a soft drop shadow under it */
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(x, y + h * 0.7, w * 0.4, h * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  /* the face of the bubble */
+  const bg = ctx.createLinearGradient(x, y - h / 2, x, y + h / 2);
+  bg.addColorStop(0, '#ffffff');
+  bg.addColorStop(1, seed % 3 === 0 ? '#f2e4c4' : '#e8e8ef');
+  ctx.fillStyle = bg;
   ctx.strokeStyle = 'rgba(0,0,0,0.55)';
   ctx.lineWidth = 1.8 * u;
   ctx.beginPath();
   ctx.roundRect(x - w / 2, y - h / 2, w, h, 7 * u);
   ctx.fill();
   ctx.stroke();
+
+  /* a gloss along the top edge */
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.roundRect(x - w / 2 + 3 * u, y - h / 2 + 2 * u, w - 6 * u, h * 0.22, 4 * u);
+  ctx.fill();
 
   /* the tail, pointing down-left */
   ctx.beginPath();

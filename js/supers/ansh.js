@@ -83,11 +83,8 @@
         const r = (26 + p.r * 44) * u * grow;
         const depthFade = 0.12 + p.depth * 0.16;
 
-        ctx.globalAlpha = depthFade * fade;
-        ctx.fillStyle = p.depth > 0.55 ? '#8fbf9a' : '#a9d6b3';
-        ctx.beginPath();
-        ctx.arc(px, py, r, 0, Math.PI * 2);
-        ctx.fill();
+        /* a lumpy puff, lit from above and darker underneath, never a flat disc */
+        softPuff(ctx, px, py, r, depthFade * fade * 3.2, p.depth > 0.55 ? '#8fbf9a' : '#a9d6b3', p.depth * 9 + drift * 3);
       }
 
       /* wobbly stars inside the haze */
@@ -98,6 +95,15 @@
         const sx = land.x + Math.cos(a) * 90 * u;
         const sy = land.y - 80 * u + Math.sin(a * 1.3) * 50 * u;
         drawStar(ctx, sx, sy, 6 * u, a);
+      }
+
+      /* a front layer, so the cloud is in front of the fighters too */
+      for (const p of this.puffs) {
+        if (p.depth < 0.7) continue;
+        const drift = ((el - cloudAt) * p.drift * 0.6) % 1;
+        const px = land.x + p.ox * spread * (0.5 + drift * 0.8);
+        const py = land.y - (p.oy * 60 + 10) * u;
+        softPuff(ctx, px, py, (22 + p.r * 34) * u * grow, 0.1 * fade, '#b7dfc1', p.depth * 5 + 1);
       }
 
       /* lo-fi notes */

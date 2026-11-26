@@ -142,15 +142,27 @@ function drawRig(ctx, x, y, u, t, flying) {
   ctx.save();
   ctx.translate(x, y);
 
-  /* tripod legs */
+  /* tripod: three jointed legs with a knee and a rubber foot */
   ctx.strokeStyle = '#2b2f36';
-  ctx.lineWidth = Math.max(1.5, 3 * u);
   ctx.lineCap = 'round';
   for (const side of [-1, 0, 1]) {
+    const kneeX = side * 10 * u;
+    const kneeY = -26 * u;
+    ctx.lineWidth = Math.max(1.6, 3 * u);
     ctx.beginPath();
     ctx.moveTo(0, -54 * u);
-    ctx.lineTo(side * 16 * u, 0);
+    ctx.lineTo(kneeX, kneeY);
     ctx.stroke();
+    ctx.lineWidth = Math.max(1.4, 2.4 * u);
+    ctx.beginPath();
+    ctx.moveTo(kneeX, kneeY);
+    ctx.lineTo(side * 17 * u, 0);
+    ctx.stroke();
+    /* rubber foot */
+    ctx.fillStyle = '#15171b';
+    ctx.beginPath();
+    ctx.ellipse(side * 17 * u, 0, 3.4 * u, 1.8 * u, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   /* ring light */
@@ -159,24 +171,41 @@ function drawRig(ctx, x, y, u, t, flying) {
   ctx.beginPath();
   ctx.arc(0, -74 * u, 16 * u, 0, Math.PI * 2);
   ctx.stroke();
+  /* soft spill from the ring light */
   ctx.save();
-  ctx.globalAlpha = 0.35 + 0.25 * Math.sin(t * 9);
-  ctx.strokeStyle = '#fff8dc';
-  ctx.lineWidth = Math.max(1.5, 2 * u);
+  const spill = ctx.createRadialGradient(0, -74 * u, 2, 0, -74 * u, 42 * u);
+  spill.addColorStop(0, `rgba(255,248,220,${0.28 + 0.12 * Math.sin(t * 9)})`);
+  spill.addColorStop(1, 'rgba(255,248,220,0)');
+  ctx.fillStyle = spill;
   ctx.beginPath();
-  ctx.arc(0, -74 * u, 20 * u, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.arc(0, -74 * u, 42 * u, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 
   /* phone */
-  ctx.fillStyle = '#111318';
+  /* phone: dark bevelled body, bright screen, a glare across the glass */
+  ctx.fillStyle = '#0d0f13';
   ctx.beginPath();
-  ctx.roundRect(-8 * u, -70 * u, 16 * u, 26 * u, 3 * u);
+  ctx.roundRect(-9 * u, -71 * u, 18 * u, 28 * u, 3.5 * u);
   ctx.fill();
+  ctx.strokeStyle = '#3d444e';
+  ctx.lineWidth = 1.2 * u;
+  ctx.stroke();
   ctx.fillStyle = flying ? '#8ad4ff' : '#3a4048';
   ctx.beginPath();
-  ctx.roundRect(-6 * u, -68 * u, 12 * u, 20 * u, 2 * u);
+  ctx.roundRect(-6.5 * u, -68.5 * u, 13 * u, 22 * u, 2 * u);
   ctx.fill();
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(-6 * u, -68 * u);
+  ctx.lineTo(2 * u, -68 * u);
+  ctx.lineTo(-4 * u, -47 * u);
+  ctx.lineTo(-6.5 * u, -47 * u);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 
   ctx.restore();
 }
