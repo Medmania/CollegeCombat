@@ -1,4 +1,4 @@
-# Kursi Kombat
+# College Combat
 
 A side-view office-politics fighting game, played in landscape. Pick a
 colleague-caricature, then punch, kick, sweep, jump and air-kick your way to a
@@ -150,16 +150,16 @@ through it. Even then, roughly one connection in five still needs a TURN relay.
    ```bash
    git init
    git add .
-   git commit -m "kursi kombat"
+   git commit -m "college combat"
    git branch -M main
-   git remote add origin https://github.com/<you>/kursi-kombat.git
+   git remote add origin https://github.com/<you>/CollegeCombat.git
    git push -u origin main
    ```
 
 2. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
    The included workflow publishes the site on every push to `main`.
 
-3. Your game is at `https://<you>.github.io/kursi-kombat/`.
+3. Your game is at `https://<you>.github.io/CollegeCombat/`.
 
 No secrets, no environment variables, no build step.
 
@@ -366,7 +366,7 @@ every fighter file is complete, and the guest snapshot round-trips health,
 height, facing, crouch, flip, live supers and projectiles without mixing any of
 them up.
 
-Debug helper in the browser console: `__kursi()` prints the live match state,
+Debug helper in the browser console: `__combat()` prints the live match state,
 which is handy while you tune numbers.
 
 Settings (the link under the main menu) holds the sound-effects volume, saved on

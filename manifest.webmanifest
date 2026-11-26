@@ -1,7 +1,7 @@
 {
-  "name": "Kursi Kombat",
-  "short_name": "Kursi Kombat",
-  "description": "Office politics, settled properly. A tiny fighting game for you and your colleagues.",
+  "name": "College Combat",
+  "short_name": "College Combat",
+  "description": "Friendship, settled properly. A tiny fighting game for you and your friends.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

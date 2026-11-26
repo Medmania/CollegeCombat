@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0e15" />
     <meta name="description" content="A tiny office-politics fighting game. You vs bots, or up to four phones on the same Wi-Fi. No servers, no accounts." />
-    <title>Kursi Kombat — office politics, settled properly</title>
+    <title>College Combat — friendship, settled properly</title>
     <style>
 :root {
   --bg: #0b0e15;
@@ -1750,8 +1750,8 @@ table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
       <!-- ================= MENU ================= -->
       <section class="screen active" id="screen-menu">
         <div class="brand">
-          <h1 class="logo">KURSI<br /><span>KOMBAT</span></h1>
-          <p class="tagline">Office politics, settled properly.</p>
+          <h1 class="logo">COLLEGE<br /><span>COMBAT</span></h1>
+          <p class="tagline">Friendship, settled properly.</p>
         </div>
 
         <div class="office-bg" aria-hidden="true">
@@ -3152,6 +3152,7 @@ function createRenderer(canvas) {
   let H = 1;
   let time = 0;
   let frameDt = 1 / 60;
+  let hitstopNow = 0;
   let shake = 0;
 
   const particles = [];
@@ -3239,6 +3240,13 @@ function createRenderer(canvas) {
 
     camX += (mid - camX) * 0.09;
     let wantDepth = clamp((cam.f * (spread + 430)) / W, 200, 1200);
+
+    /* a turning kick or a heavy swing pulls the camera in a little */
+    for (const p of view.players) {
+      if (!p.attack) continue;
+      const big = p.attack.type === 'spinKick' || p.attack.type === 'backKick' || p.attack.type === 'lungePunch';
+      if (big && p.attack.ext > 0.25) wantDepth *= 0.92;
+    }
 
     /* the super takes the camera: push in, hold low, punch out on impact */
     const ss = view.superShow;
@@ -3685,6 +3693,11 @@ function createRenderer(canvas) {
     const c = p.colors;
     const dir = p.facing >= 0 ? 1 : -1;
     const u = (v) => v * s;
+
+    /* a few frames of vibration on the fighter who just got hit */
+    if (hitstopNow > 0 && p.hitstun > 0.02) {
+      foot = { x: foot.x + (Math.random() - 0.5) * 5, y: foot.y };
+    }
 
     if (!p.alive || p.downT > 0.02) {
       drawDowned(p, foot, s, dir);
@@ -4486,6 +4499,7 @@ function createRenderer(canvas) {
       m.x = p.x;
     }
 
+    hitstopNow = view.hitstop || 0;
     for (const p of view.players) {
       p._won = !!(view.over && view.winnerId && p.id === view.winnerId);
       p._lost = !!(view.over && (!view.winnerId || p.id !== view.winnerId));
@@ -6073,7 +6087,8 @@ function drawFrame() {
     over: m.over,
     winnerId: m.winner,
     superShow: m.superShow || null,
-    lab: S.lab.on
+    lab: S.lab.on,
+    hitstop: S.hitStop
   });
 }
 
@@ -6452,9 +6467,9 @@ function boot() {
   show('menu');
 }
 
-/* Debug helper: window.__kursi() returns the live match state. Useful while
+/* Debug helper: window.__combat() returns the live match state. Useful while
    you are tuning numbers in characters.js. It does nothing on its own. */
-window.__kursi = () =>
+window.__combat = () =>
   S.match
     ? {
         mode: S.mode,

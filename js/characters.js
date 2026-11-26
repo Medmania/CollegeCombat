@@ -27,24 +27,28 @@
   const HEADLINES = [
     '{winner} wins, denies everything',
     'Sources: {winner} was provoked',
-    '{winner} victorious, asks for a raise',
-    'Exit polls wrong again as {winner} takes it',
-    '{winner} wins; HR has been informed',
-    'Chai cups broken, {winner} blamed',
-    '{winner} wins after "quick sync" turns violent',
-    'Market reacts positively to {winner} victory',
-    'Breaking: {winner} says it was always about the process',
-    'Board declares {winner} "technically correct"'
+    '{winner} victorious, will mention this forever',
+    'Nobody saw it, everybody heard about it',
+    '{winner} wins; the group chat is already typing',
+    'Snacks were finished before the fight started',
+    '{winner} wins after "just one round" turns into nine',
+    'Witnesses agree it was {winner}, mostly',
+    'Breaking: {winner} says it was always about the vibes',
+    '{winner} takes it, immediately asks for a rematch'
   ];
 
   /* Lines that scroll along the top during a fight. */
   const TICKER = [
-    'Sources say the pantry ran out of milk during round one.',
-    'A stray chair was seen leaving the arena on its own.',
-    'Management denies the arena is a metaphor.',
-    'Meeting invites continue to arrive during the fight.',
-    'Legal has asked us to stop calling it a performance review.',
-    'Attendance was mandatory. Enthusiasm was not.'
+    'He still owes you 200 from the last trip. He remembers.',
+    'Nobody is going to say who ate the last slice.',
+    'The group project was, as always, one person.',
+    'Attendance is 40 percent. Confidence is 100.',
+    'Someone just said "we should meet up more" and meant it.',
+    'The wifi dropped exactly when it mattered.',
+    'He is not angry. He is just going to bring it up for years.',
+    'They have been "almost ready" for forty minutes.',
+    'That is his seat. It has always been his seat.',
+    'One of you is still using the other one\'s Netflix.'
   ];
 
   function getCharacter(id) {
