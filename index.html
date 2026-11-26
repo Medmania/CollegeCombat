@@ -3202,8 +3202,20 @@ const ATTACK_POSES = {
     strike: { fUpper: 1.52, fFore: 1.57, bUpper: -0.5, bFore: 1.9, lean: 0.2, hipX: 8, chestW: 1.18, headTilt: 0.08, fThigh: 0.34, bThigh: -0.32 }
   },
   lungePunch: {
-    wind: { fUpper: 0.55, fFore: 1.4, bUpper: -0.3, bFore: 2.1, lean: -0.12, hipX: -10, fThigh: 0.05, fShin: 0.55, bThigh: -0.4 },
-    strike: { fUpper: 1.56, fFore: 1.6, bUpper: -0.55, bFore: 1.75, lean: 0.34, hipX: 17, fThigh: 0.8, fShin: 0.35, bThigh: -0.6, chestW: 1.22, headTilt: 0.12 }
+    /* wind-up: weight shifts onto the back leg, lead shoulder pulls back */
+    wind: {
+      fUpper: 0.62, fFore: 1.5, bUpper: -0.25, bFore: 2.15,
+      lean: -0.14, hipX: -12, chestW: 0.9,
+      fThigh: 0.02, fShin: 0.5, bThigh: -0.55, bShin: -0.9, headTilt: -0.06
+    },
+    /* strike: rear foot drives, hips turn first, fist straight out, the other
+       fist pulls back to the waist, front knee takes the weight */
+    strike: {
+      fUpper: 1.56, fFore: 1.6, bUpper: 0.55, bFore: 2.5,
+      lean: 0.3, hipX: 18, chestW: 1.26,
+      fThigh: 0.82, fShin: 0.3, bThigh: -0.72, bShin: -0.28,
+      headTilt: 0.1
+    }
   },
   crouchPunch: {
     wind: { hipY: 30, fUpper: 0.45, fFore: 1.55, bUpper: 0.5, bFore: 2.35, lean: 0.32, fThigh: 1.0, fShin: 1.8, bThigh: -0.95, bShin: -1.75 },
@@ -3218,16 +3230,39 @@ const ATTACK_POSES = {
     strike: { fThigh: 1.52, fShin: 1.55, bThigh: -0.34, bShin: -0.4, lean: -0.24, hipY: RIG.hipY + 5, fUpper: -0.45, fFore: 1.0, bUpper: -0.65, bFore: 0.9, headTilt: -0.1 }
   },
   spinKick: {
-    wind: { fThigh: 0.55, fShin: 1.75, bThigh: -0.4, bShin: -1.2, lean: 0.1, fUpper: -0.4, fFore: 1.0, bUpper: -0.5, bFore: 0.9 },
-    strike: { fThigh: 1.4, fShin: 1.42, bThigh: -0.55, bShin: -1.3, lean: -0.2, hipY: RIG.hipY + 6, fUpper: -0.95, fFore: 0.5, bUpper: -1.0, bFore: 0.45 }
+    /* chamber: knee comes up and across, support leg takes the weight */
+    wind: {
+      fThigh: 0.62, fShin: 1.95, bThigh: -0.5, bShin: -1.35,
+      lean: 0.12, hipX: -4, chestW: 0.86,
+      fUpper: -0.5, fFore: 1.1, bUpper: -0.6, bFore: 1.0
+    },
+    /* strike: hips roll over, shin whips through, arms open for balance */
+    strike: {
+      fThigh: 1.46, fShin: 1.34, bThigh: -0.62, bShin: -1.38,
+      lean: -0.18, hipY: RIG.hipY + 7, hipX: 8, chestW: 0.95,
+      fUpper: -1.0, fFore: 0.45, bUpper: -1.05, bFore: 0.4,
+      headTilt: -0.08
+    }
   },
   backKick: {
     wind: { bThigh: -0.55, bShin: -1.45, fThigh: -0.2, fShin: -0.1, lean: 0.18, fUpper: -0.35, fFore: 1.1, bUpper: -0.55, bFore: 1.0 },
     strike: { bThigh: 1.18, bShin: 1.06, fThigh: -0.4, fShin: -0.2, lean: 0.55, fUpper: -0.85, fFore: 0.65, bUpper: -0.5, bFore: 1.05, headTilt: 0.22 }
   },
   sweep: {
-    wind: { hipY: 34, fThigh: 0.85, fShin: 1.65, bThigh: -1.0, bShin: -1.75, lean: 0.22, fUpper: 0.9, fFore: 2.2, bUpper: 0.7, bFore: 2.4 },
-    strike: { hipY: 26, fThigh: 1.52, fShin: 1.5, bThigh: -1.05, bShin: -1.8, lean: 0.38, fUpper: 1.35, fFore: 2.62, bUpper: 1.0, bFore: 2.5, headTilt: 0.2 }
+    /* wind: hips drop, the bracing hand reaches for the floor */
+    wind: {
+      hipY: 32, fThigh: 0.8, fShin: 1.6, bThigh: -1.0, bShin: -1.75,
+      lean: 0.26, fUpper: 1.1, fFore: 2.35, bUpper: 0.9, bFore: 2.45,
+      headTilt: 0.14
+    },
+    /* strike: hips very low, the hand plants, the leg sweeps flat along the
+       floor, the head stays up so the silhouette reads */
+    strike: {
+      hipY: 20, fThigh: 1.58, fShin: 1.52, bThigh: -1.1, bShin: -1.85,
+      lean: 0.42, hipX: 10,
+      fUpper: 1.5, fFore: 2.7, bUpper: 1.25, bFore: 2.6,
+      headTilt: -0.05
+    }
   },
   airKick: {
     wind: { fThigh: 1.0, fShin: 2.2, bThigh: 0.3, bShin: 2.0, lean: 0.1, fUpper: -0.5, fFore: 1.1 },
