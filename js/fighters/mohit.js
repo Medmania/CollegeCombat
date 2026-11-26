@@ -30,6 +30,7 @@
   name: 'Mohit',
   tagline: 'Staring problem, officially',
   colors: { body: '#e07a5f', accent: '#f4f1de', skin: '#f0c9a0', hair: '#1f1f1f' },
+  look: { hair: { style: 'long' }, body: 'average', prop: 'heart' },
   stats: { speed: 1.15, power: 0.9, weight: 0.85, hp: 88 },
   moves: {
     punch: { damage: 6, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

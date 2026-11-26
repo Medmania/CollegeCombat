@@ -30,6 +30,7 @@
   name: 'Apoorv',
   tagline: 'Mood swings, hourly',
   colors: { body: '#3f6fa8', accent: '#ffd166', skin: '#e3b489', hair: '#2b2b2b' },
+  look: { hair: { style: 'short' }, body: 'slim', prop: 'mood' },
   stats: { speed: 1.12, power: 1.0, weight: 0.95, hp: 96 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

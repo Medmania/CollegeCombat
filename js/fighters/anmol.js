@@ -30,6 +30,7 @@
   name: 'Anmol',
   tagline: 'Diidii with a plan',
   colors: { body: '#6b2d5c', accent: '#f0abfc', skin: '#d9a97c', hair: '#241d33' },
+  look: { hair: { style: 'slick' }, body: 'tall', prop: 'crown', extra: 'beard' },
   stats: { speed: 0.98, power: 1.1, weight: 1.05, hp: 104 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

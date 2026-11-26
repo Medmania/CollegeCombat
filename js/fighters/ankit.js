@@ -30,6 +30,7 @@
   name: 'Ankit',
   tagline: 'Pinchu Panda, at your service',
   colors: { body: '#2f4f4f', accent: '#f4f1de', skin: '#f0c9a0', hair: '#111111' },
+  look: { hair: { style: 'short' }, body: 'stocky', prop: 'panda' },
   stats: { speed: 0.88, power: 1.2, weight: 1.3, hp: 130 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

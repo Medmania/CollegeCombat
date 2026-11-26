@@ -30,6 +30,7 @@
   name: 'Mukesh',
   tagline: 'Ambani of the team',
   colors: { body: '#5c3d1f', accent: '#ffd166', skin: '#c98d63', hair: '#241d33' },
+  look: { hair: { style: 'slick', color: '#2a2a2a' }, body: 'broad', prop: 'buffalo' },
   stats: { speed: 0.9, power: 1.08, weight: 1.25, hp: 122 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

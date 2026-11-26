@@ -30,6 +30,7 @@
   name: 'Saurav',
   tagline: 'Absolute thiccness',
   colors: { body: '#5b4b8a', accent: '#ff8fab', skin: '#e0b090', hair: '#241d33' },
+  look: { hair: { style: 'bun' }, body: 'broad', prop: 'thigh' },
   stats: { speed: 0.9, power: 1.05, weight: 1.3, hp: 125 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

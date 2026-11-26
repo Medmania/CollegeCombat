@@ -30,6 +30,7 @@
   name: 'Aditya',
   tagline: 'Hero of every story',
   colors: { body: '#2f7d63', accent: '#b8f2e6', skin: '#d9a97c', hair: '#20201f' },
+  look: { hair: { style: 'slick' }, body: 'slim', prop: 'mic', extra: 'glasses' },
   stats: { speed: 1.02, power: 1.0, weight: 1.0, hp: 98 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

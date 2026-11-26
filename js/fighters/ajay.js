@@ -30,6 +30,7 @@
   name: 'Ajay',
   tagline: 'Main character energy',
   colors: { body: '#1f3b57', accent: '#00d4ff', skin: '#c98a5e', hair: '#12161b' },
+  look: { hair: { style: 'cap' }, body: 'slim', prop: 'phone' },
   stats: { speed: 1.1, power: 0.98, weight: 0.95, hp: 94 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

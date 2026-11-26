@@ -30,6 +30,7 @@
   name: '31',
   tagline: 'Level sabke nikalenge',
   colors: { body: '#7c3aed', accent: '#c4b5fd', skin: '#e3b489', hair: '#241d33' },
+  look: { hair: { style: 'short' }, body: 'average', prop: 'bottle' },
   stats: { speed: 1.0, power: 1.05, weight: 1.05, hp: 100 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

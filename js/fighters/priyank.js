@@ -30,6 +30,7 @@
   name: 'Priyank',
   tagline: 'One more set, bro',
   colors: { body: '#8e2f2f', accent: '#ffb703', skin: '#c98d63', hair: '#3a1010' },
+  look: { hair: { style: 'crop' }, body: 'stocky', prop: 'dumbbell', extra: 'stubble' },
   stats: { speed: 0.92, power: 1.15, weight: 1.15, hp: 110 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

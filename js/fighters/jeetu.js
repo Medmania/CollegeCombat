@@ -30,6 +30,7 @@
   name: 'Jeetu',
   tagline: 'Kanhaiya of the group',
   colors: { body: '#2b5d8a', accent: '#a5d8ff', skin: '#e8b98a', hair: '#1a1a1a' },
+  look: { hair: { style: 'curly' }, body: 'average', prop: 'eyes' },
   stats: { speed: 1.05, power: 1.05, weight: 1.0, hp: 96 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

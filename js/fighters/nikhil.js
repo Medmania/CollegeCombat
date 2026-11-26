@@ -30,6 +30,7 @@
   name: 'Nikhil',
   tagline: 'Lucky, chikna, hungry',
   colors: { body: '#d98e04', accent: '#fff3b0', skin: '#e3b489', hair: '#2b2b2b' },
+  look: { hair: { style: 'bald' }, body: 'round', prop: 'belly' },
   stats: { speed: 0.95, power: 1.1, weight: 1.2, hp: 118 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

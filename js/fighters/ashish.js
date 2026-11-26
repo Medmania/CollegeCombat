@@ -30,6 +30,7 @@
   name: 'Ashish',
   tagline: 'Rizzler in residence',
   colors: { body: '#8a4f7d', accent: '#ffc2e2', skin: '#e3b489', hair: '#241d33' },
+  look: { hair: { style: 'slick' }, body: 'average', prop: 'rose' },
   stats: { speed: 1.12, power: 0.92, weight: 0.9, hp: 90 },
   moves: {
     punch: { damage: 6, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

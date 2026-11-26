@@ -30,6 +30,7 @@
   name: '33',
   tagline: 'Giant, on a scooty',
   colors: { body: '#4a3b2a', accent: '#ffd166', skin: '#c98d63', hair: '#241d33' },
+  look: { hair: { style: 'cap' }, body: 'slim', prop: 'scooty' },
   stats: { speed: 0.93, power: 1.15, weight: 1.3, hp: 115 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
