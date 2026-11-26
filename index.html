@@ -3480,6 +3480,49 @@ function createRenderer(canvas) {
     }
   }
 
+  function drawTumble(p, foot, s, dir) {
+    const c = p.colors;
+    const u = (v) => v * s;
+    const progress = clamp(1 - p.downT / 1.1, 0, 1);
+    const spin = -dir * progress * Math.PI * 1.7;
+
+    const cx = foot.x;
+    const cy = foot.y - u(54);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(spin);
+
+    const body = c.body;
+    const dark = shade(c.body, -34);
+    const outline = 'rgba(0,0,0,0.42)';
+
+    /* torso */
+    limb([0, u(16)], [0, -u(22)], u(19), u(22), body, outline);
+
+    /* flailing limbs */
+    const flail = progress * 6;
+    limb([0, -u(16)], [-u(20) + Math.sin(flail) * u(6), -u(2)], u(9), u(7), dark, outline);
+    limb([0, -u(16)], [u(20) + Math.cos(flail) * u(6), -u(4)], u(9), u(7), dark, outline);
+    limb([0, u(12)], [-u(16) - Math.cos(flail) * u(8), u(40)], u(10), u(8), dark, outline);
+    limb([0, u(12)], [u(16) + Math.sin(flail) * u(8), u(38)], u(10), u(8), dark, outline);
+
+    /* head, with the dizzy ring */
+    ctx.fillStyle = c.skin;
+    ctx.beginPath();
+    ctx.arc(0, -u(38), u(13), 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = u(2);
+    ctx.stroke();
+    ctx.fillStyle = c.hair || '#222';
+    ctx.beginPath();
+    ctx.arc(0, -u(40), u(13), Math.PI * 1.05, Math.PI * 1.95);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   function drawDowned(p, foot, s, dir) {
     const c = p.colors;
     const u = (v) => v * s;
@@ -3713,9 +3756,32 @@ function createRenderer(canvas) {
     }
 
     if (!p.alive || p.downT > 0.02) {
+      /* still in the air from the launch: he tumbles, then lands flat */
+      if (!p.onGround && (p.downT > 0.02 || !p.alive)) {
+        drawTumble(p, foot, s, dir);
+        return;
+      }
+      /* a puff of dust the first frame he settles */
+      if (p.downT > 0.02 && !p._dustDone) {
+        p._dustDone = true;
+        for (let i = 0; i < 6; i++) {
+          particles.push({
+            x: p.x + (Math.random() - 0.5) * 30,
+            h: 4,
+            vx: (Math.random() - 0.5) * 220,
+            vh: 30 + Math.random() * 80,
+            g: 300,
+            r: 6 + Math.random() * 9,
+            life: 0.45,
+            maxLife: 0.45,
+            color: '#c8b49a'
+          });
+        }
+      }
       drawDowned(p, foot, s, dir);
       return;
     }
+    p._dustDone = false;
 
     /* where the strike is in its arc, this frame */
     if (p.attack) {
