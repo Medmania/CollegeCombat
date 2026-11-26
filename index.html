@@ -610,7 +610,7 @@ textarea:focus {
 }
 
 .hud-name {
-  font-size: 8px;
+  font-size: 13px;
   font-weight: 800;
   color: #e6ecf4;
   white-space: nowrap;
@@ -620,14 +620,32 @@ textarea:focus {
 
 .hud-bar {
   display: block;
-  height: 3.5px;
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.6);
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.62);
   overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 
-.hud-bar.mt {
-  height: 2px;
+/* the damage trail sits behind the fill and catches up slowly */
+.hud-bar.hp .trail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 92, 92, 0.55);
+  transition: width 0.5s ease-out;
+}
+
+.hud-bar.hp .fill {
+  position: relative;
+  z-index: 1;
+}
+
+.hud-bar.sm {
+  height: 6px;
+  margin-top: 3px;
 }
 
 .hud-bar i {
@@ -779,15 +797,8 @@ textarea:focus {
 }
 
 .pad-btn.super {
-  position: absolute;
-  right: 0;
-  top: -46px;
-  width: 92px;
-  height: 38px;
-  border-radius: 12px;
   border-color: rgba(255, 209, 102, 0.45);
   color: var(--super);
-  opacity: 0.45;
 }
 
 .pad-btn.super.ready {
@@ -1305,7 +1316,7 @@ input[type='range'] {
 .lab-hud .lab-wait { color: #8ad4ff; }
 
 /* ------------------------------------------------- fighter selection (A1) */
-#screen-pick {
+.screen#screen-pick.active {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1469,7 +1480,150 @@ input[type='range'] {
   .pick-preview .pv-text { width: 100%; }
   .pick-grid { flex: 1; }
   .roster { grid-template-columns: repeat(5, 1fr); }
-  #screen-pick { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .screen#screen-pick.active { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+/* --------------------------------------------------- HUD and controls (A4/A5) */
+
+/* portrait inside the health card */
+.hud-face {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.hud-face .hud-portrait { width: 100%; height: 100%; display: block; }
+
+/* low health: a slow breathing glow, never a strobe */
+.hud-card.low .hud-face {
+  border-color: #ff6b6b;
+  animation: lowpulse 1.6s ease-in-out infinite;
+}
+@keyframes lowpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 92, 92, 0.0); }
+  50% { box-shadow: 0 0 8px 2px rgba(255, 92, 92, 0.55); }
+}
+
+/* the ticker must never compete with the health bars */
+.ticker {
+  font-size: 10px !important;
+  opacity: 0.62;
+  max-width: 34vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- round thumb buttons in a curved cluster --- */
+.pad {
+  position: relative;
+  display: block;
+  width: 200px;
+  height: 150px;
+}
+
+.pad-btn {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.26);
+  background: rgba(12, 10, 16, 0.42);
+  backdrop-filter: blur(4px);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  touch-action: none;
+  pointer-events: auto;
+  transition: transform 0.07s ease, background 0.1s ease, border-color 0.1s ease;
+}
+
+.pad-btn.pressed {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* PUNCH low-left, KICK low-right, SUPER above between them */
+.pad-btn.punch { left: 6px; bottom: 6px; }
+.pad-btn.kick { right: 6px; bottom: 18px; }
+.pad-btn.super {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 78px;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  border-color: rgba(255, 209, 102, 0.4);
+}
+.pad-btn.super.pressed { transform: translateX(-50%) scale(0.9); }
+
+/* the charge ring: a conic sweep that fills as the meter charges */
+.pad-btn.super::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(#ffd166 var(--charge, 0%), rgba(255, 255, 255, 0.08) 0);
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%);
+  mask: radial-gradient(circle, transparent 62%, #000 64%);
+  pointer-events: none;
+}
+.pad-btn.super.ready {
+  border-color: #ffd166;
+  animation: superready 1.5s ease-in-out infinite;
+}
+@keyframes superready {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.0); }
+  50% { box-shadow: 0 0 14px 3px rgba(255, 209, 102, 0.6); }
+}
+
+/* small screens: shrink the cluster a little, never below 44px targets */
+@media (max-height: 400px) {
+  .pad { width: 190px; height: 140px; }
+  .pad-btn { width: 64px; height: 64px; }
+  .pad-btn.super { bottom: 70px; width: 64px; height: 64px; }
+}
+
+/* top row: ticker left, timer dead centre, quit right */
+.hud-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+}
+.hud-row .timer {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+.hud-row .ticker {
+  max-width: 40%;
+  order: 0;
+}
+.hud-row #btn-quit {
+  order: 2;
+  min-height: 32px;
+  min-width: 58px;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(12, 10, 16, 0.55);
+}
+.hud-row #btn-quit.armed {
+  border-color: #ff6b6b;
+  color: #ff9b9b;
+  background: rgba(120, 20, 20, 0.5);
 }
     </style>
   </head>
@@ -5491,15 +5645,32 @@ function buildHudStrip() {
     const el = document.createElement('div');
     el.className = 'hud-card' + (p.id === S.localId ? ' me' : '');
     el.innerHTML = `
-      <span class="hud-face" style="background:${esc(p.colors.body)};border-color:${esc(p.colors.accent)}"></span>
+      <span class="hud-face"></span>
       <span class="hud-info">
         <span class="hud-name">${esc(p.name)}<span class="hud-pips" data-pips="${p.id}"></span></span>
-        <span class="hud-bar hp"><i></i></span>
-        <span class="hud-bar mt"><i style="background:${esc(p.colors.accent)}"></i></span>
+        <span class="hud-bar hp"><i class="trail"></i><i class="fill"></i></span>
+        <span class="hud-bar sm"><i style="background:${esc(p.colors.accent)}"></i></span>
       </span>
       ${p.isBot ? '<span class="hud-tag">BOT</span>' : ''}`;
+
+    /* the same portrait as the pick screen */
+    const face = el.querySelector('.hud-face');
+    const cv = document.createElement('canvas');
+    cv.width = 64;
+    cv.height = 64;
+    cv.className = 'hud-portrait';
+    drawPortrait(cv.getContext('2d'), getCharacter(p.charId), 64, { showProp: false });
+    face.appendChild(cv);
+
     strip.appendChild(el);
-    S.hudCards.push({ id: p.id, el, hp: el.querySelector('.hp i'), mt: el.querySelector('.mt i') });
+    S.hudCards.push({
+      id: p.id,
+      el,
+      hp: el.querySelector('.hp .fill'),
+      trail: el.querySelector('.hp .trail'),
+      mt: el.querySelector('.sm i'),
+      shown: 1
+    });
   }
   updateHudPips();
 }
@@ -5749,7 +5920,10 @@ function updateHud() {
   }
 
   const local = m.players.find((p) => p.id === S.localId);
-  $('#btn-super').classList.toggle('ready', !!local && local.meter >= SUPER_COST);
+  const btn = $('#btn-super');
+  btn.classList.toggle('ready', !!local && local.meter >= SUPER_COST);
+  /* the ring around Super fills as the meter charges */
+  btn.style.setProperty('--charge', `${Math.max(0, Math.min(100, local ? local.meter : 0))}%`);
 
   for (const card of S.hudCards) {
     const p = m.players.find((q) => q.id === card.id);
@@ -5757,8 +5931,16 @@ function updateHud() {
     const hpFrac = Math.max(0, Math.min(1, p.hp / p.maxHp));
     card.hp.style.width = `${hpFrac * 100}%`;
     card.hp.style.background = hpFrac > 0.5 ? '#4ade80' : hpFrac > 0.22 ? '#facc15' : '#f87171';
+
+    /* the trail holds where health was, then catches up — so a hit reads */
+    if (card.shown === undefined) card.shown = hpFrac;
+    if (hpFrac < card.shown) card.shown = Math.max(hpFrac, card.shown - 0.012);
+    else card.shown = hpFrac;
+    if (card.trail) card.trail.style.width = `${card.shown * 100}%`;
+
     card.mt.style.width = `${Math.max(0, Math.min(100, p.meter))}%`;
     card.el.classList.toggle('dead', !p.alive);
+    card.el.classList.toggle('low', hpFrac > 0 && hpFrac < 0.25);
   }
 }
 
@@ -5984,9 +6166,28 @@ function wire() {
     }
   });
 
+  let quitArmed = 0;
   $('#btn-quit').addEventListener('click', () => {
-    quitToMenu();
-    toast('Match abandoned');
+    const btn = $('#btn-quit');
+    const now = Date.now();
+    if (now - quitArmed < 2600) {
+      clearTimeout(quitArmed);
+      quitArmed = 0;
+      btn.textContent = 'Quit';
+      btn.classList.remove('armed');
+      quitToMenu();
+      toast('Match abandoned');
+      return;
+    }
+    quitArmed = now;
+    btn.textContent = 'Sure?';
+    btn.classList.add('armed');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => {
+      btn.textContent = 'Quit';
+      btn.classList.remove('armed');
+      quitArmed = 0;
+    }, 2600);
   });
 
   $('#result-again').addEventListener('click', () => {
