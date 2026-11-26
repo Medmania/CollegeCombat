@@ -192,6 +192,11 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     downT: 0,
     hitstun: 0,
     iframes: 0,
+    slowT: 0,
+    weakT: 0,
+    lockT: 0,
+    superLive: null,
+    superDef: char.moves.super || {},
     dashT: 0,
     dashDir: 1,
     cd: { punch: 0, kick: 0, dash: 0 },
@@ -216,7 +221,18 @@ function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
   const players = fighters.map((f, i) =>
     makePlayer({ id: f.id, name: f.name, char: f.char, isBot: f.isBot, slot: i, count })
   );
-  return { tick: 0, timeLeft: roundTime, roundTime, over: false, winner: null, players, events: [], seed };
+  return {
+    tick: 0,
+    timeLeft: roundTime,
+    roundTime,
+    over: false,
+    winner: null,
+    players,
+    events: [],
+    projectiles: [],
+    projSeq: 1,
+    seed
+  };
 }
 
 function hurtBox(p) {
@@ -253,6 +269,9 @@ function stepMatch(m, inputs) {
     p.cd.dash = Math.max(0, p.cd.dash - TICK);
     p.iframes = Math.max(0, p.iframes - TICK);
     p.hitstun = Math.max(0, p.hitstun - TICK);
+    p.slowT = Math.max(0, p.slowT - TICK);
+    p.weakT = Math.max(0, p.weakT - TICK);
+    p.lockT = Math.max(0, p.lockT - TICK);
     if (p.downT > 0) p.downT = Math.max(0, p.downT - TICK);
 
     const inp = inputs[p.id] || EMPTY_INPUT;
@@ -268,7 +287,7 @@ function stepMatch(m, inputs) {
     /* holding away from your opponent turns a kick into a back kick */
     const backward = (inp.mx || 0) * p.facing < -0.3;
 
-    if (p.hitstun > 0 || p.downT > 0) {
+    if (p.hitstun > 0 || p.downT > 0 || p.lockT > 0) {
       /* no control */
     } else if (p.attack) {
       p.attack.t += TICK;
@@ -293,9 +312,17 @@ function stepMatch(m, inputs) {
 
       if (inp.super && p.meter >= SUPER_COST && p.onGround) {
         p.meter = 0;
-        p.attack = { type: 'super', t: 0, dur: 0.66, hitAt: 0.22, hit: false, def: p.moves.super };
+        const sd = p.superDef || {};
+        p.attack = {
+          type: 'super',
+          t: 0,
+          dur: sd.dur || 0.66,
+          hitAt: sd.hitAt || 0.22,
+          hit: false,
+          def: sd
+        };
         p.vx = 0;
-        m.events.push({ type: 'superstart', x: p.x, h: p.h, id: p.id });
+        m.events.push({ type: 'superstart', x: p.x, h: p.h, r: 40, id: p.id, kind: sd.kind || 'blast' });
       } else if (inp.punch && p.cd.punch <= 0) {
         startAttack(p, pickAttack(p, 'punch', ctx));
       } else if (inp.kick && p.cd.kick <= 0) {
@@ -319,7 +346,8 @@ function stepMatch(m, inputs) {
       p.vx *= Math.pow(0.05, TICK);
     } else {
       const mx = clamp(inp.mx || 0, -1, 1);
-      const speed = p.stats.speed * 300 * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
+      const slow = p.slowT > 0 ? 0.45 : 1;
+      const speed = p.stats.speed * 300 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
       p.vx = mx * speed;
     }
 
@@ -339,6 +367,11 @@ function stepMatch(m, inputs) {
     p.x += p.vx * TICK;
     p.x = clamp(p.x, LANE.min + PLAYER_R, LANE.max - PLAYER_R);
   }
+
+  for (const p of m.players) {
+    if (p.alive && p.superLive) stepSuperLive(m, p);
+  }
+  stepProjectiles(m);
 
   separate(m);
   checkEnd(m);
@@ -364,16 +397,145 @@ function startAttack(p, def) {
   p.vx *= 0.4;
 }
 
-function resolveHit(m, p, atk) {
-  if (atk.type === 'super') {
-    const s = atk.def;
+
+/* ---------------------------------------------------------------- supers
+
+   Five shapes cover the whole roster:
+
+     blast   instant hit in a radius around you
+     shot    a projectile that travels and hits once
+     beam    sustained damage in a line in front of you
+     flurry  sustained multi-hit close range
+     aura    sustained pulse around you that can debuff        */
+
+function fireSuper(m, p, def) {
+  const kind = (def && def.kind) || 'blast';
+  const d = def || {};
+  /* only a blast is a radial burst; other kinds draw their own shape */
+  m.events.push({ type: 'super', x: p.x, h: p.h, r: kind === 'blast' ? d.range || 180 : 46, id: p.id, kind });
+
+  if (kind === 'blast') {
     for (const t of m.players) {
       if (t === p || !t.alive) continue;
-      if (Math.abs(t.x - p.x) <= s.range) {
-        applyDamage(m, p, t, { hitstun: 0.5, knockdown: true }, s.damage, s.knock, 'super');
+      if (Math.abs(t.x - p.x) <= (d.range || 180)) {
+        applyDamage(m, p, t, { hitstun: 0.5, knockdown: d.knockdown !== false }, d.damage || 26, d.knock || 600, 'super');
       }
     }
-    m.events.push({ type: 'super', x: p.x, h: p.h, r: s.range, id: p.id });
+    return;
+  }
+
+  if (kind === 'shot') {
+    const n = d.count || 1;
+    for (let i = 0; i < n; i++) {
+      m.projectiles.push({
+        id: `p${m.projSeq++}`,
+        owner: p.id,
+        x: p.x + p.facing * 34,
+        h: d.h0 != null ? d.h0 : 62,
+        vx: p.facing * (d.speed || 520) * (1 + i * 0.05),
+        vh: d.arc ? 260 : 0,
+        r: d.r || 22,
+        damage: d.damage || 18,
+        knock: d.knock || 320,
+        life: d.life || 1.8,
+        gravity: d.arc ? 1900 : 0,
+        bounces: d.bounces || 0,
+        hitIds: [],
+        look: d.look || 'shot',
+        facing: p.facing
+      });
+    }
+    return;
+  }
+
+  /* beam / flurry / aura run for a while and tick damage */
+  p.superLive = {
+    kind,
+    def: d,
+    t: 0,
+    dur: d.dur || 1.0,
+    interval: d.interval || 0.16,
+    next: 0
+  };
+}
+
+function stepSuperLive(m, p) {
+  const live = p.superLive;
+  if (!live) return;
+  const d = live.def;
+  live.t += TICK;
+  live.next -= TICK;
+
+  if (live.next <= 0) {
+    live.next = live.interval;
+
+    for (const t of m.players) {
+      if (t === p || !t.alive) continue;
+      const dx = t.x - p.x;
+      const dist = Math.abs(dx);
+
+      let inRange = false;
+      if (live.kind === 'beam') {
+        inRange = dist <= (d.range || 260) && dx * p.facing > -PLAYER_R;
+      } else if (live.kind === 'flurry') {
+        inRange = dist <= (d.range || 150);
+      } else {
+        inRange = dist <= (d.range || 170);
+      }
+      if (!inRange) continue;
+
+      const [hmin, hmax] = hurtBox(t);
+      const band = live.kind === 'beam' ? [20, 120] : [0, 130];
+      if (hmax <= band[0] || hmin >= band[1]) continue;
+
+      applyDamage(m, p, t, { hitstun: 0.12 }, d.damage || 4, d.knock || 40, 'super');
+      if (d.slow) t.slowT = Math.max(t.slowT, d.slow);
+      if (d.weak) t.weakT = Math.max(t.weakT, d.weak);
+      if (d.lock) t.lockT = Math.max(t.lockT, d.lock);
+    }
+  }
+
+  if (live.t >= live.dur) p.superLive = null;
+}
+
+function stepProjectiles(m) {
+  for (let i = m.projectiles.length - 1; i >= 0; i--) {
+    const pr = m.projectiles[i];
+    pr.life -= TICK;
+    pr.vh -= pr.gravity * TICK;
+    pr.x += pr.vx * TICK;
+    pr.h += pr.vh * TICK;
+
+    if (pr.h <= 0) {
+      pr.h = 0;
+      if (pr.bounces > 0) {
+        pr.bounces--;
+        pr.vh = Math.abs(pr.vh) * 0.5;
+        pr.vx *= 0.75;
+      } else {
+        pr.vh = 0;
+        pr.vx *= 0.92;
+      }
+    }
+
+    for (const t of m.players) {
+      if (!t.alive || t.id === pr.owner || pr.hitIds.includes(t.id)) continue;
+      const [hmin, hmax] = hurtBox(t);
+      if (Math.abs(t.x - pr.x) > pr.r + PLAYER_R) continue;
+      if (pr.h < hmin - pr.r || pr.h > hmax + pr.r) continue;
+      pr.hitIds.push(t.id);
+      const owner = playerById(m, pr.owner) || t;
+      applyDamage(m, owner, t, { hitstun: 0.3 }, pr.damage, pr.knock, 'super');
+      pr.life = Math.min(pr.life, 0.06);
+    }
+
+    if (pr.life <= 0 || pr.x < LANE.min - 140 || pr.x > LANE.max + 140) m.projectiles.splice(i, 1);
+  }
+}
+
+function resolveHit(m, p, atk) {
+  if (atk.type === 'super') {
+    fireSuper(m, p, atk.def);
     return;
   }
 
@@ -395,7 +557,7 @@ function resolveHit(m, p, atk) {
 
 function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   if (tgt.iframes > 0) return false;
-  const dmg = baseDmg * src.stats.power;
+  const dmg = baseDmg * src.stats.power * (src.weakT > 0 ? 0.6 : 1);
   tgt.hp = Math.max(0, tgt.hp - dmg);
 
   const dir = sign(tgt.x - src.x) || src.facing;
@@ -488,7 +650,16 @@ function packSnapshot(m) {
       c: p.crouching ? 1 : 0,
       d: p.downT > 0 ? 1 : 0,
       at: p.attack ? p.attack.type : 0,
-      ap: p.attack ? Math.round((p.attack.t / p.attack.dur) * 100) / 100 : 0
+      ap: p.attack ? Math.round((p.attack.t / p.attack.dur) * 100) / 100 : 0,
+      sl: p.slowT > 0 ? 1 : 0,
+      lk: p.lockT > 0 ? 1 : 0
+    })),
+    pr: m.projectiles.map((pr) => ({
+      x: Math.round(pr.x),
+      h: Math.round(pr.h),
+      r: Math.round(pr.r),
+      l: pr.look,
+      f: pr.facing
     })),
     e: m.events.map((e) => ({
       y: e.type,
@@ -516,7 +687,26 @@ function unpackSnapshot(snap, match) {
     p.crouching = !!sp.c;
     p.downT = sp.d ? 0.5 : 0;
     p.attack = sp.at ? { type: sp.at, t: sp.ap * 0.4, dur: 0.4, hit: true } : null;
+    p.slowT = sp.sl ? 0.5 : 0;
+    p.lockT = sp.lk ? 0.5 : 0;
   }
+  match.projectiles = (snap.pr || []).map((pr) => ({
+    id: `r${pr.x}`,
+    owner: '',
+    x: pr.x,
+    h: pr.h,
+    r: pr.r,
+    vx: 0,
+    vh: 0,
+    gravity: 0,
+    life: 1,
+    damage: 0,
+    knock: 0,
+    bounces: 0,
+    hitIds: ['*'],
+    look: pr.l,
+    facing: pr.f
+  }));
   match.tick = snap.k;
   match.timeLeft = snap.tl;
   match.over = !!snap.ov;

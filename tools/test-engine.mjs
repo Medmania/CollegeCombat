@@ -3,7 +3,7 @@
    Loads the same files the browser loads, so this tests the real code.
    The stick is one control: my < 0 is up (jump), my > 0 is down (crouch). */
 
-for (const f of ['manager', 'intern', 'deadline', 'replyall', 'sixpm', 'founder']) {
+for (const f of ['apoorv', 'priyank', 'saurav', 'aditya', 'thirtyone', 'mohit', 'nikhil', 'ajay', 'jeetu', 'mukesh', 'ankit', 'ansh', 'anmol', 'adnan', 'thirtytwo', 'thirtythree', 'ashish']) {
   await import(`../js/fighters/${f}.js`);
 }
 await import('../js/characters.js');
@@ -25,7 +25,7 @@ function check(name, cond, detail = '') {
 const idle = { mx: 0, my: 0, punch: false, kick: false, dash: false, super: false };
 const act = (o) => ({ ...idle, ...o });
 
-function makeTwo(a = 'manager', b = 'intern') {
+function makeTwo(a = 'apoorv', b = 'priyank') {
   return createMatch({
     fighters: [
       { id: 'p0', name: 'A', char: getCharacter(a), isBot: false },
@@ -225,6 +225,84 @@ console.log('\nsuper');
   check('super consumes the meter', a.meter === 0);
   run(m, 14, { p0: idle, p1: idle });
   check('super damages a nearby opponent', b.hp < b.maxHp);
+}
+
+console.log('\nsuper archetypes');
+{
+  /* blast: instant damage in a radius */
+  const m = makeTwo('saurav', 'apoorv');
+  const [a, b] = m.players;
+  b.x = a.x + 120;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  run(m, 12, { p0: idle, p1: idle });
+  check('blast super damages nearby', b.hp < b.maxHp, `${b.hp}`);
+}
+
+{
+  /* shot: a projectile that travels and hits once */
+  const m = makeTwo('priyank', 'apoorv');
+  const [a, b] = m.players;
+  b.x = a.x + 240;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  run(m, 9, { p0: idle, p1: idle });
+  check('shot super spawns a projectile', m.projectiles.length > 0, `${m.projectiles.length}`);
+  const before = b.hp;
+  run(m, 40, { p0: idle, p1: idle });
+  check('the projectile damages the target', b.hp < before, `${b.hp} vs ${before}`);
+  check('projectiles clear up afterwards', m.projectiles.length === 0);
+}
+
+{
+  /* beam: sustained damage in front */
+  const m = makeTwo('jeetu', 'apoorv');
+  const [a, b] = m.players;
+  b.x = a.x + 150;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  run(m, 9, { p0: idle, p1: idle });
+  check('beam super goes live', !!a.superLive, a.superLive && a.superLive.kind);
+  const before = b.hp;
+  run(m, 30, { p0: idle, p1: idle });
+  check('the beam keeps damaging', b.hp < before - 4, `${b.hp} vs ${before}`);
+}
+
+{
+  /* aura: debuffs everyone in range */
+  const m = makeTwo('ansh', 'apoorv');
+  const [a, b] = m.players;
+  b.x = a.x + 110;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  run(m, 14, { p0: idle, p1: idle });
+  check('aura super applies slow', b.slowT > 0, `slowT=${b.slowT.toFixed(2)}`);
+  check('aura super applies weakness', b.weakT > 0, `weakT=${b.weakT.toFixed(2)}`);
+}
+
+{
+  /* flurry: several small hits in a row */
+  const m = makeTwo('apoorv', 'saurav');
+  const [a, b] = m.players;
+  b.x = a.x + 110;
+  a.meter = 100;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  run(m, 9, { p0: idle, p1: idle });
+  const before = b.hp;
+  run(m, 34, { p0: idle, p1: idle });
+  check('flurry super multi-hits', before - b.hp >= 8, `damage ${(before - b.hp).toFixed(0)}`);
+}
+
+{
+  /* every fighter declares a usable super */
+  const kinds = new Set();
+  for (const c of CHARACTERS) {
+    const sd = c.moves && c.moves.super;
+    if (!sd) continue;
+    kinds.add(sd.kind || 'blast');
+  }
+  check('roster covers several super kinds', kinds.size >= 4, [...kinds].join(','));
+  check('every super has damage', CHARACTERS.every((c) => c.moves.super.damage > 0));
 }
 
 console.log('\nfull round');

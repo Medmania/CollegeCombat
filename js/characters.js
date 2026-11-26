@@ -5,7 +5,7 @@
    scroll during a fight.
 
    TO ADD A CHARACTER
-     1. copy js/fighters/intern.js to js/fighters/<their-id>.js
+     1. copy js/fighters/apoorv.js to js/fighters/<their-id>.js
      2. edit the values in it
      3. add one line to index.html beside the other fighters:
           <script src="js/fighters/<their-id>.js"></script>

@@ -218,20 +218,47 @@ time.
   front of you.
 - A knockdown leaves you on the floor for about a second. Free hits.
 
+## The roster
+
+Seventeen fighters, one file each in `js/fighters/`. Every one has its own
+super, built from five archetypes in `js/engine.js`:
+
+| Kind | What it does | Who has one |
+| --- | --- | --- |
+| `blast` | instant hit in a radius around you | Saurav, Ankit, Adnan |
+| `shot` | a projectile that flies and hits once | Priyank, Nikhil, Ajay, Mukesh, 31, 33 |
+| `beam` | sustained damage in a line in front | Jeetu, Mohit |
+| `flurry` | sustained multi-hit at close range | Apoorv, Aditya, 32 |
+| `aura` | sustained pulse that can slow, weaken or lock | Ansh, Anmol, Ashish |
+
+Super parameters live in each fighter's `moves.super`:
+
+```js
+super: { kind: 'shot', name: 'Gym Ka Hisaab', damage: 24, speed: 560,
+         r: 26, bounces: 1, knock: 520, look: 'dumbbell' }
+```
+
+- `beam` / `flurry` / `aura` also take `dur`, `interval`, and optionally `slow`,
+  `weak` and `lock` (seconds of debuff).
+- `shot` takes `speed`, `r`, `bounces`, `arc` (lob it) and `count` (a herd).
+- `blast` takes `range`, `knock` and `knockdown`.
+
+`look` picks the shape the renderer draws: `dumbbell`, `ball`, `cloud`,
+`tripod`, `scooty`, `herd`, `haze`, `heart`, `beam`, `laser`, `ghost`, `mood`,
+`bubble`, `dark`, `panda`, `thigh`.
+
 ## Bots
 
 Bots are built from three layers, all in `js/ai.js`:
 
 **Profile** — temperament, blended from the fighter's passive and its id:
 
-| Fighter | Passive | How it fights |
-| --- | --- | --- |
-| The Intern | slippery | swarms you, dashes in, pokes with kicks |
-| The Deadline | heavy | patient, holds range, waits for a mistake, heavy kicks |
-| The Manager | none | balanced, tries to sit at its best distance |
-| The Founder | tank | walks you down, absorbs pressure, looks for a super |
-| Reply All | charged | balanced, builds meter fast |
-| The 6 PM Call | shover | mid-range, knockback-heavy |
+| Fighter | How it fights |
+| --- | --- |
+| Mohit, 32, Apoorv, Ashish | fast and relentless, in your face |
+| Priyank, Adnan, Mukesh | patient, hold range, punish mistakes |
+| Ankit, Saurav, 33, Nikhil | walk you down and trade |
+| Jeetu, Aditya, 31, Anmol, Ajay, Ansh | balanced, mix pokes with pressure |
 
 Each profile sets `aggression`, `patience`, `spacing`, `mobility` and which
 button it reaches for first. Tweak the numbers in `PROFILES` to change a
@@ -256,14 +283,16 @@ networked match.
 npm test
 ```
 
-40 checks run against the same files the browser loads: hits connect at the right
+51 checks run against the same files the browser loads: hits connect at the right
 range, stick-up jumps and stick-down crouches, up+forward jumps obliquely, one
 swipe gives exactly one jump, a jab sails over a crouch, a sweep lands on a
 croucher and passes under a jump, crouch+punch becomes an uppercut that connects,
 air punch and air kick register only in the air, holding away turns a kick into a
-back kick, sweeps knock down, super needs a full meter, a four-player round
-finishes, nobody leaves the lane or falls through the floor, snapshots carry
-position and height, and every fighter file is complete.
+back kick, sweeps knock down, super needs a full meter, all five super
+archetypes do what they claim (blast, shot, beam, aura, flurry), projectiles
+travel, hit and clean up, a four-player round finishes, nobody leaves the lane or
+falls through the floor, snapshots carry position, height and projectiles, and
+every fighter file is complete.
 
 Debug helper in the browser console: `__kursi()` prints the live match state,
 which is handy while you tune numbers.

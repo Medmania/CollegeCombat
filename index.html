@@ -1325,12 +1325,23 @@ input[type='range'] {
     <div class="toast" id="toast"></div>
 
     <!-- THE ROSTER: one file per fighter. To add a character, add a line here. -->
-    <script src="js/fighters/manager.js"></script>
-    <script src="js/fighters/intern.js"></script>
-    <script src="js/fighters/deadline.js"></script>
-    <script src="js/fighters/replyall.js"></script>
-    <script src="js/fighters/sixpm.js"></script>
-    <script src="js/fighters/founder.js"></script>
+    <script src="js/fighters/apoorv.js"></script>
+    <script src="js/fighters/priyank.js"></script>
+    <script src="js/fighters/saurav.js"></script>
+    <script src="js/fighters/aditya.js"></script>
+    <script src="js/fighters/thirtyone.js"></script>
+    <script src="js/fighters/mohit.js"></script>
+    <script src="js/fighters/nikhil.js"></script>
+    <script src="js/fighters/ajay.js"></script>
+    <script src="js/fighters/jeetu.js"></script>
+    <script src="js/fighters/mukesh.js"></script>
+    <script src="js/fighters/ankit.js"></script>
+    <script src="js/fighters/ansh.js"></script>
+    <script src="js/fighters/anmol.js"></script>
+    <script src="js/fighters/adnan.js"></script>
+    <script src="js/fighters/thirtytwo.js"></script>
+    <script src="js/fighters/thirtythree.js"></script>
+    <script src="js/fighters/ashish.js"></script>
 
     <script src="js/characters.js"></script>
     <script src="js/engine.js"></script>
@@ -2368,7 +2379,7 @@ function createRenderer(canvas) {
           x: e.x,
           h: 55,
           r: 14,
-          max: e.r || 190,
+          max: e.r || 70,
           life: 0.5,
           maxLife: 0.5,
           color: p ? p.colors.accent : '#fff',
@@ -2498,6 +2509,173 @@ function createRenderer(canvas) {
     }
   }
 
+
+  /* ------------------------------------------------------- super effects */
+
+  function drawProjectiles(view) {
+    for (const pr of view.projectiles || []) {
+      const p = project([pr.x, 0, pr.h]);
+      if (!p) continue;
+      const owner = view.players.find((q) => q.id === pr.owner);
+      const col = owner ? owner.colors.accent : '#ffd166';
+      const body = owner ? owner.colors.body : '#8e2f2f';
+      const s = p.s;
+      const R = Math.max(4, pr.r * s);
+      const dir = pr.facing >= 0 ? 1 : -1;
+
+      const ground = project([pr.x, 0, 0]);
+      if (ground) {
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(ground.x, ground.y, R * 0.8, Math.max(2, 5 * s), 0, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.lineWidth = Math.max(1.5, 2 * s);
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+
+      if (pr.look === 'dumbbell') {
+        ctx.fillStyle = '#2b2f36';
+        ctx.beginPath();
+        ctx.roundRect(p.x - R, p.y - R * 0.22, R * 2, R * 0.44, R * 0.2);
+        ctx.fill();
+        ctx.stroke();
+        for (const d of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(p.x + d * R * 0.85, p.y, R * 0.5, 0, TAU);
+          ctx.fillStyle = '#3a4048';
+          ctx.fill();
+          ctx.stroke();
+        }
+      } else if (pr.look === 'herd') {
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.roundRect(p.x - R, p.y - R * 0.5, R * 1.8, R * 0.9, R * 0.3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(p.x + dir * R * 0.9, p.y - R * 0.5, R * 0.42, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+      } else if (pr.look === 'cloud' || pr.look === 'haze') {
+        ctx.fillStyle = 'rgba(120,220,140,0.55)';
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(p.x + Math.cos(i * 1.7) * R * 0.5, p.y + Math.sin(i * 2.1) * R * 0.4, R * 0.55, 0, TAU);
+          ctx.fill();
+        }
+      } else if (pr.look === 'tripod') {
+        ctx.strokeStyle = '#22262c';
+        ctx.lineWidth = Math.max(1.5, 3 * s);
+        ctx.beginPath();
+        ctx.moveTo(p.x - R * 0.7, p.y + R);
+        ctx.lineTo(p.x, p.y - R * 0.6);
+        ctx.lineTo(p.x + R * 0.7, p.y + R);
+        ctx.stroke();
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.roundRect(p.x - R * 0.5, p.y - R * 1.1, R, R * 0.7, R * 0.15);
+        ctx.fill();
+        ctx.stroke();
+      } else if (pr.look === 'scooty') {
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.roundRect(p.x - R, p.y - R * 0.55, R * 2, R * 0.8, R * 0.25);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#191c21';
+        for (const d of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(p.x + d * R * 0.65, p.y + R * 0.35, R * 0.34, 0, TAU);
+          ctx.fill();
+        }
+        ctx.fillStyle = 'rgba(255,220,150,0.75)';
+        ctx.beginPath();
+        ctx.ellipse(p.x - dir * R * 1.15, p.y - R * 0.15, R * 0.45, R * 0.25, 0, 0, TAU);
+        ctx.fill();
+      } else {
+        /* stomach missile, ball, generic */
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, R, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        ctx.arc(p.x - R * 0.3, p.y - R * 0.3, R * 0.32, 0, TAU);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = col;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, R * 1.05, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawSupers(view) {
+    for (const p of view.players) {
+      const live = p.superLive;
+      if (!live) continue;
+      const d = live.def || {};
+      const foot = project([p.x, 0, 0]);
+      if (!foot) continue;
+      const s = foot.s;
+      const col = p.colors.accent;
+      const fade = 1 - live.t / live.dur;
+      const dir = p.facing >= 0 ? 1 : -1;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.35 + 0.35 * Math.abs(Math.sin(time * 18));
+
+      if (live.kind === 'beam') {
+        const head = project([p.x + dir * 30, 0, 78]);
+        const tail = project([p.x + dir * (d.range || 280), 0, 78]);
+        if (head && tail) {
+          const g = ctx.createLinearGradient(head.x, 0, tail.x, 0);
+          g.addColorStop(0, '#ffffff');
+          g.addColorStop(0.35, col);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.strokeStyle = g;
+          ctx.lineWidth = 22 * s * (0.7 + 0.3 * fade);
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(head.x, head.y);
+          ctx.lineTo(tail.x, tail.y);
+          ctx.stroke();
+        }
+      } else if (live.kind === 'aura') {
+        const r = (d.range || 170) * s;
+        const g = ctx.createRadialGradient(foot.x, foot.y - 40 * s, 10, foot.x, foot.y - 40 * s, r);
+        g.addColorStop(0, col);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.ellipse(foot.x, foot.y - 40 * s, r, r * 0.6, 0, 0, TAU);
+        ctx.fill();
+      } else {
+        /* flurry: arcs snapping out in front */
+        const r = (d.range || 150) * s;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 6 * s;
+        for (let i = 0; i < 3; i++) {
+          const off = Math.sin(time * 26 + i) * 0.5;
+          ctx.beginPath();
+          ctx.arc(foot.x, foot.y - 60 * s, r * (0.55 + i * 0.15), -0.7 + off, 0.7 + off);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  }
+
   function draw(view) {
     for (const p of view.players) {
       const m = motion.get(p.id);
@@ -2570,6 +2748,8 @@ function createRenderer(canvas) {
       drawFighter(p, foot, foot.s);
     }
 
+    drawSupers(view);
+    drawProjectiles(view);
     drawEffects();
     drawBubbles(view.players);
     ctx.restore();
@@ -2610,12 +2790,24 @@ const NEUTRAL = {
    mobility    how much it dashes and jumps around
    prefer      which button it reaches for first */
 const PROFILES = {
-  intern: { aggression: 1.3, patience: 0.25, spacing: 0.8, mobility: 1.35, prefer: 'kick' },
-  manager: { aggression: 1.0, patience: 0.55, spacing: 1.0, mobility: 1.0, prefer: 'punch' },
-  deadline: { aggression: 0.65, patience: 0.9, spacing: 1.15, mobility: 0.65, prefer: 'kick' },
-  replyall: { aggression: 1.0, patience: 0.5, spacing: 1.0, mobility: 1.0, prefer: 'punch' },
-  sixpm: { aggression: 1.1, patience: 0.45, spacing: 0.95, mobility: 0.95, prefer: 'kick' },
-  founder: { aggression: 1.05, patience: 0.65, spacing: 0.85, mobility: 0.8, prefer: 'punch' }
+  /* aggression · patience · spacing · mobility · preferred button */
+  apoorv: { aggression: 1.2, patience: 0.25, spacing: 0.85, mobility: 1.2, prefer: 'punch' },
+  priyank: { aggression: 0.75, patience: 0.85, spacing: 1.1, mobility: 0.7, prefer: 'kick' },
+  saurav: { aggression: 0.95, patience: 0.7, spacing: 0.85, mobility: 0.65, prefer: 'kick' },
+  aditya: { aggression: 1.05, patience: 0.5, spacing: 1.0, mobility: 1.0, prefer: 'punch' },
+  thirtyone: { aggression: 1.1, patience: 0.5, spacing: 0.95, mobility: 1.0, prefer: 'kick' },
+  mohit: { aggression: 1.3, patience: 0.2, spacing: 0.78, mobility: 1.4, prefer: 'kick' },
+  nikhil: { aggression: 1.0, patience: 0.65, spacing: 0.9, mobility: 0.8, prefer: 'punch' },
+  ajay: { aggression: 1.15, patience: 0.35, spacing: 0.9, mobility: 1.25, prefer: 'punch' },
+  jeetu: { aggression: 1.05, patience: 0.45, spacing: 1.05, mobility: 0.95, prefer: 'kick' },
+  mukesh: { aggression: 0.9, patience: 0.75, spacing: 0.88, mobility: 0.7, prefer: 'punch' },
+  ankit: { aggression: 1.0, patience: 0.8, spacing: 0.82, mobility: 0.6, prefer: 'kick' },
+  ansh: { aggression: 0.95, patience: 0.6, spacing: 1.0, mobility: 0.9, prefer: 'punch' },
+  anmol: { aggression: 1.1, patience: 0.45, spacing: 0.95, mobility: 1.0, prefer: 'kick' },
+  adnan: { aggression: 0.7, patience: 0.95, spacing: 1.15, mobility: 0.65, prefer: 'kick' },
+  thirtytwo: { aggression: 1.35, patience: 0.2, spacing: 0.8, mobility: 1.4, prefer: 'kick' },
+  thirtythree: { aggression: 1.1, patience: 0.55, spacing: 0.9, mobility: 0.75, prefer: 'kick' },
+  ashish: { aggression: 1.25, patience: 0.3, spacing: 0.85, mobility: 1.3, prefer: 'punch' }
 };
 
 /* the passive is the stronger signal, so it wins when the id is unknown */
@@ -3760,7 +3952,7 @@ function handleEvents(events) {
 function drawFrame() {
   const m = S.match;
   if (!m) return;
-  renderer.draw({ players: m.players, localId: S.localId });
+  renderer.draw({ players: m.players, localId: S.localId, projectiles: m.projectiles || [] });
 }
 
 function updateHud() {
