@@ -1712,6 +1712,20 @@ function createAudio() {
       noise(big ? 0.16 : 0.09, big ? 0.07 : 0.04);
       tone({ freq: big ? 110 : 170, dur: 0.07, type: 'triangle', gain: 0.04, slide: -60 });
     },
+    /* light = slap, medium = thud, heavy = crack */
+    hitTier: (tier) => {
+      if (tier === 'heavy') {
+        noise(0.2, 0.09);
+        tone({ freq: 96, dur: 0.12, type: 'triangle', gain: 0.06, slide: -54 });
+        tone({ freq: 340, dur: 0.05, type: 'square', gain: 0.022, slide: -180 });
+      } else if (tier === 'medium') {
+        noise(0.12, 0.055);
+        tone({ freq: 132, dur: 0.09, type: 'triangle', gain: 0.045, slide: -50 });
+      } else {
+        noise(0.06, 0.035);
+        tone({ freq: 210, dur: 0.05, type: 'triangle', gain: 0.03, slide: -70 });
+      }
+    },
     ko: () => {
       tone({ freq: 300, dur: 0.35, type: 'sawtooth', gain: 0.05, slide: -240 });
       noise(0.3, 0.05);
@@ -2204,15 +2218,32 @@ function poseFor(p, phase, opts) {
   const moving = Math.abs(p.vx) > 40 && p.onGround && !p.attack;
 
   if (!p.onGround) {
-    P.hipY = 62;
-    P.fThigh = 0.75;
-    P.fShin = 1.75;
-    P.bThigh = 0.2;
-    P.bShin = 1.95;
-    P.fUpper = -0.35;
-    P.fFore = 1.15;
-    P.bUpper = -0.55;
-    P.bFore = 1.0;
+    const rising = (p.vh || 0) > 0;
+    if (rising) {
+      /* take-off: knees tucked, arms up */
+      P.hipY = 62;
+      P.fThigh = 0.9;
+      P.fShin = 1.95;
+      P.bThigh = 0.35;
+      P.bShin = 2.1;
+      P.fUpper = -0.6;
+      P.fFore = 0.9;
+      P.bUpper = -0.8;
+      P.bFore = 0.8;
+      P.lean = -0.08;
+    } else {
+      /* falling: legs reach for the floor, arms out for balance */
+      P.hipY = 58;
+      P.fThigh = 0.3;
+      P.fShin = 0.35;
+      P.bThigh = -0.28;
+      P.bShin = -0.3;
+      P.fUpper = -0.2;
+      P.fFore = 1.3;
+      P.bUpper = -0.15;
+      P.bFore = 1.35;
+      P.lean = 0.05;
+    }
   } else if (p.crouching) {
     P.hipY = 33;
     P.fThigh = 1.0;
@@ -2227,6 +2258,7 @@ function poseFor(p, phase, opts) {
   } else if (moving) {
     const sw = Math.sin(phase);
     const cw = Math.cos(phase);
+    const backpedal = p.vx * p.facing < 0;
     P.fThigh = 0.5 * sw;
     P.bThigh = -0.5 * sw;
     P.fShin = 0.3 + Math.max(0, -cw) * 0.75;
@@ -2234,7 +2266,15 @@ function poseFor(p, phase, opts) {
     P.fUpper = 0.4 - 0.4 * sw;
     P.bUpper = 0.25 + 0.4 * sw;
     P.hipY = RIG.hipY - Math.abs(sw) * 3;
-    P.lean = 0.06;
+    /* walking forward leans into it, backing away leans off it and keeps the
+       arms closer to the body */
+    P.lean = backpedal ? -0.12 : 0.09;
+    if (backpedal) {
+      P.fUpper = 0.6;
+      P.bUpper = 0.5;
+      P.fFore = 2.2;
+      P.bFore = 2.3;
+    }
   }
 
   /* win / lose / taunt override the idle stance */
@@ -2884,7 +2924,9 @@ function createRenderer(canvas) {
     if (planted) {
       const stanceF = 13;
       const stanceB = -15;
-      fAnkle = [stanceF * dir + rig.hipX * 0.25, 0];
+      /* a lunging straight takes a real step forward */
+      const step = p.attack && p.attack.type === 'lungePunch' ? (p.attack.ext || 0) * 26 : 0;
+      fAnkle = [(stanceF + step) * dir + rig.hipX * 0.25, 0];
       bAnkle = [stanceB * dir + rig.hipX * 0.25, 0];
       fKnee = solveKnee(hip, fAnkle, RIG.thigh, RIG.shin, dir);
       bKnee = solveKnee(hip, bAnkle, RIG.thigh, RIG.shin, dir);
@@ -3054,8 +3096,47 @@ function createRenderer(canvas) {
             color: i % 3 === 0 ? '#fff' : color
           });
         }
-        rings.push({ x: e.x, h: e.h, r: 8, max: big ? 110 : 64, life: 0.3, maxLife: 0.3, color });
-        comicWord(e.x, e.h + 30, big);
+        const tier = e.tier || (big ? 'heavy' : 'light');
+        const reach = tier === 'heavy' ? 120 : tier === 'medium' ? 86 : 58;
+        rings.push({ x: e.x, h: e.h, r: 8, max: reach, life: 0.3, maxLife: 0.3, color });
+
+        /* dust puffs kicked off the floor, more of them on a heavier hit */
+        const puffs = tier === 'heavy' ? 7 : tier === 'medium' ? 4 : 2;
+        for (let i = 0; i < puffs; i++) {
+          const a = -0.4 + (i / puffs) * (Math.PI + 0.8);
+          particles.push({
+            x: e.x + Math.cos(a) * 10,
+            h: 6 + Math.random() * 10,
+            vx: Math.cos(a) * (tier === 'heavy' ? 260 : 150),
+            vh: 40 + Math.random() * 90,
+            g: 240,
+            r: 6 + Math.random() * (tier === 'heavy' ? 12 : 7),
+            life: 0.4 + Math.random() * 0.25,
+            maxLife: 0.65,
+            color: '#c8b49a'
+          });
+        }
+
+        /* sparks: a burst on heavy, a couple on medium, none on a light tap */
+        const sparks = tier === 'heavy' ? 9 : tier === 'medium' ? 4 : 0;
+        for (let i = 0; i < sparks; i++) {
+          const a = Math.random() * TAU;
+          const sp = 180 + Math.random() * 260;
+          particles.push({
+            x: e.x,
+            h: e.h,
+            vx: Math.cos(a) * sp,
+            vh: Math.sin(a) * sp,
+            g: 900,
+            r: 1.6 + Math.random() * 2,
+            life: 0.18 + Math.random() * 0.16,
+            maxLife: 0.34,
+            color: '#ffe9a8'
+          });
+        }
+
+        shake = Math.min(22, shake + (tier === 'heavy' ? 9 : tier === 'medium' ? 5 : 2.5));
+        comicWord(e.x, e.h + 30, tier === 'heavy');
         shake = Math.min(20, shake + (big ? 12 : 5));
         cheer = Math.max(cheer, big ? 0.55 : 0.3);
 
@@ -4993,10 +5074,11 @@ function handleEvents(events) {
   if (!m) return;
   for (const e of events) {
     if (e.type === 'hit') {
-      const heavy = e.kind === 'kick' || e.kind === 'super' || e.kind === 'backKick' || e.kind === 'sweep';
-      S.hitStop = Math.max(S.hitStop, heavy ? 0.085 : 0.045);
-      audio.hit(heavy);
-      audio.cheer(heavy ? 0.55 : 0.22);
+      const tier = e.tier || (e.kind === 'kick' || e.kind === 'super' ? 'heavy' : 'light');
+      const stop = tier === 'heavy' ? 0.1 : tier === 'medium' ? 0.065 : 0.035;
+      S.hitStop = Math.max(S.hitStop, stop);
+      audio.hitTier(tier);
+      audio.cheer(tier === 'heavy' ? 0.6 : tier === 'medium' ? 0.35 : 0.18);
       if (S.mode === 'guest') {
         const t = m.players.find((p) => p.id === e.on);
         if (t) t.hitstun = 0.12;

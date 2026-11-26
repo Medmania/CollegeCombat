@@ -778,7 +778,8 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   src.meter = Math.min(SUPER_COST, src.meter + dmg * 1.5 * src.stats.meter);
   tgt.meter = Math.min(SUPER_COST, tgt.meter + dmg * 1.0 * tgt.stats.meter);
 
-  m.events.push({ type: 'hit', x: tgt.x, h: tgt.h + 60, dmg, id: src.id, on: tgt.id, kind });
+  const tier = dmg >= 16 ? 'heavy' : dmg >= 8 ? 'medium' : 'light';
+  m.events.push({ type: 'hit', x: tgt.x, h: tgt.h + 60, dmg: Math.round(dmg), tier, id: src.id, on: tgt.id, kind });
 
   if (tgt.hp <= 0) {
     tgt.alive = false;
