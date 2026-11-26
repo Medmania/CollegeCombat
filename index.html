@@ -1189,6 +1189,95 @@ input[type='range'] {
   background: var(--gold);
   box-shadow: 0 0 5px rgba(255, 209, 102, 0.9);
 }
+
+
+/* ---------- round intro ---------- */
+
+.vs-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(70% 70% at 50% 45%, rgba(20, 14, 22, 0.92), rgba(6, 5, 9, 0.97));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.vs-intro.show {
+  opacity: 1;
+}
+
+.vs-round {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.34em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.vs-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 5vw, 52px);
+}
+
+.vs-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 110px;
+}
+
+.vs-face {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.vs-name {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.vs-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.vs-mid {
+  font-size: 26px;
+  font-weight: 900;
+  font-style: italic;
+  color: var(--gold);
+  text-shadow: 0 0 22px rgba(255, 209, 102, 0.55);
+}
+
+.vs-intro.show .vs-side {
+  animation: vsIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes vsIn {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
     </style>
   </head>
   <body>
@@ -1342,6 +1431,23 @@ input[type='range'] {
           </div>
         </div>
 
+        <div class="vs-intro" id="vs-intro">
+          <div class="vs-round" id="vs-round">ROUND 1</div>
+          <div class="vs-row">
+            <div class="vs-side">
+              <span class="vs-face" id="vs-face-a"></span>
+              <strong class="vs-name" id="vs-name-a">You</strong>
+              <small class="vs-tag" id="vs-tag-a">Manager</small>
+            </div>
+            <div class="vs-mid">VS</div>
+            <div class="vs-side">
+              <span class="vs-face" id="vs-face-b"></span>
+              <strong class="vs-name" id="vs-name-b">Bot</strong>
+              <small class="vs-tag" id="vs-tag-b">Intern</small>
+            </div>
+          </div>
+        </div>
+
         <div class="round-banner" id="round-banner">
           <strong id="round-title">ROUND 1</strong>
           <span id="round-sub">First to two rounds wins</span>
@@ -1434,6 +1540,7 @@ function createAudio() {
   let ctx = null;
   let master = null;
   let volume = 0.8;
+  let crowd = null;
 
   function ensure() {
     if (!ctx) {
@@ -1483,6 +1590,78 @@ function createAudio() {
     src.start();
   }
 
+  /* a low crowd murmur that runs for the whole match */
+  function crowdStart() {
+    const c = ensure();
+    if (!c || crowd) return;
+    const len = Math.floor(c.sampleRate * 3);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+
+    const band = c.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 560;
+    band.Q.value = 0.6;
+
+    const g = c.createGain();
+    g.gain.value = 0.022;
+
+    const lfo = c.createOscillator();
+    lfo.frequency.value = 0.11;
+    const lfoGain = c.createGain();
+    lfoGain.gain.value = 0.014;
+    lfo.connect(lfoGain).connect(g.gain);
+
+    src.connect(band).connect(g).connect(out());
+    src.start();
+    lfo.start();
+    crowd = { src, g, lfo };
+  }
+
+  function crowdStop() {
+    if (!crowd) return;
+    try {
+      crowd.src.stop();
+      crowd.lfo.stop();
+      crowd.src.disconnect();
+      crowd.lfo.disconnect();
+    } catch (_) {
+      /* ignore */
+    }
+    crowd = null;
+  }
+
+  /* a swell of cheering, used on big hits and knockouts */
+  function cheer(strength = 1) {
+    const c = ensure();
+    if (!c) return;
+    const dur = 0.5 + strength * 0.8;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const env = Math.sin((i / len) * Math.PI);
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+
+    const band = c.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 900 + strength * 500;
+    band.Q.value = 0.8;
+
+    const g = c.createGain();
+    g.gain.value = 0.05 * strength;
+    src.connect(band).connect(g).connect(out());
+    src.start();
+  }
+
   function setVolume(v) {
     volume = Math.max(0, Math.min(1, Number(v) || 0));
     if (master) master.gain.value = volume;
@@ -1508,6 +1687,23 @@ function createAudio() {
       noise(0.25, 0.04);
     },
     click: () => tone({ freq: 520, dur: 0.04, type: 'square', gain: 0.025 }),
+    whoosh: () => {
+      noise(0.1, 0.018);
+      tone({ freq: 620, dur: 0.07, type: 'sine', gain: 0.012, slide: -380 });
+    },
+    roundStart: () => {
+      tone({ freq: 392, dur: 0.14, type: 'triangle', gain: 0.05 });
+      setTimeout(() => tone({ freq: 523, dur: 0.14, type: 'triangle', gain: 0.05 }), 150);
+      setTimeout(() => tone({ freq: 659, dur: 0.22, type: 'triangle', gain: 0.055 }), 300);
+    },
+    fight: () => {
+      tone({ freq: 880, dur: 0.09, type: 'square', gain: 0.05 });
+      tone({ freq: 1320, dur: 0.16, type: 'sawtooth', gain: 0.03, slide: -200 });
+      noise(0.18, 0.035);
+    },
+    crowdStart,
+    crowdStop,
+    cheer,
     win: () => {
       tone({ freq: 440, dur: 0.12, type: 'square', gain: 0.04 });
       setTimeout(() => tone({ freq: 660, dur: 0.14, type: 'square', gain: 0.04 }), 120);
@@ -1918,6 +2114,30 @@ function poseFor(p, phase) {
       P.fFore = 1.05;
       P.bUpper = -0.75;
       P.bFore = 0.9;
+    } else if (a.type === 'spinKick') {
+      /* whole body turns through the kick */
+      P.fThigh = 0.55 + 1.15 * ext;
+      P.fShin = 0.7 + 1.05 * ext;
+      P.bThigh = -0.5;
+      P.bShin = -1.2;
+      P.fUpper = -0.8;
+      P.fFore = 0.8;
+      P.bUpper = -0.9;
+      P.bFore = 0.6;
+      P.lean = -0.2 * ext;
+      P.hipY = RIG.hipY + 6 * ext;
+    } else if (a.type === 'lungePunch') {
+      /* stepping straight, shoulder behind it */
+      P.fUpper = 1.55;
+      P.fFore = 1.58;
+      P.bUpper = -0.45;
+      P.bFore = 1.7;
+      P.lean = 0.3 * ext;
+      P.fThigh = 0.55;
+      P.fShin = 0.5;
+      P.bThigh = -0.45;
+      P.bShin = -0.25;
+      P.hipY = RIG.hipY - 3;
     } else if (a.type === 'backKick') {
       /* turning kick: torso swings away, the trailing leg whips round */
       P.lean = 0.5 * ext;
@@ -1981,22 +2201,30 @@ function createRenderer(canvas) {
 
   const crowd = (() => {
     const r = rng(4242);
+    const skins = ['#e3b489', '#c98d63', '#f0c9a0', '#a86f4a', '#d9a97c', '#8d5a3b'];
+    const hairs = ['#1f1f1f', '#2b2b2b', '#3a2a1a', '#5a4030', '#111111'];
     const out = [];
     for (let row = 0; row < 3; row++) {
       const depth = 250 + row * 34;
-      for (let i = 0; i < 34; i++) {
-        const x = LANE.min - 260 + (i / 33) * (LANE.max - LANE.min + 520) + (r() - 0.5) * 20;
+      const count = 34 - row * 3;
+      for (let i = 0; i < count; i++) {
+        const x = LANE.min - 260 + (i / (count - 1)) * (LANE.max - LANE.min + 520) + (r() - 0.5) * 22;
         out.push({
           x,
           y: depth,
-          color: CROWD_COLORS[Math.floor(r() * CROWD_COLORS.length)],
+          shirt: CROWD_COLORS[Math.floor(r() * CROWD_COLORS.length)],
+          skin: skins[Math.floor(r() * skins.length)],
+          hair: hairs[Math.floor(r() * hairs.length)],
           h: 30 + r() * 10,
-          bob: r() * TAU
+          bob: r() * TAU,
+          keen: r()
         });
       }
     }
     return out;
   })();
+
+  let cheer = 0;
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
@@ -2135,24 +2363,49 @@ function createRenderer(canvas) {
       ctx.fillRect(pr.x - halfW * 1.4, top.y - 6 * pr.s, halfW * 2.8, 7 * pr.s);
     }
 
-    /* crowd */
+    /* crowd: actual little people, arms up when it kicks off */
     const crowdOrder = crowd
       .map((c) => ({ c, pr: project([c.x, c.y, 0]) }))
       .filter((o) => o.pr)
       .sort((a, b) => b.pr.z - a.pr.z);
 
     for (const { c, pr } of crowdOrder) {
-      const s = pr.s;
-      const bob = Math.sin(time * 2.6 + c.bob) * 3 * s;
-      const h = c.h * s;
-      const w = 13 * s;
-      ctx.fillStyle = c.color;
+      const s2 = pr.s;
+      const excited = cheer * 0.7 + c.keen * 0.5;
+      const bounce = Math.abs(Math.sin(time * (2.4 + excited * 4) + c.bob)) * (1.5 + excited * 7) * s2;
+      const h = c.h * s2;
+      const w = 12 * s2;
+      const topY = pr.y - h - bounce;
+
+      /* body */
+      ctx.fillStyle = c.shirt;
       ctx.beginPath();
-      ctx.roundRect(pr.x - w / 2, pr.y - h + bob, w, h, w * 0.42);
+      ctx.roundRect(pr.x - w * 0.5, topY, w, h, w * 0.38);
       ctx.fill();
-      ctx.fillStyle = shade(c.color, -55);
+
+      /* arms, up when cheering */
+      const raise = Math.max(0, Math.sin(time * 5 + c.bob * 3)) * excited;
+      ctx.strokeStyle = c.skin;
+      ctx.lineWidth = Math.max(1, w * 0.24);
+      ctx.lineCap = 'round';
+      for (const side of [-1, 1]) {
+        const ax = pr.x + side * w * 0.5;
+        const ay = topY + h * 0.22;
+        const up = raise * h * 0.75;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + side * w * 0.35, ay - up - h * 0.1);
+        ctx.stroke();
+      }
+
+      /* head */
+      ctx.fillStyle = c.skin;
       ctx.beginPath();
-      ctx.arc(pr.x, pr.y - h + bob - w * 0.18, w * 0.4, 0, TAU);
+      ctx.arc(pr.x, topY - w * 0.28, w * 0.36, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = c.hair;
+      ctx.beginPath();
+      ctx.arc(pr.x, topY - w * 0.36, w * 0.36, Math.PI * 1.02, Math.PI * 1.98);
       ctx.fill();
     }
 
@@ -2425,6 +2678,23 @@ function createRenderer(canvas) {
 
     const S = (pt) => [ox + pt[0] * s, oy + pt[1] * s];
 
+    /* a backflip and a spin kick both turn the whole body */
+    let spin = 0;
+    if (p.flipT > 0) {
+      const prog = 1 - p.flipT / 0.62;
+      spin = -dir * prog * TAU;
+    } else if (p.attack && p.attack.type === 'spinKick') {
+      const prog = clamp(p.attack.t / p.attack.dur, 0, 1);
+      spin = dir * Math.min(1, prog * 1.15) * TAU;
+    }
+    if (spin) {
+      const pivot = S([0, -rig.hipY * 0.55]);
+      ctx.save();
+      ctx.translate(pivot[0], pivot[1]);
+      ctx.rotate(spin);
+      ctx.translate(-pivot[0], -pivot[1]);
+    }
+
     /* ---- back limbs, deeper in shadow ---- */
     limb(S(hip), S(bKnee), u(17), u(13), bodyDark, outline);
     limb(S(bKnee), S(bAnkle), u(13), u(10), bodyDark, outline);
@@ -2508,6 +2778,8 @@ function createRenderer(canvas) {
     ctx.stroke();
     ctx.restore();
 
+    if (spin) ctx.restore();
+
     /* marker for the local player */
     if (p.isLocal) {
       ctx.fillStyle = '#ffd166';
@@ -2548,6 +2820,7 @@ function createRenderer(canvas) {
         }
         rings.push({ x: e.x, h: e.h, r: 8, max: big ? 110 : 64, life: 0.3, maxLife: 0.3, color });
         shake = Math.min(20, shake + (big ? 12 : 5));
+        cheer = Math.max(cheer, big ? 0.55 : 0.3);
 
         if (attacker && attacker.taunts && attacker.taunts.length && Math.random() < 0.3) {
           say(attacker.id, attacker.taunts[Math.floor(Math.random() * attacker.taunts.length)]);
@@ -2572,6 +2845,7 @@ function createRenderer(canvas) {
         }
         rings.push({ x: e.x, h: 40, r: 12, max: 110, life: 0.38, maxLife: 0.38, color: '#ffd166' });
         shake = Math.min(28, shake + 20);
+        cheer = 1;
         if (p && p.taunts && p.taunts.length) say(p.id, p.taunts[0]);
       } else if (e.type === 'super' || e.type === 'superstart') {
         const p = players.find((q) => q.id === e.id);
@@ -2586,6 +2860,7 @@ function createRenderer(canvas) {
           thick: true
         });
         shake = Math.min(20, shake + 10);
+        cheer = Math.max(cheer, 0.85);
       } else if (e.type === 'land') {
         for (let i = 0; i < 6; i++) {
           particles.push({
@@ -2612,6 +2887,7 @@ function createRenderer(canvas) {
 
   function step(dt) {
     time += dt;
+    cheer = Math.max(0, cheer - dt * 0.55);
     shake *= Math.pow(0.0015, dt);
     if (shake < 0.2) shake = 0;
 
@@ -3621,6 +3897,7 @@ const S = {
   fighters: null,
   round: 1,
   wins: {},
+  introT: 0,
   match: null,
   localId: 'p0',
   running: false,
@@ -3745,7 +4022,7 @@ function startRound() {
   S.match = createMatch({ fighters: S.fighters, seed: (Date.now() & 0xffff) + S.round });
   S.remoteInputs = {};
   beginMatch();
-  showBanner(`ROUND ${S.round}`, S.round === 1 ? 'First to two rounds wins' : 'Next round');
+  showIntro();
   if (S.mode === 'host' && S.host) {
     S.host.broadcast({
       t: 'start',
@@ -4017,7 +4294,7 @@ function onGuestMessage(msg) {
     S.match = createMatch({ fighters, seed: Date.now() & 0xffff });
     if (!S.match.players.some((p) => p.id === S.localId)) S.localId = 'p0';
     beginMatch();
-    showBanner(`ROUND ${S.round}`, 'First to two rounds wins');
+    showIntro();
     return;
   }
   if (msg.t === 'roundend') {
@@ -4097,6 +4374,7 @@ function beginMatch() {
   $('#net-badge').hidden = S.mode === 'solo';
   input.reset();
   audio.ensure();
+  audio.crowdStart();
   buildHudStrip();
   show('game');
   requestAnimationFrame(() => {
@@ -4122,6 +4400,9 @@ function loop(ts) {
   if (dt < 0) dt = 0;
 
   if (heldInPortrait) {
+    acc = 0;
+  } else if (S.introT > 0) {
+    S.introT = Math.max(0, S.introT - dt);
     acc = 0;
   } else if (S.hitStop > 0) {
     /* freeze frames: the world holds still for a beat on impact */
@@ -4203,6 +4484,7 @@ function handleEvents(events) {
       const heavy = e.kind === 'kick' || e.kind === 'super' || e.kind === 'backKick' || e.kind === 'sweep';
       S.hitStop = Math.max(S.hitStop, heavy ? 0.085 : 0.045);
       audio.hit(heavy);
+      audio.cheer(heavy ? 0.55 : 0.22);
       if (S.mode === 'guest') {
         const t = m.players.find((p) => p.id === e.on);
         if (t) t.hitstun = 0.12;
@@ -4210,11 +4492,17 @@ function handleEvents(events) {
     } else if (e.type === 'swing') {
       if (e.kind === 'punch') audio.punch();
       else audio.kick();
+      audio.whoosh();
+    } else if (e.type === 'flip') {
+      audio.whoosh();
+      audio.cheer(0.3);
     } else if (e.type === 'ko') {
       S.hitStop = Math.max(S.hitStop, 0.16);
       audio.ko();
+      audio.cheer(1);
     } else if (e.type === 'super' || e.type === 'superstart') {
       audio.superMove();
+      audio.cheer(0.8);
     }
   }
   if (renderer) renderer.feed(events, m.players);
@@ -4258,6 +4546,42 @@ function updateHud() {
   }
 }
 
+/* The card before the bell: who is fighting, and which round. */
+function showIntro() {
+  const m = S.match;
+  if (!m || !m.players.length) return;
+  const a = m.players[0];
+  const b = m.players.find((p) => p.id !== a.id) || a;
+
+  $('#vs-round').textContent = `ROUND ${S.round}`;
+  const side = (sfx, p) => {
+    const face = $(`#vs-face-${sfx}`);
+    if (face) {
+      face.style.background = p.colors.body;
+      face.style.borderColor = p.colors.accent;
+    }
+    const nm = $(`#vs-name-${sfx}`);
+    if (nm) nm.textContent = p.name;
+    const tg = $(`#vs-tag-${sfx}`);
+    if (tg) tg.textContent = p.isBot ? 'bot' : p.id === S.localId ? 'you' : 'player';
+  };
+  side('a', a);
+  side('b', b);
+
+  const el = $('#vs-intro');
+  if (el) el.classList.add('show');
+  S.introT = 2.6;
+  audio.roundStart();
+  audio.cheer(0.5);
+
+  clearTimeout(showIntro._t);
+  showIntro._t = setTimeout(() => {
+    if (el) el.classList.remove('show');
+    showBanner('FIGHT!', '');
+    audio.fight();
+  }, 2600);
+}
+
 /* A round just ended. Decide whether the series is over or another round starts. */
 function finishMatch() {
   if (S.ended) return;
@@ -4286,6 +4610,7 @@ function finishMatch() {
     }
     setTimeout(() => {
       stopLoop();
+      audio.crowdStop();
       showResult();
     }, 1700);
     return;

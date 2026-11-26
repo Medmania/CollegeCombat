@@ -19,10 +19,10 @@ const STAND_H = 122;
 const CROUCH_H = 50;
 const GRAVITY = 2400;
 const JUMP_V = 760;
-const ROUND_TIME = 99;
+const ROUND_TIME = 120;
 const SUPER_COST = 100;
 /* global health multiplier — raise this to make fights last longer */
-const HP_SCALE = 1.9;
+const HP_SCALE = 2.6;
 
 const EMPTY_INPUT = {
   mx: 0,
@@ -34,7 +34,7 @@ const EMPTY_INPUT = {
 };
 
 /* One knob for the pace of every attack. Bump it up to slow the fight down. */
-const PACE = 1.3;
+const PACE = 1.42;
 
 /* How far the stick has to travel before it counts as up or down. */
 const UP_THRESHOLD = -0.55;
@@ -62,7 +62,9 @@ const BANDS = {
   kick: { minH: 16, maxH: 86 },
   sweep: { minH: 0, maxH: 34 },
   airKick: { minH: -55, maxH: 25 },
-  backKick: { minH: 30, maxH: 98 }
+  backKick: { minH: 30, maxH: 98 },
+  spinKick: { minH: 26, maxH: 104 },
+  lungePunch: { minH: 46, maxH: 112 }
 };
 
 function buildAttacks(char) {
@@ -149,6 +151,30 @@ function buildAttacks(char) {
       hitstun: 0.32,
       ...BANDS.airKick
     },
+    spinKick: {
+      family: 'kick',
+      type: 'spinKick',
+      damage: k.damage * 1.3,
+      range: k.range * 1.08,
+      dur: d(k.dur * 1.35),
+      hitAt: k.hitAt * PACE * 1.3,
+      knock: k.knock * 1.55,
+      cd: d(k.cd * 1.5),
+      hitstun: 0.4,
+      ...BANDS.spinKick
+    },
+    lungePunch: {
+      family: 'punch',
+      type: 'lungePunch',
+      damage: p.damage * 1.25,
+      range: p.range * 1.25,
+      dur: d(p.dur * 1.3),
+      hitAt: p.hitAt * PACE * 1.15,
+      knock: p.knock * 1.3,
+      cd: d(p.cd * 1.35),
+      hitstun: 0.24,
+      ...BANDS.lungePunch
+    },
     backKick: {
       family: 'kick',
       type: 'backKick',
@@ -197,6 +223,7 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     slowT: 0,
     weakT: 0,
     lockT: 0,
+    flipT: 0,
     superLive: null,
     superDef: char.moves.super || {},
     dashT: 0,
@@ -274,6 +301,7 @@ function stepMatch(m, inputs) {
     p.slowT = Math.max(0, p.slowT - TICK);
     p.weakT = Math.max(0, p.weakT - TICK);
     p.lockT = Math.max(0, p.lockT - TICK);
+    if (p.flipT > 0) p.flipT = Math.max(0, p.flipT - TICK);
     if (p.downT > 0) p.downT = Math.max(0, p.downT - TICK);
 
     const inp = inputs[p.id] || EMPTY_INPUT;
@@ -286,8 +314,11 @@ function stepMatch(m, inputs) {
     const wantJump = upHeld && !p.wasUp && p.onGround && p.hitstun <= 0 && p.downT <= 0;
     p.wasUp = upHeld;
     const wantCrouch = my > DOWN_THRESHOLD && p.onGround;
-    /* holding away from your opponent turns a kick into a back kick */
-    const backward = (inp.mx || 0) * p.facing < -0.3;
+    /* leaning away turns a kick into a back kick; leaning in turns it into a
+       spinning kick and a jab into a stepping straight */
+    const mxRaw = inp.mx || 0;
+    const backward = mxRaw * p.facing < -0.3;
+    const forward = mxRaw * p.facing > 0.3;
 
     if (p.hitstun > 0 || p.downT > 0 || p.lockT > 0) {
       /* no control */
@@ -310,7 +341,7 @@ function stepMatch(m, inputs) {
       }
 
       const airborne = !p.onGround;
-      const ctx = { airborne, crouch: wantCrouch && p.onGround, backward };
+      const ctx = { airborne, crouch: wantCrouch && p.onGround, backward, forward };
 
       if (inp.super && p.meter >= SUPER_COST && p.onGround) {
         p.meter = 0;
@@ -330,11 +361,22 @@ function stepMatch(m, inputs) {
       } else if (inp.kick && p.cd.kick <= 0) {
         startAttack(p, pickAttack(p, 'kick', ctx));
       } else if (inp.dash && p.onGround && p.cd.dash <= 0) {
-        const dir = Math.abs(inp.mx) > 0.1 ? sign(inp.mx) : -p.facing;
-        p.dashT = 0.16;
-        p.dashDir = dir;
         p.cd.dash = p.moves.dash.cd * p.stats.dashCd;
-        p.iframes = Math.max(p.iframes, 0.1);
+        if (backward) {
+          /* double-tap away: backflip out of trouble, briefly invincible */
+          p.vh = JUMP_V * 0.95;
+          p.vx = -p.facing * 430;
+          p.onGround = false;
+          p.crouching = false;
+          p.iframes = Math.max(p.iframes, 0.42);
+          p.flipT = 0.62;
+          m.events.push({ type: 'flip', x: p.x, h: p.h, id: p.id });
+        } else {
+          const dir = Math.abs(inp.mx) > 0.1 ? sign(inp.mx) : -p.facing;
+          p.dashT = 0.16;
+          p.dashDir = dir;
+          p.iframes = Math.max(p.iframes, 0.1);
+        }
       }
     }
 
@@ -344,12 +386,15 @@ function stepMatch(m, inputs) {
     } else if (p.dashT > 0) {
       p.dashT -= TICK;
       p.vx = p.dashDir * p.moves.dash.speed * 0.85;
+    } else if (p.flipT > 0) {
+      /* keep the flip's momentum; steering is locked mid-air */
+      p.vx *= Math.pow(0.25, TICK);
     } else if (p.attack) {
       p.vx *= Math.pow(0.05, TICK);
     } else {
       const mx = clamp(inp.mx || 0, -1, 1);
       const slow = p.slowT > 0 ? 0.45 : 1;
-      const speed = p.stats.speed * 262 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
+      const speed = p.stats.speed * 240 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
       p.vx = mx * speed;
     }
 
@@ -385,8 +430,13 @@ function pickAttack(p, family, ctx) {
   const A = p.attacks;
   if (ctx.airborne) return family === 'punch' ? A.airPunch : A.airKick;
   if (ctx.crouch) return family === 'punch' ? A.crouchPunch : A.sweep;
-  if (ctx.backward && family === 'kick') return A.backKick;
-  return family === 'punch' ? A.punch : A.kick;
+  if (family === 'kick') {
+    if (ctx.backward) return A.backKick;   /* turning back kick */
+    if (ctx.forward) return A.spinKick;    /* turn and kick */
+    return A.kick;
+  }
+  if (ctx.forward) return A.lungePunch;    /* stepping straight */
+  return A.punch;
 }
 
 function startAttack(p, def) {

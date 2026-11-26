@@ -200,6 +200,44 @@ console.log('\nmove variants');
   check('the back kick still connects', b.hp < before);
 }
 
+console.log('\nnew moves');
+{
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 60;
+  a.facing = 1;
+  stepMatch(m, { p0: act({ kick: true, mx: 1 }), p1: idle });
+  check('pushing forward turns a kick into a spin kick', a.attack && a.attack.type === 'spinKick', a.attack && a.attack.type);
+  const before = b.hp;
+  run(m, 22, { p0: idle, p1: idle });
+  check('the spin kick connects', b.hp < before, `${b.hp} vs ${before}`);
+}
+
+{
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 60;
+  a.facing = 1;
+  stepMatch(m, { p0: act({ punch: true, mx: 1 }), p1: idle });
+  check('pushing forward turns a jab into a stepping straight', a.attack && a.attack.type === 'lungePunch', a.attack && a.attack.type);
+  const before = b.hp;
+  run(m, 18, { p0: idle, p1: idle });
+  check('the stepping straight connects', b.hp < before);
+}
+
+{
+  const m = makeTwo('apoorv', 'priyank');
+  const a = m.players[0];
+  a.facing = 1;
+  const x0 = a.x;
+  /* double-tap away = backflip: airborne, moving backwards, briefly invincible */
+  stepMatch(m, { p0: act({ dash: true, mx: -1 }), p1: idle });
+  check('double-tapping away starts a backflip', a.flipT > 0, `flipT=${a.flipT}`);
+  for (let i = 0; i < 6; i++) stepMatch(m, { p0: idle, p1: idle });
+  check('the backflip carries you backwards', a.x < x0 - 10, `dx=${(a.x - x0).toFixed(0)}`);
+  check('the backflip has invincibility frames', a.iframes > 0 || a.flipT > 0);
+}
+
 console.log('\nknockdown');
 {
   const m = makeTwo();
@@ -320,7 +358,7 @@ console.log('\nfull round');
 
   let ticks = 0;
   let escaped = false;
-  while (!m.over && ticks < 30 * 100) {
+  while (!m.over && ticks < 30 * 140) {
     const inputs = {};
     for (const p of m.players) {
       const r = rand();

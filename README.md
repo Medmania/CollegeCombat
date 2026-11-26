@@ -184,7 +184,8 @@ There are only **two buttons**. Everything else is on the stick.
 | Slide **up** | jump straight up |
 | Slide **up + forward** | jump obliquely — forward and up together |
 | Slide **down** | crouch (hold) |
-| Double-tap a side | dash that way |
+| Double-tap toward | dash forward |
+| Double-tap **away** | backflip — leaves the ground, flies backwards, briefly invincible |
 
 **The buttons (right thumb)**
 
@@ -194,9 +195,13 @@ picks the move:
 | Stick | PUNCH | KICK |
 | --- | --- | --- |
 | neutral | **jab** — fast, chest height | **roundhouse** — slower, longer |
+| pushing **forward** | **stepping straight** — longer reach, more damage | **spin kick** — turns the whole body through the kick |
+| holding **away** | jab | **back kick** — turning kick, huge knockback |
 | down (crouch) | **uppercut** — drives up from low | **sweep** — hits crouchers, knocks down |
 | up (in the air) | **overhead** — hammer from above | **flying kick** — leg thrown forward |
-| holding away | jab | **back kick** — turning kick, huge knockback |
+
+Leaning into or away from your opponent with the stick changes what a button
+does, so ten moves come out of two buttons and one stick.
 
 SUPER appears at full meter: a radial blast.
 
@@ -204,11 +209,19 @@ SUPER appears at full meter: a radial blast.
 `K` kick, `L` dash, `Space` super.
 
 A match is **best of three**: two rounds, and a third only if the wins are level
-after two. Each round is 99 seconds or until one fighter is left standing; most
-HP wins on time. The HUD pips next to each name show rounds won.
+after two. Each round opens on a card showing who is fighting and which round it
+is, then "FIGHT!". Rounds run to 120 seconds or until one fighter is left
+standing; most HP wins on time. The HUD pips next to each name show rounds won.
 
-The pace is deliberately slow — `HP_SCALE`, `PACE` and the walk speed in
-`js/engine.js` are the three dials. Raise `HP_SCALE` to make fights longer.
+The crowd behind the barrier is made of little people — they bob, raise their
+arms and cheer harder after a big hit or a knockout.
+
+The pace is deliberately slow. `HP_SCALE`, `PACE` and the walk speed in
+`js/engine.js` are the three dials; raise `HP_SCALE` to make fights longer. At
+the current settings a round lasts around 45 seconds.
+
+Sound is synthesised in the browser, no audio files: hits, whiffs, the round
+fanfare, the crowd murmur and cheers that swell on knockouts.
 
 ### How the heights interact
 
@@ -287,12 +300,13 @@ networked match.
 npm test
 ```
 
-51 checks run against the same files the browser loads: hits connect at the right
+59 checks run against the same files the browser loads: hits connect at the right
 range, stick-up jumps and stick-down crouches, up+forward jumps obliquely, one
 swipe gives exactly one jump, a jab sails over a crouch, a sweep lands on a
 croucher and passes under a jump, crouch+punch becomes an uppercut that connects,
 air punch and air kick register only in the air, holding away turns a kick into a
-back kick, sweeps knock down, super needs a full meter, all five super
+back kick, pushing forward produces a spin kick and a stepping straight,
+double-tapping away starts a backflip, sweeps knock down, super needs a full meter, all five super
 archetypes do what they claim (blast, shot, beam, aura, flurry), projectiles
 travel, hit and clean up, a four-player round finishes, nobody leaves the lane or
 falls through the floor, snapshots carry position, height and projectiles, and
