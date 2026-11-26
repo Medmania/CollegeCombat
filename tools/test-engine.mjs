@@ -26,7 +26,7 @@ await import('../js/supers/ashish.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
-const { createMatch, stepMatch, packSnapshot, unpackSnapshot, LANE, PLAYER_R, TICK, CROUCH_H, BODY_GAP, ROUND_TIME, HP_SCALE } =
+const { createMatch, stepMatch, packSnapshot, unpackSnapshot, LANE, PLAYER_R, TICK, CROUCH_H, BODY_GAP, ROUND_TIME, HP_SCALE, buildAttacks } =
   globalThis.KK_Engine;
 const { CHARACTERS, getCharacter } = globalThis.KK_Roster;
 
@@ -371,6 +371,53 @@ console.log('\nnetcode');
   check('snapshot keeps the horizontal position', Math.abs(m2.players[0].x - 640) < 1);
   check('snapshot keeps the jump height', Math.abs(m2.players[0].h - 88) < 1);
   check('snapshot is small enough for mobile', JSON.stringify(wire).length < 900, `${JSON.stringify(wire).length} bytes`);
+}
+
+console.log('\nmove timing and super windows');
+{
+  /* every move of every fighter: wind-up, a contact frame inside the move,
+     then real recovery. Nothing may hit on the frame it ends. */
+  const bad = [];
+  for (const c of CHARACTERS) {
+    const at = buildAttacks(c);
+    for (const [name, d] of Object.entries(at)) {
+      if (!d || typeof d.dur !== 'number') continue;
+      if (!(d.hitAt > 0 && d.hitAt < d.dur)) bad.push(`${c.id}.${name}`);
+      if (d.dur - d.hitAt < d.dur * 0.1) bad.push(`${c.id}.${name}:no-recovery`);
+    }
+  }
+  check('every move has a contact frame with recovery after it', bad.length === 0, bad.slice(0, 6).join(' '));
+}
+
+{
+  /* a jab that lands unlocks the cancel; a whiff does not */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 50;
+  a.attack = { type: 'punch', t: 0.05, dur: 0.31, hitAt: 0.11, hit: false, def: a.attacks.punch };
+  run(m, 4, { p0: idle, p1: idle });
+  check('a landed jab unlocks the cancel', a.attack === null || a.attack.connected === true,
+    a.attack ? String(a.attack.connected) : 'ended');
+}
+
+{
+  /* every hit window of a super may land, so the full damage arrives */
+  const mods = Object.keys(globalThis.KK_SUPERS || {});
+  const short = [];
+  for (const id of mods) {
+    const mod = globalThis.KK_SUPERS[id];
+    if ((mod.hits || []).length < 2) continue;
+    const m = makeTwo(id, 'ashish');
+    const [a, b] = m.players;
+    b.x = a.x + 60;
+    a.meter = 165;
+    const hp0 = b.hp;
+    stepMatch(m, { p0: act({ super: true }), p1: idle });
+    run(m, 340, { p0: idle, p1: idle });
+    const dealt = hp0 - b.hp;
+    if (dealt < mod.damage * 0.6) short.push(`${id}:${Math.round(dealt)}/${mod.damage}`);
+  }
+  check('multi-window supers land more than their first window', short.length === 0, short.join(' '));
 }
 
 console.log('\nblocking and hit stop');

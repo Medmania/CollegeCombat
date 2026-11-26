@@ -80,6 +80,25 @@ const ARCHETYPE_STYLES = {
 };
 
 function buildAttacks(char) {
+  return enforceTiming(buildAttacksRaw(char));
+}
+
+/* Every move must have a real wind-up, a contact frame inside the move, and
+   recovery after it. Anything that breaks the rule is pulled back into line
+   here, so no fighter can end up with a move that cannot connect. */
+function enforceTiming(at) {
+  for (const key of Object.keys(at)) {
+    const d = at[key];
+    if (!d || typeof d.dur !== 'number') continue;
+    const min = d.dur * 0.22;
+    const max = d.dur * 0.74;
+    if (!(d.hitAt > min)) d.hitAt = min;
+    if (d.hitAt > max) d.hitAt = max;
+  }
+  return at;
+}
+
+function buildAttacksRaw(char) {
   const p = char.moves.punch;
   const k = char.moves.kick;
   const d = (v) => v * PACE;
@@ -326,7 +345,9 @@ function faceOpponents(m, p) {
 function stepMatch(m, inputs) {
   if (m.over) return m;
 
-  /* impact freeze frames: the whole world holds still for a beat */
+  /* impact freeze frames: the world holds still, and last tick's events are
+     cleared first so a hit is never reported twice during the freeze */
+  m.events = [];
   if (m.hitstop > 0) {
     m.hitstop--;
     return m;
@@ -675,6 +696,7 @@ function startCinematic(m, p, mod) {
     total: ph.startup + ph.action + ph.impact + ph.aftermath,
     phaseDur: ph,
     hits,
+    slow: SUPER_SLOW,
     fired: [],
     hitIds: [],
     dealt: 0,
@@ -735,8 +757,9 @@ function stepSuperShow(m) {
     for (const t of m.players) {
       if (t === owner || !t.alive) continue;
       if (Math.abs(t.x - origin) > (h.radius || 200)) continue;
-      if (s2.hitIds.indexOf(t.id) >= 0) continue;
-      s2.hitIds.push(t.id);
+      if (!s2.hitIds[i]) s2.hitIds[i] = [];
+      if (s2.hitIds[i].indexOf(t.id) >= 0) continue;
+      s2.hitIds[i].push(t.id);
       const room = Math.max(0, (s2.mod.damage || 40) - s2.dealt);
       const dmg = Math.min(h.damage || 0, room);
       s2.dealt += dmg;
@@ -815,7 +838,8 @@ function resolveHit(m, p, atk) {
     if (dx * p.facing < -PLAYER_R) continue; /* target must be in front */
     const [hmin, hmax] = hurtBox(t);
     if (bandMax <= hmin || bandMin >= hmax) continue;
-    applyDamage(m, p, t, def, def.damage, def.knock, def.type);
+    const landed = applyDamage(m, p, t, def, def.damage, def.knock, def.type);
+    if (landed && p.attack) p.attack.connected = true;
   }
 }
 
@@ -832,6 +856,12 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
     if (holds) {
       const chip = baseDmg * 0.15;
       tgt.hp = Math.max(0, tgt.hp - chip);
+      if (tgt.hp <= 0) {
+        tgt.alive = false;
+        tgt.downT = 1.1;
+        tgt.blocking = false;
+        m.events.push({ type: 'ko', x: tgt.x, h: tgt.h, id: tgt.id, on: tgt.id });
+      }
       tgt.vx = (sign(tgt.x - src.x) || src.facing) * (knockBase * src.stats.knock * 0.45) / (tgt.stats.weight || 1) * 2.4;
       tgt.hitstun = Math.max(tgt.hitstun, (def.hitstun || 0.18) * 0.65);
       tgt.blockFlash = 0.22;
@@ -981,6 +1011,10 @@ function packSnapshot(m) {
           ph: m.superShow.phase,
           e: Math.round(m.superShow.elapsed * 100) / 100,
           x: Math.round(m.superShow.data.plantX),
+          lx: Math.round(m.superShow.data.landX),
+          pd: m.superShow.phaseDur,
+          sl: m.superShow.slow,
+          tot: Math.round(m.superShow.total * 100) / 100,
           lx: Math.round(m.superShow.data.landX)
         }
       : 0,

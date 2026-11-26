@@ -4397,7 +4397,11 @@ function createRenderer(canvas) {
       reduced: !!view.reduced
     };
     const st = {
-      elapsed: ss.elapsed,
+      /* modules hardcode their beats in unscaled seconds, so they read the
+         engine clock divided by the same factor the engine stretched it by */
+      elapsed: ss.elapsed / (ss.slow || 1),
+      landX: ss.data.landX,
+      facing: owner ? owner.facing : 1,
       phase: ss.phase,
       total: ss.total,
       name: mod.name,
