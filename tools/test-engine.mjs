@@ -17,6 +17,9 @@ await import('../js/supers/mohit.js');
 await import('../js/supers/nikhil.js');
 await import('../js/supers/ajay.js');
 await import('../js/supers/jeetu.js');
+await import('../js/supers/mukesh.js');
+await import('../js/supers/ansh.js');
+await import('../js/supers/anmol.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
@@ -283,7 +286,7 @@ console.log('\nsuper archetypes');
    ansh (aura), thirtytwo (flurry). The rest are covered by the module pass. */
 {
   /* shot: a projectile that travels and hits once */
-  const m = makeTwo('mukesh', 'ansh');
+  const m = makeTwo('thirtythree', 'ashish');
   const [a, b] = m.players;
   b.x = a.x + 240;
   a.meter = 100;
@@ -298,14 +301,15 @@ console.log('\nsuper archetypes');
 
 {
   /* aura: debuffs everyone in range */
-  const m = makeTwo('ansh', 'ashish');
+  const m = makeTwo('ashish', 'thirtytwo');
   const [a, b] = m.players;
   b.x = a.x + 110;
   a.meter = 100;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   run(m, 14, { p0: idle, p1: idle });
-  check('aura super applies slow', b.slowT > 0, `slowT=${b.slowT.toFixed(2)}`);
+  /* ashish is the last generic aura: it weakens and locks rather than slows */
   check('aura super applies weakness', b.weakT > 0, `weakT=${b.weakT.toFixed(2)}`);
+  check('aura super applies lock', b.lockT > 0, `lockT=${b.lockT.toFixed(2)}`);
 }
 
 {
