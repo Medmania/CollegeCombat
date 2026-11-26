@@ -35,7 +35,7 @@
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 15, range: 94, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'shot', name: 'Gym Ka Hisaab', damage: 24, speed: 560, r: 26, bounces: 1, knock: 520, look: 'dumbbell' }
+    super: { kind: 'shot', botRange: 340, name: 'Gym Ka Hisaab', damage: 24, speed: 560, r: 26, bounces: 1, knock: 520, look: 'dumbbell' }
   },
   taunts: ['Ek aur set!', 'Legs day is every day.'],
   passive: { id: 'heavy', text: 'heavy' }

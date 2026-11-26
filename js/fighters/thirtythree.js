@@ -35,7 +35,7 @@
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 15, range: 94, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'shot', name: 'Scooty Express', damage: 30, speed: 700, r: 30, knock: 600, look: 'scooty' }
+    super: { kind: 'shot', botRange: 340, name: 'Scooty Express', damage: 30, speed: 700, r: 30, knock: 600, look: 'scooty' }
   },
   taunts: ['Scooty pe aa.', 'One Bihari is enough.'],
   passive: { id: 'heavy', text: 'heavy' }

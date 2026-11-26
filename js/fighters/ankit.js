@@ -35,7 +35,7 @@
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 16, range: 92, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'blast', name: 'Pinchu Stomp', damage: 36, range: 200, knock: 780, knockdown: true, look: 'panda' }
+    super: { kind: 'blast', botRange: 200, name: 'Pinchu Stomp', damage: 36, range: 200, knock: 780, knockdown: true, look: 'panda' }
   },
   taunts: ['Panda does not negotiate.', 'Sorry, sorry, sorry.'],
   passive: { id: 'tank', text: 'tank' }

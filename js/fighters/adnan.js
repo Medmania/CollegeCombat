@@ -35,7 +35,7 @@
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 15, range: 94, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'blast', name: 'Final Countdown', damage: 40, range: 230, knock: 800, knockdown: true, hitAt: 1.15, dur: 1.5, look: 'blast' }
+    super: { kind: 'blast', botRange: 230, name: 'Final Countdown', damage: 40, range: 230, knock: 800, knockdown: true, hitAt: 1.15, dur: 1.5, look: 'blast' }
   },
   taunts: ['Five. Four. Three.', 'Do not rush me.'],
   passive: { id: 'heavy', text: 'heavy' }

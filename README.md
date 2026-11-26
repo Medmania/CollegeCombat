@@ -5,9 +5,8 @@ colleague-caricature, then punch, kick, sweep, jump and air-kick your way to a
 knockout. Fighters are drawn as articulated skeletons, so the limbs actually
 move — no sprite swapping.
 
-- **Play solo** against 1–3 bots.
-- **Host a game** and up to three friends join from their own phones — 1v1 or a
-  four-way free-for-all.
+- **Play solo** against a bot, or **host a game** and fight a friend on the other
+  phone. One on one only.
 - **Real depth:** a perspective camera beside the lane, a colonnade, a crowd and
   a painted stage. Drawn with the 2D canvas API, so there is no 3D library to
   download and the page still opens by double-click.
@@ -121,7 +120,7 @@ once per friend:
    **reply code**.
 3. They send the reply code back. The host pastes it into the slot and taps
    **Connect**.
-4. Repeat for each extra player. Then **Start fight**.
+4. Then **Start fight**.
 
 After that handshake, every gameplay packet goes directly between the phones.
 Nothing is stored anywhere, and the codes are single-use for that session.
@@ -300,7 +299,7 @@ networked match.
 npm test
 ```
 
-59 checks run against the same files the browser loads: hits connect at the right
+71 checks run against the same files the browser loads: hits connect at the right
 range, stick-up jumps and stick-down crouches, up+forward jumps obliquely, one
 swipe gives exactly one jump, a jab sails over a crouch, a sweep lands on a
 croucher and passes under a jump, crouch+punch becomes an uppercut that connects,
@@ -310,7 +309,9 @@ double-tapping away starts a backflip, sweeps knock down, super needs a full met
 archetypes do what they claim (blast, shot, beam, aura, flurry), projectiles
 travel, hit and clean up, a four-player round finishes, nobody leaves the lane or
 falls through the floor, snapshots carry position, height and projectiles, and
-every fighter file is complete.
+every fighter file is complete, and the guest snapshot round-trips health,
+height, facing, crouch, flip, live supers and projectiles without mixing any of
+them up.
 
 Debug helper in the browser console: `__kursi()` prints the live match state,
 which is handy while you tune numbers.

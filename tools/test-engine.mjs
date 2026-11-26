@@ -399,6 +399,88 @@ console.log('\nnetcode');
   check('snapshot is small enough for mobile', JSON.stringify(wire).length < 900, `${JSON.stringify(wire).length} bytes`);
 }
 
+console.log('\nphase 0 fixes');
+{
+  /* air hit boxes must travel with the attacker */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 60;
+  b.crouching = true;
+  a.facing = 1;
+  a.h = 150;
+  a.onGround = false;
+  const before = b.hp;
+  a.attack = { type: 'airKick', t: 0.1, dur: 0.36, hitAt: 0.12, hit: false, def: a.attacks.airKick };
+  a.attack.t = 0.13;
+  stepMatch(m, { p0: idle, p1: idle });
+  check('an air kick high up misses a crouching target', b.hp === before, `${b.hp} vs ${before}`);
+}
+
+{
+  /* the same kick at ground height should connect */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 60;
+  a.facing = 1;
+  a.h = 20;
+  a.onGround = false;
+  const before = b.hp;
+  a.attack = { type: 'airKick', t: 0.13, dur: 0.36, hitAt: 0.12, hit: false, def: a.attacks.airKick };
+  stepMatch(m, { p0: idle, p1: idle });
+  check('the same kick low down connects', b.hp < before, `${b.hp} vs ${before}`);
+}
+
+{
+  /* swing events feed the whiff sound */
+  const m = makeTwo();
+  const a = m.players[0];
+  stepMatch(m, { p0: act({ punch: true }), p1: idle });
+  check('attacking emits a swing event', m.events.some((e) => e.type === 'swing'), JSON.stringify(m.events.map((e) => e.type)));
+}
+
+{
+  /* snapshot must keep health and height apart */
+  const m = makeTwo();
+  const a = m.players[0];
+  a.hp = 77;
+  a.h = 120;
+  a.facing = -1;
+  a.crouching = true;
+  a.flipT = 0.3;
+  a.superLive = { kind: 'beam', t: 0.4, dur: 1.2, def: {} };
+  m.projectiles.push({ id: 'pX', owner: a.id, x: 500, h: 60, r: 20, vx: 0, vh: 0, gravity: 0, life: 1, damage: 0, knock: 0, bounces: 0, hitIds: [], look: 'ball', facing: 1 });
+
+  const wire = JSON.parse(JSON.stringify(packSnapshot(m)));
+  const m2 = makeTwo();
+  const events = unpackSnapshot(wire, m2);
+  const b2 = m2.players[0];
+
+  check('snapshot keeps health and height separate', b2.hp === 77 && b2.h === 120, `hp=${b2.hp} h=${b2.h}`);
+  check('snapshot keeps facing', b2.facing === -1);
+  check('snapshot keeps crouch and flip', b2.crouching === true && b2.flipT > 0);
+  check('snapshot keeps the live super', b2.superLive && b2.superLive.kind === 'beam', JSON.stringify(b2.superLive));
+  check('snapshot keeps projectiles with owner and look', m2.projectiles.length === 1 && m2.projectiles[0].owner === a.id && m2.projectiles[0].look === 'ball');
+  check('unpack returns the events', Array.isArray(events));
+  check('snapshot packet still fits a phone', JSON.stringify(wire).length < 1200, `${JSON.stringify(wire).length} bytes`);
+}
+
+{
+  /* events from ticks that are not broadcast must survive */
+  const m = makeTwo();
+  m.outbox.length = 0;
+  stepMatch(m, { p0: act({ punch: true }), p1: idle });
+  stepMatch(m, { p0: idle, p1: idle });
+  const queued = m.outbox.length;
+  const wire = packSnapshot(m);
+  check('events queue up between broadcasts', queued >= 1 && wire.e.length >= 1, `outbox=${queued} sent=${wire.e.length}`);
+}
+
+{
+  /* every super must have a usable bot range */
+  const missing = CHARACTERS.filter((c) => !c.moves.super.botRange).map((c) => c.id);
+  check('every super declares a bot range', missing.length === 0, missing.join(','));
+}
+
 console.log('\nroster');
 {
   const problems = [];

@@ -35,7 +35,7 @@
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 14, range: 98, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'beam', name: 'Kaniya Beam', damage: 4, interval: 0.09, dur: 1.2, range: 340, knock: 30, look: 'laser' }
+    super: { kind: 'beam', botRange: 360, name: 'Kaniya Beam', damage: 4, interval: 0.09, dur: 1.2, range: 340, knock: 30, look: 'laser' }
   },
   taunts: ['I saw that coming.', 'Focus. Always focus.'],
   passive: { id: 'charged', text: 'charged' }

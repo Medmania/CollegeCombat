@@ -35,7 +35,7 @@
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 13, range: 100, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'flurry', name: 'Mood Swing Protocol', damage: 5, interval: 0.14, dur: 1.1, range: 140, knock: 60, lock: 0.3, look: 'mood' }
+    super: { kind: 'flurry', botRange: 160, name: 'Mood Swing Protocol', damage: 5, interval: 0.14, dur: 1.1, range: 140, knock: 60, lock: 0.3, look: 'mood' }
   },
   taunts: ['You would not get it.', 'Why is everyone so fake?'],
   passive: { id: 'quick', text: 'quick' }

@@ -35,7 +35,7 @@
     punch: { damage: 6, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 12, range: 100, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'aura', name: 'Emotional Damage', damage: 3, interval: 0.2, dur: 2.2, range: 220, knock: 20, lock: 0.6, weak: 2.0, look: 'heart' }
+    super: { kind: 'aura', botRange: 200, name: 'Emotional Damage', damage: 3, interval: 0.2, dur: 2.2, range: 220, knock: 20, lock: 0.6, weak: 2.0, look: 'heart' }
   },
   taunts: ['Mere paas GF hai. Tere paas?', 'Emotional damage.'],
   passive: { id: 'slippery', text: 'slippery' }

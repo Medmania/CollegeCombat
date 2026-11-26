@@ -110,6 +110,7 @@ function buildAttacks(char) {
       knock: p.knock * 1.1,
       cd: d(0.4),
       hitstun: 0.22,
+      air: true,
       ...BANDS.airPunch
     },
 
@@ -149,6 +150,7 @@ function buildAttacks(char) {
       knock: k.knock * 1.15,
       cd: d(0.45),
       hitstun: 0.32,
+      air: true,
       ...BANDS.airKick
     },
     spinKick: {
@@ -260,6 +262,8 @@ function createMatch({ fighters, seed = 12345, roundTime = ROUND_TIME }) {
     events: [],
     projectiles: [],
     projSeq: 1,
+    outbox: [],
+    rngState: (seed >>> 0) || 1,
     seed
   };
 }
@@ -357,9 +361,9 @@ function stepMatch(m, inputs) {
         p.vx = 0;
         m.events.push({ type: 'superstart', x: p.x, h: p.h, r: 40, id: p.id, kind: sd.kind || 'blast' });
       } else if (inp.punch && p.cd.punch <= 0) {
-        startAttack(p, pickAttack(p, 'punch', ctx));
+        startAttack(p, pickAttack(p, 'punch', ctx), m);
       } else if (inp.kick && p.cd.kick <= 0) {
-        startAttack(p, pickAttack(p, 'kick', ctx));
+        startAttack(p, pickAttack(p, 'kick', ctx), m);
       } else if (inp.dash && p.onGround && p.cd.dash <= 0) {
         p.cd.dash = p.moves.dash.cd * p.stats.dashCd;
         if (backward) {
@@ -406,7 +410,7 @@ function stepMatch(m, inputs) {
         p.h = 0;
         p.vh = 0;
         p.onGround = true;
-        if (p.attack && p.attack.type === 'air') p.attack = null;
+        if (p.attack && p.attack.def && p.attack.def.air) p.attack = null;
         m.events.push({ type: 'land', x: p.x, h: 0, id: p.id });
       }
     }
@@ -419,6 +423,12 @@ function stepMatch(m, inputs) {
     if (p.alive && p.superLive) stepSuperLive(m, p);
   }
   stepProjectiles(m);
+
+  /* events are also queued for the next network broadcast */
+  for (const e of m.events) {
+    m.outbox.push(e);
+    if (m.outbox.length > 40) m.outbox.shift();
+  }
 
   separate(m);
   checkEnd(m);
@@ -439,8 +449,9 @@ function pickAttack(p, family, ctx) {
   return A.punch;
 }
 
-function startAttack(p, def) {
+function startAttack(p, def, m) {
   p.attack = { type: def.type, t: 0, dur: def.dur, hitAt: def.hitAt, hit: false, def };
+  if (m) m.events.push({ type: 'swing', x: p.x, h: p.h, id: p.id, kind: def.family });
   if (def.family === 'punch') p.cd.punch = def.cd;
   else p.cd.kick = def.cd;
   /* crouching moves keep you low; everything else stands you up */
@@ -592,7 +603,7 @@ function resolveHit(m, p, atk) {
   }
 
   const def = atk.def;
-  const offset = def.type === 'air' ? p.h : 0;
+  const offset = def.air ? p.h : 0;
   const bandMin = def.minH + offset;
   const bandMax = def.maxH + offset;
 
@@ -678,11 +689,18 @@ function checkEnd(m) {
   }
 }
 
+/* Gameplay randomness must be reproducible: never Math.random here. */
+function nextRandom(m) {
+  m.rngState = (m.rngState * 1664525 + 1013904223) >>> 0;
+  return m.rngState / 4294967296;
+}
+
 function playerById(m, id) {
   return m.players.find((p) => p.id === id) || null;
 }
 
-/* Compact wire format — short keys keep the packet small on mobile. */
+/* Compact wire format. Short keys keep the packet small on mobile; every field
+   the renderer needs is here, so a guest can draw a frame without simulating. */
 function packSnapshot(m) {
   return {
     t: 'snap',
@@ -701,19 +719,26 @@ function packSnapshot(m) {
       g: p.onGround ? 1 : 0,
       c: p.crouching ? 1 : 0,
       d: p.downT > 0 ? 1 : 0,
-      at: p.attack ? p.attack.type : 0,
-      ap: p.attack ? Math.round((p.attack.t / p.attack.dur) * 100) / 100 : 0,
+      fl: p.flipT > 0 ? 1 : 0,
       sl: p.slowT > 0 ? 1 : 0,
-      lk: p.lockT > 0 ? 1 : 0
+      lk: p.lockT > 0 ? 1 : 0,
+      at: p.attack ? p.attack.type : 0,
+      ad: p.attack ? Math.round(p.attack.dur * 100) / 100 : 0,
+      ap: p.attack ? Math.round((p.attack.t / p.attack.dur) * 100) / 100 : 0,
+      su: p.superLive
+        ? { k: p.superLive.kind, t: Math.round(p.superLive.t * 10) / 10, d: Math.round(p.superLive.dur * 10) / 10 }
+        : 0
     })),
     pr: m.projectiles.map((pr) => ({
+      i: pr.id,
+      o: pr.owner,
       x: Math.round(pr.x),
       h: Math.round(pr.h),
       r: Math.round(pr.r),
       l: pr.look,
       f: pr.facing
     })),
-    e: m.events.map((e) => ({
+    e: m.outbox.map((e) => ({
       y: e.type,
       x: Math.round(e.x),
       h: Math.round(e.h || 0),
@@ -725,10 +750,17 @@ function packSnapshot(m) {
   };
 }
 
+/* Apply a snapshot to a local match. Returns the events for the caller to play;
+   positions are also left as interpolation targets for smooth guest rendering. */
 function unpackSnapshot(snap, match) {
   for (const sp of snap.p) {
     const p = playerById(match, sp.i);
     if (!p) continue;
+
+    p.tx = sp.x;
+    p.th = sp.h;
+    p.tf = sp.f;
+
     p.x = sp.x;
     p.h = sp.h;
     p.facing = sp.f;
@@ -738,13 +770,27 @@ function unpackSnapshot(snap, match) {
     p.onGround = !!sp.g;
     p.crouching = !!sp.c;
     p.downT = sp.d ? 0.5 : 0;
-    p.attack = sp.at ? { type: sp.at, t: sp.ap * 0.4, dur: 0.4, hit: true } : null;
-    p.slowT = sp.sl ? 0.5 : 0;
-    p.lockT = sp.lk ? 0.5 : 0;
+    p.flipT = sp.fl ? 0.35 : 0;
+    p.slowT = sp.sl ? 0.4 : 0;
+    p.lockT = sp.lk ? 0.4 : 0;
+
+    p.attack = sp.at
+      ? {
+          type: sp.at,
+          t: (sp.ap || 0) * (sp.ad || 0.4),
+          dur: sp.ad || 0.4,
+          hitAt: 0,
+          hit: true,
+          def: (p.attacks && p.attacks[sp.at]) || null
+        }
+      : null;
+
+    p.superLive = sp.su ? { kind: sp.su.k, t: sp.su.t, dur: sp.su.d, def: p.superDef || {} } : null;
   }
+
   match.projectiles = (snap.pr || []).map((pr) => ({
-    id: `r${pr.x}`,
-    owner: '',
+    id: pr.i,
+    owner: pr.o,
     x: pr.x,
     h: pr.h,
     r: pr.r,
@@ -759,11 +805,13 @@ function unpackSnapshot(snap, match) {
     look: pr.l,
     facing: pr.f
   }));
+
   match.tick = snap.k;
   match.timeLeft = snap.tl;
   match.over = !!snap.ov;
   match.winner = snap.w || null;
-  match.events = snap.e.map((e) => ({
+
+  return (snap.e || []).map((e) => ({
     type: e.y,
     x: e.x,
     h: e.h,
@@ -772,7 +820,6 @@ function unpackSnapshot(snap, match) {
     kind: e.k,
     r: e.r
   }));
-  return match;
 }
 
   globalThis.KK_Engine = {

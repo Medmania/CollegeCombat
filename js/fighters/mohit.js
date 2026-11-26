@@ -35,7 +35,7 @@
     punch: { damage: 6, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 12, range: 100, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'beam', name: 'Paglu Vision', damage: 3, interval: 0.1, dur: 1.8, range: 300, knock: 20, slow: 1.2, look: 'beam' }
+    super: { kind: 'beam', botRange: 360, name: 'Paglu Vision', damage: 3, interval: 0.1, dur: 1.8, range: 300, knock: 20, slow: 1.2, look: 'beam' }
   },
   taunts: ['I was not staring, I was observing.', 'Hehehe.'],
   passive: { id: 'slippery', text: 'slippery' }

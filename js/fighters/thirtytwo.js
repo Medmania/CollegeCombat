@@ -35,7 +35,7 @@
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 12, range: 100, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'flurry', name: 'Player 2 Has Entered', damage: 5, interval: 0.12, dur: 1.6, range: 170, knock: 50, look: 'ghost' }
+    super: { kind: 'flurry', botRange: 160, name: 'Player 2 Has Entered', damage: 5, interval: 0.12, dur: 1.6, range: 170, knock: 50, look: 'ghost' }
   },
   taunts: ['I brought backup.', 'Player 2 has entered.'],
   passive: { id: 'quick', text: 'quick' }

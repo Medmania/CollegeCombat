@@ -35,7 +35,7 @@
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 13, range: 97, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'flurry', name: 'Continuous Commentary', damage: 4, interval: 0.12, dur: 1.4, range: 190, knock: 40, lock: 0.5, look: 'bubble' }
+    super: { kind: 'flurry', botRange: 160, name: 'Continuous Commentary', damage: 4, interval: 0.12, dur: 1.4, range: 190, knock: 40, lock: 0.5, look: 'bubble' }
   },
   taunts: ['Let me explain the full context.', 'I was the one who fixed it.'],
   passive: { id: 'charged', text: 'charged' }

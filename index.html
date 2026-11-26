@@ -1330,15 +1330,6 @@ input[type='range'] {
 
         <div id="roster" class="roster"></div>
 
-        <div class="field" id="bot-row">
-          <label>Opponents</label>
-          <div class="chips" id="bot-count">
-            <button class="chip active" data-bots="1">1 bot</button>
-            <button class="chip" data-bots="2">2 bots</button>
-            <button class="chip" data-bots="3">3 bots</button>
-          </div>
-        </div>
-
         <div class="field" id="difficulty-row">
           <label>Bot difficulty</label>
           <div class="chips" id="difficulty">
@@ -3441,7 +3432,8 @@ function decide(p, target, dist, dir, mem, lvl, prof) {
   const targetAirborne = !target.onGround && target.h > 30;
 
   /* 1. super, but only at a moment worth spending it on */
-  const superRange = p.moves.super.range;
+  const superDef = p.superDef || p.moves.super || {};
+  const superRange = superDef.botRange || superDef.range || 200;
   if (p.meter >= 100 && dist < superRange * 0.85) {
     const goodMoment = target.hitstun > 0 || target.downT > 0 || target.attack !== null || dist < 95;
     if (goodMoment && Math.random() < lvl.superIQ) {
@@ -3890,7 +3882,6 @@ let renderer = null;
 const S = {
   mode: 'solo',
   me: { name: 'You', charId: CHARACTERS[0].id },
-  botCount: 1,
   difficulty: 'normal',
   hitStop: 0,
   slotState: {},
@@ -3982,7 +3973,6 @@ function refreshRoster() {
 
 function openPick(mode) {
   S.mode = mode;
-  $('#bot-row').hidden = mode !== 'solo';
   $('#difficulty-row').hidden = mode !== 'solo';
   $('#pick-msg').textContent = '';
   $('#pick-title').textContent =
@@ -4000,11 +3990,10 @@ function startSolo() {
   setBotDifficulty(S.difficulty);
   const char = getCharacter(S.me.charId);
   const fighters = [{ id: 'p0', name: S.me.name || 'You', char, isBot: false }];
+  /* one on one: a single bot opponent */
   const pool = CHARACTERS.filter((c) => c.id !== char.id);
-  for (let i = 0; i < S.botCount; i++) {
-    const c = pool[i % pool.length];
-    fighters.push({ id: `b${i}`, name: c.name, char: c, isBot: true });
-  }
+  const foe = pool[Math.floor(Math.random() * pool.length)];
+  fighters.push({ id: 'b0', name: foe.name, char: foe, isBot: true });
   S.localId = 'p0';
   beginSeries(fighters);
 }
@@ -4055,7 +4044,7 @@ function renderLobby() {
   if (!box) return;
   const parts = [];
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 1; i++) {
     const state = slotStateFor(i);
     const entry = S.lobby.find((l) => l.slot === i);
     const badge = `<span class="slot-badge">${SLOT_BADGE[state]}</span>`;
@@ -4309,34 +4298,38 @@ function onGuestMessage(msg) {
 function applySnapshot(snap) {
   const m = S.match;
   if (!m) return;
-  for (const sp of snap.p) {
-    const p = m.players.find((q) => q.id === sp.i);
-    if (!p) continue;
-    p._tx = sp.x;
-    p._ty = sp.y;
-    p._tf = sp.f;
-    p.hp = sp.h;
-    p.meter = sp.m;
-    p.alive = !!sp.a;
-    p.dashT = sp.d ? 0.1 : 0;
-    p.attack = sp.at ? { type: sp.at, t: sp.ap * 0.4, dur: 0.4, hit: true } : null;
-  }
-  m.tick = snap.k;
-  m.timeLeft = snap.tl;
-  m.events = snap.e.map((e) => ({
-    type: e.y,
-    x: e.x,
-    y: e.y2,
-    id: e.id,
-    on: e.on,
-    kind: e.k,
-    r: e.r
-  }));
-  handleEvents(m.events);
+
+  const events = unpackSnapshot(snap, m);
+  m.events = events;
+  m.outbox = [];
+  handleEvents(events);
+
   if (snap.ov && !S.ended) {
     m.over = true;
     m.winner = snap.w || null;
     finishMatch();
+  }
+}
+
+/* Guests never run the simulation, so their timers have to tick here. */
+function tickGuestTimers(dt) {
+  const m = S.match;
+  if (!m) return;
+  for (const p of m.players) {
+    p.hitstun = Math.max(0, p.hitstun - dt);
+    p.iframes = Math.max(0, p.iframes - dt);
+    p.slowT = Math.max(0, p.slowT - dt);
+    p.lockT = Math.max(0, p.lockT - dt);
+    p.downT = Math.max(0, p.downT - dt);
+    p.flipT = Math.max(0, p.flipT - dt);
+    if (p.attack) {
+      p.attack.t += dt;
+      if (p.attack.t >= p.attack.dur) p.attack = null;
+    }
+    if (p.superLive) {
+      p.superLive.t += dt;
+      if (p.superLive.t >= p.superLive.dur) p.superLive = null;
+    }
   }
 }
 
@@ -4419,7 +4412,10 @@ function loop(ts) {
     if (guard >= 6) acc = 0;
   }
 
-  if (S.mode === 'guest') smoothGuest(dt);
+  if (S.mode === 'guest') {
+    tickGuestTimers(dt);
+    smoothGuest(dt);
+  }
   if (renderer) {
     renderer.step(dt);
     drawFrame();
@@ -4457,6 +4453,7 @@ function simulate() {
 
   if (S.mode === 'host' && m.tick % 2 === 0 && S.host) {
     S.host.broadcast(packSnapshot(m));
+    m.outbox.length = 0;
   }
   if (m.over) finishMatch();
 }
@@ -4466,13 +4463,10 @@ function smoothGuest(dt) {
   if (!m) return;
   const k = Math.min(1, dt * 14);
   for (const p of m.players) {
-    if (p._tx == null) continue;
-    p.x += (p._tx - p.x) * k;
-    p.y += (p._ty - p.y) * k;
-    let df = p._tf - p.face;
-    while (df > Math.PI) df -= Math.PI * 2;
-    while (df < -Math.PI) df += Math.PI * 2;
-    p.face += df * k;
+    if (p.tx == null) continue;
+    p.x += (p.tx - p.x) * k;
+    p.h += (p.th - p.h) * k;
+    p.facing = p.tf;
   }
 }
 
@@ -4703,14 +4697,6 @@ function wire() {
     } catch (_) {
       /* private mode, ignore */
     }
-  });
-
-  $('#bot-count').addEventListener('click', (e) => {
-    const chip = e.target.closest('[data-bots]');
-    if (!chip) return;
-    S.botCount = Number(chip.dataset.bots);
-    $$('#bot-count .chip').forEach((c) => c.classList.toggle('active', c === chip));
-    audio.click();
   });
 
   $('#pick-start').addEventListener('click', () => {

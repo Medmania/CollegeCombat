@@ -35,7 +35,7 @@
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 14, range: 95, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'aura', name: 'Lanka Mode', damage: 4, interval: 0.22, dur: 2.0, range: 240, knock: 90, look: 'dark' }
+    super: { kind: 'aura', botRange: 200, name: 'Lanka Mode', damage: 4, interval: 0.22, dur: 2.0, range: 240, knock: 90, look: 'dark' }
   },
   taunts: ['Diidii knows everything.', 'Come here, beta.'],
   passive: { id: 'shover', text: 'shover' }

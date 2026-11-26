@@ -35,7 +35,7 @@
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
     kick: { damage: 14, range: 93, arc: 0.9, dur: 0.42, hitAt: 0.18, knock: 300, cd: 0.55 },
     dash: { speed: 700, dur: 0.15, cd: 2.0 },
-    super: { kind: 'blast', name: 'Absolute Thiccness', damage: 30, range: 210, knock: 700, knockdown: true, look: 'thigh' }
+    super: { kind: 'blast', botRange: 210, name: 'Absolute Thiccness', damage: 30, range: 210, knock: 700, knockdown: true, look: 'thigh' }
   },
   taunts: ['These thighs have their own PIN code.', 'Thigh Man does not skip squats.'],
   passive: { id: 'tank', text: 'tank' }
