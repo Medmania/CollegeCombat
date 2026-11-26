@@ -57,7 +57,7 @@ const run = (m, n, inputs) => {
 console.log('\nbasics');
 {
   const m = makeTwo();
-  run(m, 60, { p0: idle, p1: idle });
+  run(m, 95, { p0: idle, p1: idle });
   check('idle fighters take no damage', m.players.every((p) => p.hp === p.maxHp));
   check('clock runs down', m.timeLeft < ROUND_TIME);
   check('fighters are built with the health scale', m.players[0].maxHp >= 96 * HP_SCALE - 1, `${m.players[0].maxHp}`);
@@ -74,7 +74,7 @@ console.log('\nstrikes');
   const before = b.hp;
   stepMatch(m, { p0: act({ punch: true }), p1: idle });
   check('standing punch is a jab', a.attack && a.attack.type === 'punch', a.attack && a.attack.type);
-  run(m, 12, { p0: idle, p1: idle });
+  run(m, 19, { p0: idle, p1: idle });
   check('a punch in range lands', b.hp < before, `${b.hp} vs ${before}`);
 }
 
@@ -84,7 +84,7 @@ console.log('\nstrikes');
   b.x = a.x + 420;
   const before = b.hp;
   stepMatch(m, { p0: act({ punch: true }), p1: idle });
-  run(m, 12, { p0: idle, p1: idle });
+  run(m, 19, { p0: idle, p1: idle });
   check('a punch out of range misses', b.hp === before);
 }
 
@@ -107,7 +107,7 @@ console.log('\nstick stances');
 {
   const m = makeTwo();
   const a = m.players[0];
-  run(m, 20, { p0: act({ my: -1 }), p1: idle });
+  run(m, 47, { p0: act({ my: -1 }), p1: idle });
   check('holding up does not bunny-hop', a.onGround === true || a.h === 0 || true);
 
   const m2 = makeTwo();
@@ -146,7 +146,7 @@ console.log('\nheight matters');
   run(m, 3, { p0: idle, p1: act({ my: 1 }) });
   const before = b.hp;
   stepMatch(m, { p0: act({ punch: true }), p1: act({ my: 1 }) });
-  run(m, 12, { p0: idle, p1: act({ my: 1 }) });
+  run(m, 19, { p0: idle, p1: act({ my: 1 }) });
   check('a jab sails over a crouching opponent', b.hp === before, `${b.hp} vs ${before}`);
 }
 
@@ -169,7 +169,7 @@ console.log('\nheight matters');
   run(m, 5, { p0: idle, p1: idle });
   const before = b.hp;
   stepMatch(m, { p0: act({ kick: true, my: 1 }), p1: idle });
-  run(m, 14, { p0: idle, p1: idle });
+  run(m, 22, { p0: idle, p1: idle });
   check('a sweep passes under a jumping opponent', b.hp === before, `${b.hp} vs ${before}`);
 }
 
@@ -182,7 +182,7 @@ console.log('\nmove variants');
   stepMatch(m, { p0: act({ punch: true, my: 1 }), p1: idle });
   check('crouch + punch becomes an uppercut', a.attack && a.attack.type === 'crouchPunch', a.attack && a.attack.type);
   const before = b.hp;
-  run(m, 14, { p0: idle, p1: idle });
+  run(m, 22, { p0: idle, p1: idle });
   check('the uppercut lands on a standing opponent', b.hp < before);
 }
 
@@ -263,7 +263,7 @@ console.log('\nknockdown');
   stepMatch(m, { p0: act({ kick: true, my: 1 }), p1: idle });
   run(m, 24, { p0: idle, p1: idle });
   check('a sweep knocks the opponent down', b.downT > 0, `downT=${b.downT.toFixed(2)}`);
-  run(m, 20, { p0: idle, p1: idle });
+  run(m, 47, { p0: idle, p1: idle });
   check('a downed fighter gets back up', m.players[1].downT < 1.2);
 }
 
@@ -273,14 +273,14 @@ console.log('\nsuper');
   const m = makeTwo('jeetu', 'ansh');
   const [a, b] = m.players;
   b.x = a.x + 90;
-  a.meter = 40;
+  a.meter = 60;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
-  check('super blocked below 100 meter', a.meter === 40 && !a.attack);
+  check('super blocked below full meter', a.meter === 60 && !a.attack);
 
-  a.meter = 100;
+  a.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   check('super consumes the meter', a.meter === 0);
-  run(m, 40, { p0: idle, p1: idle });
+  run(m, 65, { p0: idle, p1: idle });
   check('super damages a nearby opponent', b.hp < b.maxHp, `${Math.round(b.hp)} of ${b.maxHp}`);
 }
 
@@ -294,11 +294,11 @@ console.log('\nsuper archetypes');
   const m = makeTwo('ashish', 'ansh');
   const [a, b] = m.players;
   b.x = a.x + 110;
-  a.meter = 100;
+  a.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   check('the fallback does not start a cinematic', m.superShow === null);
   /* the archetype effect starts when the super attack lands, not on the press */
-  run(m, 12, { p0: idle, p1: idle });
+  run(m, 19, { p0: idle, p1: idle });
   check('a fighter without a module falls back to its archetype', !!a.superLive,
     `live=${a.superLive && a.superLive.kind}`);
 
@@ -506,20 +506,20 @@ console.log('\ncinematic supers');
   const m = makeTwo('adnan', 'priyank');
   const [a, b] = m.players;
   b.x = a.x + 150;
-  a.meter = 100;
+  a.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   check('the bomb is planted', !!m.superShow && m.superShow.phase === 'startup', m.superShow && m.superShow.phase);
 
   const hp0 = b.hp;
   const t0 = m.timeLeft;
-  run(m, 20, { p0: idle, p1: idle });
+  run(m, 30, { p0: idle, p1: idle });   /* well inside the 42-tick intro freeze */
   check('the round timer is paused during the intro', Math.abs(m.timeLeft - t0) < 0.001, `${m.timeLeft} vs ${t0}`);
 
   /* 1 activation tick + 20 + 60 = 81 ticks = 2.7 s, still short of 3.35 s */
-  run(m, 60, { p0: idle, p1: idle });
+  run(m, 95, { p0: idle, p1: idle });
   check('nothing has gone off early', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
 
-  run(m, 25, { p0: idle, p1: idle });
+  run(m, 65, { p0: idle, p1: idle });
   check('the bomb goes off and hurts the target', b.hp < hp0 - 20, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
   check('the owner is unhurt by his own bomb', a.hp === a.maxHp, `${Math.round(a.hp)}`);
 }
@@ -529,10 +529,10 @@ console.log('\ncinematic supers');
   const m = makeTwo('adnan', 'priyank');
   const [a, b] = m.players;
   b.x = a.x + 300;               /* outside the 230 radius */
-  a.meter = 100;
+  a.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   const hp0 = b.hp;
-  run(m, 120, { p0: idle, p1: idle });
+  run(m, 190, { p0: idle, p1: idle });
   check('standing outside the ring avoids the blast', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
 }
 
@@ -541,11 +541,11 @@ console.log('\ncinematic supers');
   const m = makeTwo('ankit', 'priyank');
   const [a, b] = m.players;
   b.x = a.x + 120;
-  a.meter = 100;
+  a.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   check('the panda is aimed at the target', Math.abs(m.superShow.data.landX - b.x) < 1, `${m.superShow.data.landX} vs ${b.x}`);
   const hp0 = b.hp;
-  run(m, 74, { p0: idle, p1: idle });
+  run(m, 115, { p0: idle, p1: idle });
   check('the stomp connects', b.hp < hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
 }
 
@@ -554,12 +554,12 @@ console.log('\ncinematic supers');
   const m = makeTwo('ankit', 'priyank');
   const [a, b] = m.players;
   b.x = a.x + 120;
-  a.meter = 100;
+  a.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   const hp0 = b.hp;
   run(m, 8, { p0: idle, p1: idle });
   b.x = a.x + 500;               /* walk out of the footprint */
-  run(m, 70, { p0: idle, p1: idle });
+  run(m, 110, { p0: idle, p1: idle });
   check('stepping out of the footprint avoids the stomp', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
 }
 
@@ -568,13 +568,13 @@ console.log('\ncinematic supers');
   const m = makeTwo('adnan', 'ankit');
   const [a, b] = m.players;
   b.x = a.x + 140;
-  a.meter = 100;
-  b.meter = 100;
+  a.meter = 165;
+  b.meter = 165;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
   const first = m.superShow && m.superShow.charId;
   stepMatch(m, { p0: idle, p1: act({ super: true }) });
   check('a second super cannot start over the first', m.superShow.charId === first, `${first} then ${m.superShow.charId}`);
-  run(m, 200, { p0: idle, p1: idle });
+  run(m, 310, { p0: idle, p1: idle });
   check('the show cleans itself up', m.superShow === null);
 }
 
@@ -586,11 +586,11 @@ console.log('\ncinematic supers');
     const m = makeTwo(id, 'priyank');
     const [a, b2] = m.players;
     b2.x = a.x + 110;
-    a.meter = 100;
+    a.meter = 165;
     const hp0 = b2.hp;
     stepMatch(m, { p0: act({ super: true }), p1: idle });
     if (!m.superShow) { bad.push(`${id}:no-start`); continue; }
-    run(m, 220, { p0: idle, p1: idle });
+    run(m, 340, { p0: idle, p1: idle });
     if (b2.hp >= hp0) bad.push(`${id}:no-damage`);
     if (m.superShow !== null) bad.push(`${id}:no-cleanup`);
   }
@@ -604,10 +604,10 @@ console.log('\ncinematic supers');
     const m = makeTwo(id, 'priyank');
     const [a, b2] = m.players;
     b2.x = a.x + 100;
-    a.meter = 100;
+    a.meter = 165;
     const hp0 = b2.hp;
     stepMatch(m, { p0: act({ super: true }), p1: idle });
-    run(m, 220, { p0: idle, p1: idle });
+    run(m, 340, { p0: idle, p1: idle });
     const dealt = hp0 - b2.hp;
     /* power multiplies damage, so allow for it, but never more than 2x the cap */
     if (dealt > mod.damage * 2.2) bad.push(`${id}:${Math.round(dealt)}`);

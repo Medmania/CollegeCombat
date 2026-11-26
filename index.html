@@ -1743,6 +1743,36 @@ table.moves th, table.moves td {
 }
 table.moves th { color: var(--gold); font-weight: 800; }
 table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
+
+/* opponent picker */
+.foe-wrap { margin-bottom: 8px; }
+.foe-wrap label {
+  display: block;
+  font-size: 12px;
+  color: rgba(244, 239, 228, 0.7);
+  margin-bottom: 4px;
+}
+.foe-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.foe-row button {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  overflow: hidden;
+}
+.foe-row button canvas { width: 100%; height: 100%; display: block; }
+.foe-row button.on { border-color: #ffd166; box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.35); }
+.foe-row button.random { font-size: 16px; color: var(--ink); font-weight: 800; }
     </style>
   </head>
   <body>
@@ -1799,6 +1829,10 @@ table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
           <aside class="pick-preview" id="pick-preview"></aside>
 
           <div class="pick-grid">
+            <div class="foe-wrap">
+              <label>Opponent</label>
+              <div class="foe-row" id="foe-row"></div>
+            </div>
             <div class="field tight">
               <label for="player-name">Your name</label>
               <input id="player-name" type="text" maxlength="14" placeholder="Your name" autocomplete="off" />
@@ -3619,6 +3653,16 @@ function createRenderer(canvas) {
       ctx.lineWidth = Math.max(0.6, wb * 0.09);
       ctx.stroke();
     }
+
+    /* rim light down the lit side: the cheapest way to say "this is round" */
+    ctx.beginPath();
+    ctx.moveTo(a1[0], a1[1]);
+    ctx.lineTo(b1[0], b1[1]);
+    ctx.strokeStyle = 'rgba(255, 246, 230, 0.26)';
+    ctx.lineWidth = Math.max(0.5, wb * 0.1);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
     return { nx, ny, ux, uy };
   }
 
@@ -5350,7 +5394,7 @@ window.addEventListener('keydown', (e) => {
 
 const S = {
   mode: 'solo',
-  me: { name: 'You', charId: CHARACTERS[0].id },
+  me: { name: 'You', charId: CHARACTERS[0].id, foeId: null },
   difficulty: 'normal',
   hitStop: 0,
   slotState: {},
@@ -5430,6 +5474,43 @@ function buildRoster(container, onPick, selectedId) {
   }
 }
 
+/* pick who you fight in solo */
+function renderFoes() {
+  const row = $('#foe-row');
+  if (!row) return;
+  row.innerHTML = '';
+
+  const rnd = document.createElement('button');
+  rnd.className = 'random' + (S.me.foeId ? '' : ' on');
+  rnd.textContent = '?';
+  rnd.title = 'Surprise me';
+  rnd.addEventListener('click', () => {
+    S.me.foeId = null;
+    savePrefs();
+    renderFoes();
+    audio.click();
+  });
+  row.appendChild(rnd);
+
+  for (const c of CHARACTERS) {
+    const btn = document.createElement('button');
+    btn.className = S.me.foeId === c.id ? 'on' : '';
+    btn.title = c.name;
+    const cv = document.createElement('canvas');
+    cv.width = 84;
+    cv.height = 84;
+    drawPortrait(cv.getContext('2d'), c, 84, { showProp: false });
+    btn.appendChild(cv);
+    btn.addEventListener('click', () => {
+      S.me.foeId = c.id;
+      savePrefs();
+      renderFoes();
+      audio.click();
+    });
+    row.appendChild(btn);
+  }
+}
+
 function renderPreview() {
   const box = $('#pick-preview');
   if (!box) return;
@@ -5484,6 +5565,7 @@ function refreshRoster() {
     S.me.charId
   );
   renderPreview();
+  renderFoes();
 }
 
 /* Three fighters waiting on the main menu, one of them today's pick. */
@@ -5514,7 +5596,7 @@ function buildMenuFighters() {
 /* remember the last name and fighter between visits */
 function savePrefs() {
   try {
-    localStorage.setItem('kk.prefs', JSON.stringify({ name: S.me.name, charId: S.me.charId, diff: S.difficulty }));
+    localStorage.setItem('kk.prefs', JSON.stringify({ name: S.me.name, charId: S.me.charId, foeId: S.me.foeId, diff: S.difficulty }));
   } catch (err) { /* private mode: not fatal */ }
 }
 
@@ -5525,6 +5607,7 @@ function loadPrefs() {
     const p = JSON.parse(raw);
     if (p.name) S.me.name = p.name;
     if (p.charId && getCharacter(p.charId)) S.me.charId = p.charId;
+    if (p.foeId && getCharacter(p.foeId)) S.me.foeId = p.foeId;
     if (p.diff) S.difficulty = p.diff;
   } catch (err) { /* ignore a corrupt value */ }
 }
@@ -5550,7 +5633,8 @@ function startSolo() {
   const fighters = [{ id: 'p0', name: S.me.name || 'You', char, isBot: false }];
   /* one on one: a single bot opponent */
   const pool = CHARACTERS.filter((c) => c.id !== char.id);
-  const foe = pool[Math.floor(Math.random() * pool.length)];
+  const chosen = S.me.foeId && S.me.foeId !== char.id ? getCharacter(S.me.foeId) : null;
+  const foe = chosen || pool[Math.floor(Math.random() * pool.length)];
   fighters.push({ id: 'b0', name: foe.name, char: foe, isBot: true });
   S.localId = 'p0';
   beginSeries(fighters);

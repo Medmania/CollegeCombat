@@ -20,7 +20,7 @@ const CROUCH_H = 50;
 const GRAVITY = 2400;
 const JUMP_V = 760;
 const ROUND_TIME = 150;
-const SUPER_COST = 100;
+const SUPER_COST = 165;
 /* global health multiplier — raise this to make fights last longer */
 const HP_SCALE = 3.4;
 
@@ -657,8 +657,13 @@ function stepSuperLive(m, p) {
    absolute times from activation. The engine owns the clock, the freeze, the
    damage and the cleanup; the module owns only how it looks. */
 
+const SUPER_SLOW = 1.55;
+
 function startCinematic(m, p, mod) {
-  const ph = mod.phases;
+  /* stretch the whole scene: same beats, just longer to take in */
+  const ph = {};
+  for (const k of Object.keys(mod.phases)) ph[k] = mod.phases[k] * SUPER_SLOW;
+  const hits = (mod.hits || []).map((h) => ({ ...h, at: h.at * SUPER_SLOW }));
   m.superShow = {
     owner: p.id,
     charId: p.charId,
@@ -669,6 +674,7 @@ function startCinematic(m, p, mod) {
     elapsed: 0,
     total: ph.startup + ph.action + ph.impact + ph.aftermath,
     phaseDur: ph,
+    hits,
     fired: [],
     hitIds: [],
     dealt: 0,
@@ -718,7 +724,7 @@ function stepSuperShow(m) {
   }
 
   /* hit windows, each target struck at most once per window */
-  const hits = s2.mod.hits || [];
+  const hits = s2.hits || (s2.mod.hits || []);
   for (let i = 0; i < hits.length; i++) {
     const h = hits[i];
     if (s2.fired[i] || s2.elapsed < h.at) continue;
@@ -857,8 +863,8 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   tgt.iframes = 0.08;
   tgt.attack = null;
 
-  src.meter = Math.min(SUPER_COST, src.meter + dmg * 1.5 * src.stats.meter);
-  tgt.meter = Math.min(SUPER_COST, tgt.meter + dmg * 1.0 * tgt.stats.meter);
+  src.meter = Math.min(SUPER_COST, src.meter + dmg * 0.95 * src.stats.meter);
+  tgt.meter = Math.min(SUPER_COST, tgt.meter + dmg * 0.65 * tgt.stats.meter);
 
   const tier = dmg >= 16 ? 'heavy' : dmg >= 8 ? 'medium' : 'light';
   /* impact freeze frames, deterministic and identical for host and guest */
