@@ -1625,6 +1625,124 @@ input[type='range'] {
   color: #ff9b9b;
   background: rgba(120, 20, 20, 0.5);
 }
+
+/* ---------------------------------------------------- menu, VS and sheets */
+
+/* drifting office clutter behind the menu */
+.office-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.office-bg .of-file {
+  position: absolute;
+  width: 26px;
+  height: 34px;
+  border-radius: 3px;
+  background: rgba(232, 220, 192, 0.1);
+  border: 1px solid rgba(232, 220, 192, 0.16);
+  animation: drift 18s linear infinite;
+}
+.office-bg .of-file::after {
+  content: '';
+  position: absolute;
+  left: 4px; right: 4px; top: 8px;
+  height: 2px;
+  background: rgba(232, 220, 192, 0.18);
+  box-shadow: 0 6px 0 rgba(232, 220, 192, 0.14), 0 12px 0 rgba(232, 220, 192, 0.1);
+}
+.office-bg .f1 { left: 8%; top: -10%; animation-duration: 22s; }
+.office-bg .f2 { left: 72%; top: -18%; animation-duration: 27s; animation-delay: -6s; }
+.office-bg .f3 { left: 44%; top: -24%; animation-duration: 32s; animation-delay: -14s; }
+@keyframes drift {
+  0% { transform: translateY(0) rotate(-8deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(115vh) rotate(22deg); opacity: 0; }
+}
+.office-bg .of-chair {
+  position: absolute;
+  right: -40px;
+  bottom: 12%;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 6px solid rgba(255, 255, 255, 0.05);
+  border-top-color: rgba(255, 209, 102, 0.18);
+  animation: spinchair 14s linear infinite;
+}
+@keyframes spinchair { to { transform: rotate(360deg); } }
+
+/* the three fighters waiting on the menu */
+.menu-fighters {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 6px 0 14px;
+}
+.menu-fighters .mf {
+  width: 76px;
+  height: 76px;
+  animation: bob 2.6s ease-in-out infinite;
+}
+.menu-fighters .mf:nth-child(2) { animation-delay: -0.9s; }
+.menu-fighters .mf:nth-child(3) { animation-delay: -1.7s; }
+.menu-fighters canvas { width: 100%; height: 100%; display: block; }
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* VS portraits */
+.vs-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.vs-face canvas { width: 100%; height: 100%; display: block; }
+
+/* the moves sheet */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 4, 8, 0.78);
+  padding: 16px;
+}
+.sheet[hidden] { display: none; }
+.sheet-card {
+  width: min(560px, 100%);
+  max-height: 84vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  background: #12151d;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 14px 16px 18px;
+}
+.sheet-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sheet-card header strong { font-size: 15px; color: var(--gold); }
+.sheet-note { font-size: 12px; color: rgba(244, 239, 228, 0.66); margin: 6px 0; line-height: 1.4; }
+table.moves { width: 100%; border-collapse: collapse; font-size: 12px; margin: 6px 0 10px; }
+table.moves th, table.moves td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+table.moves th { color: var(--gold); font-weight: 800; }
+table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
     </style>
   </head>
   <body>
@@ -1636,16 +1754,23 @@ input[type='range'] {
           <p class="tagline">Office politics, settled properly.</p>
         </div>
 
-        <div class="roster-strip" id="roster-strip" aria-hidden="true"></div>
+        <div class="office-bg" aria-hidden="true">
+          <span class="of-file f1"></span>
+          <span class="of-file f2"></span>
+          <span class="of-file f3"></span>
+          <span class="of-chair"></span>
+        </div>
+
+        <div class="menu-fighters" id="menu-fighters" aria-hidden="true"></div>
 
         <div class="stack">
           <button class="btn primary" data-action="solo">
             Play solo
-            <small>you vs 1–3 bots</small>
+            <small>you vs one bot</small>
           </button>
           <button class="btn" data-action="host">
             Host a game
-            <small>up to 4 phones, your phone runs it</small>
+            <small>one friend, your phone runs it</small>
           </button>
           <button class="btn" data-action="join">
             Join a game
@@ -1689,6 +1814,7 @@ input[type='range'] {
             <button class="chip" data-diff="hard">Hard</button>
           </div>
           <span class="spacer"></span>
+          <button class="btn" id="pick-moves" title="Moves">?</button>
           <button class="btn" id="pick-random">Random</button>
           <button class="btn primary" id="pick-start">Fight</button>
         </div>
@@ -1746,6 +1872,7 @@ input[type='range'] {
       <section class="screen" id="screen-game">
         <canvas id="game-canvas"></canvas>
         <div id="lab-hud" class="lab-hud" hidden></div>
+
 
         <div class="game-hud">
           <div class="hud-row">
@@ -1838,6 +1965,32 @@ input[type='range'] {
     </div>
 
     <div class="toast" id="toast"></div>
+
+      <div class="sheet" id="moves-sheet" hidden>
+      <div class="sheet-card">
+        <header><strong>Moves</strong><button class="ghost" id="moves-close">Close</button></header>
+        <div class="sheet-body">
+          <p class="sheet-note">The stick sets your stance; the buttons change with it.</p>
+          <table class="moves">
+            <tr><th>Stick</th><th>Punch</th><th>Kick</th></tr>
+            <tr><td>neutral</td><td>Jab</td><td>Roundhouse</td></tr>
+            <tr><td>push forward</td><td>Stepping straight</td><td>Spin kick</td></tr>
+            <tr><td>hold away</td><td>Jab</td><td>Back kick</td></tr>
+            <tr><td>down (crouch)</td><td>Uppercut</td><td>Sweep</td></tr>
+            <tr><td>up (airborne)</td><td>Overhead</td><td>Flying kick</td></tr>
+          </table>
+          <table class="moves">
+            <tr><th>Also</th><th>How</th></tr>
+            <tr><td>Move</td><td>drag the stick</td></tr>
+            <tr><td>Jump / crouch</td><td>stick up / down</td></tr>
+            <tr><td>Dash</td><td>double-tap toward</td></tr>
+            <tr><td>Backflip</td><td>double-tap away</td></tr>
+            <tr><td>Super</td><td>full meter, then Super</td></tr>
+          </table>
+          <p class="sheet-note">Keyboard: A/D move, W/S jump and crouch, J punch, K kick, L super, double-tap A/D to dash or flip.</p>
+        </div>
+      </div>
+    </div>
 
     <!-- THE ROSTER: one file per fighter. To add a character, add a line here. -->
     <script src="js/fighters/apoorv.js"></script>
@@ -5239,6 +5392,29 @@ function refreshRoster() {
   renderPreview();
 }
 
+/* Three fighters waiting on the main menu, one of them today's pick. */
+function buildMenuFighters() {
+  const box = $('#menu-fighters');
+  if (!box) return;
+  box.innerHTML = '';
+  const day = Math.floor(Date.now() / 86400000);
+  const feat = CHARACTERS[day % CHARACTERS.length];
+  const picks = [feat];
+  for (let i = 1; i < 3; i++) picks.push(CHARACTERS[(day + i * 5) % CHARACTERS.length]);
+
+  for (const c of picks) {
+    const wrap = document.createElement('div');
+    wrap.className = 'mf';
+    wrap.title = c.name;
+    const cv = document.createElement('canvas');
+    cv.width = 152;
+    cv.height = 152;
+    drawPortrait(cv.getContext('2d'), c, 152, { showProp: true });
+    wrap.appendChild(cv);
+    box.appendChild(wrap);
+  }
+}
+
 /* --------------------------------------------------------------- pick screen */
 
 /* remember the last name and fighter between visits */
@@ -5955,6 +6131,12 @@ function showIntro() {
   const side = (sfx, p) => {
     const face = $(`#vs-face-${sfx}`);
     if (face) {
+      face.innerHTML = '';
+      const cv = document.createElement('canvas');
+      cv.width = 128;
+      cv.height = 128;
+      drawPortrait(cv.getContext('2d'), getCharacter(p.charId), 128, { showProp: true, expr: 'angry' });
+      face.appendChild(cv);
       face.style.background = p.colors.body;
       face.style.borderColor = p.colors.accent;
     }
@@ -6101,6 +6283,15 @@ function wire() {
     } catch (_) {
       /* private mode, ignore */
     }
+  });
+
+  $('#pick-moves').addEventListener('click', () => {
+    $('#moves-sheet').hidden = false;
+    audio.click();
+  });
+  $('#moves-close').addEventListener('click', () => { $('#moves-sheet').hidden = true; });
+  $('#moves-sheet').addEventListener('click', (e) => {
+    if (e.target.id === 'moves-sheet') $('#moves-sheet').hidden = true;
   });
 
   $('#pick-random').addEventListener('click', () => {
@@ -6252,15 +6443,7 @@ function boot() {
     /* ignore */
   }
 
-  const strip = $('#roster-strip');
-  if (strip) {
-    strip.innerHTML = CHARACTERS.map(
-      (c) =>
-        `<span class="sw" title="${esc(c.name)}" style="background:${esc(c.colors.body)};border-color:${esc(
-          c.colors.accent
-        )}"></span>`
-    ).join('');
-  }
+  buildMenuFighters();
 
   renderer = createRenderer($('#game-canvas'));
   renderer.resize();
