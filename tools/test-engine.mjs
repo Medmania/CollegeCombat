@@ -420,6 +420,46 @@ console.log('\nmove timing and super windows');
   check('multi-window supers land more than their first window', short.length === 0, short.join(' '));
 }
 
+console.log('\ncombos and protection');
+{
+  /* a landed hit starts a combo counter, which is what scales the damage */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 50;
+  check('a fighter starts with no combo', (a.combo || 0) === 0);
+  a.attack = { type: 'punch', t: 0.1, dur: 0.31, hitAt: 0.11, hit: false, def: a.attacks.punch };
+  run(m, 3, { p0: idle, p1: idle });
+  check('a landed hit opens a combo', a.combo === 1, `combo=${a.combo}`);
+  const scaled = Math.max(0.35, 1 - (3 - 1) * 0.14);
+  check('the third hit of a string is scaled down', scaled < 0.8, `${scaled.toFixed(2)}`);
+}
+
+{
+  /* a downed fighter cannot be hit again on the floor */
+  const m = makeTwo('apoorv', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 50;
+  b.downT = 1.0;
+  b.onGround = true;
+  a.attack = { type: 'punch', t: 0.1, dur: 0.31, hitAt: 0.11, hit: false, def: a.attacks.punch };
+  const hp0 = b.hp;
+  run(m, 3, { p0: idle, p1: idle });
+  check('a knockdown grants get-up protection', b.hp === hp0, `${Math.round(b.hp)} vs ${Math.round(hp0)}`);
+}
+
+{
+  /* a KO'd owner ends their own super */
+  const m = makeTwo('adnan', 'priyank');
+  const [a, b] = m.players;
+  b.x = a.x + 100;
+  a.meter = 165;
+  stepMatch(m, { p0: act({ super: true }), p1: idle });
+  check('the super starts', !!m.superShow);
+  a.alive = false;
+  run(m, 2, { p0: idle, p1: idle });
+  check('a knocked out owner ends their super', m.superShow === null);
+}
+
 console.log('\nblocking and hit stop');
 {
   /* holding away is a guard: the hit is chipped, not eaten */

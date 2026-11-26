@@ -266,6 +266,8 @@ function makePlayer({ id, name, char, isBot = false, slot = 0, count = 2 }) {
     downT: 0,
     hitstun: 0,
     blocking: false,
+    combo: 0,
+    comboT: 0,
     lastHit: null,
     iframes: 0,
     slowT: 0,
@@ -375,6 +377,8 @@ function stepMatch(m, inputs) {
     p.cd.kick = Math.max(0, p.cd.kick - TICK);
     p.cd.dash = Math.max(0, p.cd.dash - TICK);
     p.iframes = Math.max(0, p.iframes - TICK);
+    p.comboT = Math.max(0, (p.comboT || 0) - TICK);
+    if (p.comboT <= 0) p.combo = 0;
     p.hitstun = Math.max(0, p.hitstun - TICK);
     p.slowT = Math.max(0, p.slowT - TICK);
     p.weakT = Math.max(0, p.weakT - TICK);
@@ -402,7 +406,8 @@ function stepMatch(m, inputs) {
     p.blocking = p.onGround && !p.attack && p.hitstun <= 0 && p.downT <= 0 && backward;
 
     if (p.hitstun > 0 || p.downT > 0 || p.lockT > 0) {
-      /* no control */
+      /* no control: a locked fighter may not walk, attack or jump */
+      p.vx *= Math.pow(0.4, TICK);
     } else if (p.attack) {
       p.attack.t += TICK;
 
@@ -721,6 +726,14 @@ function startCinematic(m, p, mod) {
 function stepSuperShow(m) {
   const s2 = m.superShow;
   if (!s2) return;
+
+  /* if the owner goes down, the show is over: no damage from a KO'd fighter */
+  const who = playerById(m, s2.owner);
+  if (who && !who.alive) {
+    m.events.push({ type: 'superend', x: s2.data.plantX, h: 0, id: s2.owner });
+    m.superShow = null;
+    return;
+  }
   const dt = TICK;
   s2.t += dt;
   s2.elapsed += dt;
@@ -764,7 +777,7 @@ function stepSuperShow(m) {
       const dmg = Math.min(h.damage || 0, room);
       s2.dealt += dmg;
       if (owner) {
-        applyDamage(m, owner, t, { hitstun: h.hitstun || 0.5, knockdown: !!h.knockdown }, dmg, h.knock || 600, 'super');
+        applyDamage(m, owner, t, { hitstun: h.hitstun || 0.5, knockdown: !!h.knockdown, unblockable: !!h.unblockable }, dmg, h.knock || 600, 'super');
         /* a super can also leave a debuff behind */
         if (h.slow) t.slowT = Math.max(t.slowT, h.slow);
         if (h.weak) t.weakT = Math.max(t.weakT, h.weak);
@@ -869,7 +882,11 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
       return false;
     }
   }
-  const dmg = baseDmg * src.stats.power * (src.weakT > 0 ? 0.6 : 1);
+  /* combo scaling: each extra hit in a string is worth less, so no loop */
+  src.comboT = 0.85;
+  src.combo = (src.combo || 0) + 1;
+  const scale = Math.max(0.35, 1 - (src.combo - 1) * 0.14);
+  const dmg = baseDmg * src.stats.power * (src.weakT > 0 ? 0.6 : 1) * scale;
   tgt.hp = Math.max(0, tgt.hp - dmg);
 
   const dir = sign(tgt.x - src.x) || src.facing;
@@ -891,6 +908,7 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
     heavy: !!def.knockdown
   };
   tgt.iframes = 0.08;
+  if (tgt.downT > 0) tgt.iframes = 0.5;   /* get-up protection */
   tgt.attack = null;
 
   src.meter = Math.min(SUPER_COST, src.meter + dmg * 0.95 * src.stats.meter);

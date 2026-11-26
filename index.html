@@ -6060,6 +6060,19 @@ function stopLoop() {
   cancelAnimationFrame(rafId);
 }
 
+/* Keep the last 100 ms of presses so a tap during a freeze still registers. */
+const inputBuffer = { punch: 0, kick: 0, super: 0, dash: 0 };
+function bufferedInput(raw, now) {
+  for (const k of ['punch', 'kick', 'super', 'dash']) {
+    if (raw[k]) inputBuffer[k] = now;
+  }
+  const out = { ...raw };
+  for (const k of ['punch', 'kick', 'super', 'dash']) {
+    if (now - inputBuffer[k] < 100) out[k] = true;
+  }
+  return out;
+}
+
 function loop(ts) {
   if (!S.running) return;
   if (!lastTs) lastTs = ts;
@@ -6116,7 +6129,7 @@ function simulate() {
   if (!m) return;
 
   if (S.mode === 'guest') {
-    if (S.guest) S.guest.send({ t: 'in', i: input.getInput() });
+    if (S.guest) S.guest.send({ t: 'in', i: bufferedInput(input.getInput(), performance.now()) });
     return;
   }
 
@@ -6124,7 +6137,7 @@ function simulate() {
 
   let inputs;
   if (S.mode === 'solo') {
-    inputs = inputsForMatch(m, S.localId, input.getInput());
+    inputs = inputsForMatch(m, S.localId, bufferedInput(input.getInput(), performance.now()));
   } else {
     inputs = {};
     const localInput = input.getInput();
