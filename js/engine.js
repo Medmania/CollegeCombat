@@ -670,7 +670,13 @@ function stepSuperShow(m) {
       const room = Math.max(0, (s2.mod.damage || 40) - s2.dealt);
       const dmg = Math.min(h.damage || 0, room);
       s2.dealt += dmg;
-      if (owner) applyDamage(m, owner, t, { hitstun: h.hitstun || 0.5, knockdown: !!h.knockdown }, dmg, h.knock || 600, 'super');
+      if (owner) {
+        applyDamage(m, owner, t, { hitstun: h.hitstun || 0.5, knockdown: !!h.knockdown }, dmg, h.knock || 600, 'super');
+        /* a super can also leave a debuff behind */
+        if (h.slow) t.slowT = Math.max(t.slowT, h.slow);
+        if (h.weak) t.weakT = Math.max(t.weakT, h.weak);
+        if (h.lock) t.lockT = Math.max(t.lockT, h.lock);
+      }
     }
     m.events.push({ type: 'superhit', x: origin, h: 40, r: h.radius || 200, id: s2.owner, kind: 'super' });
   }

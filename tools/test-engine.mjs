@@ -11,6 +11,9 @@ await import('../js/supers/ankit.js');
 await import('../js/supers/apoorv.js');
 await import('../js/supers/priyank.js');
 await import('../js/supers/saurav.js');
+await import('../js/supers/aditya.js');
+await import('../js/supers/thirtyone.js');
+await import('../js/supers/mohit.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
