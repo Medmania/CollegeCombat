@@ -14,6 +14,9 @@ await import('../js/supers/saurav.js');
 await import('../js/supers/aditya.js');
 await import('../js/supers/thirtyone.js');
 await import('../js/supers/mohit.js');
+await import('../js/supers/nikhil.js');
+await import('../js/supers/ajay.js');
+await import('../js/supers/jeetu.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
@@ -276,20 +279,11 @@ console.log('\nsuper');
 }
 
 console.log('\nsuper archetypes');
-{
-  /* beam: sustained damage in front (jeetu still uses the archetype) */
-  const m = makeTwo('jeetu', 'ansh');
-  const [a, b] = m.players;
-  b.x = a.x + 120;
-  a.meter = 100;
-  stepMatch(m, { p0: act({ super: true }), p1: idle });
-  run(m, 30, { p0: idle, p1: idle });
-  check('beam super damages nearby', b.hp < b.maxHp, `${b.hp}`);
-}
-
+/* only fighters WITHOUT a cinematic module use these now: mukesh (shot),
+   ansh (aura), thirtytwo (flurry). The rest are covered by the module pass. */
 {
   /* shot: a projectile that travels and hits once */
-  const m = makeTwo('nikhil', 'ansh');
+  const m = makeTwo('mukesh', 'ansh');
   const [a, b] = m.players;
   b.x = a.x + 240;
   a.meter = 100;
@@ -303,22 +297,8 @@ console.log('\nsuper archetypes');
 }
 
 {
-  /* beam: sustained damage in front */
-  const m = makeTwo('jeetu', 'apoorv');
-  const [a, b] = m.players;
-  b.x = a.x + 150;
-  a.meter = 100;
-  stepMatch(m, { p0: act({ super: true }), p1: idle });
-  run(m, 9, { p0: idle, p1: idle });
-  check('beam super goes live', !!a.superLive, a.superLive && a.superLive.kind);
-  const before = b.hp;
-  run(m, 30, { p0: idle, p1: idle });
-  check('the beam keeps damaging', b.hp < before - 4, `${b.hp} vs ${before}`);
-}
-
-{
   /* aura: debuffs everyone in range */
-  const m = makeTwo('ansh', 'apoorv');
+  const m = makeTwo('ansh', 'ashish');
   const [a, b] = m.players;
   b.x = a.x + 110;
   a.meter = 100;
@@ -330,7 +310,7 @@ console.log('\nsuper archetypes');
 
 {
   /* flurry: several small hits in a row */
-  const m = makeTwo('apoorv', 'saurav');
+  const m = makeTwo('thirtytwo', 'ashish');
   const [a, b] = m.players;
   b.x = a.x + 110;
   a.meter = 100;
