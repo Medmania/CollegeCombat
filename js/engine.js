@@ -19,10 +19,10 @@ const STAND_H = 122;
 const CROUCH_H = 50;
 const GRAVITY = 2400;
 const JUMP_V = 760;
-const ROUND_TIME = 120;
+const ROUND_TIME = 150;
 const SUPER_COST = 100;
 /* global health multiplier — raise this to make fights last longer */
-const HP_SCALE = 2.6;
+const HP_SCALE = 3.4;
 
 const EMPTY_INPUT = {
   mx: 0,
@@ -34,7 +34,7 @@ const EMPTY_INPUT = {
 };
 
 /* One knob for the pace of every attack. Bump it up to slow the fight down. */
-const PACE = 1.42;
+const PACE = 1.56;
 
 /* How far the stick has to travel before it counts as up or down. */
 const UP_THRESHOLD = -0.55;
@@ -67,10 +67,26 @@ const BANDS = {
   lungePunch: { minH: 46, maxH: 112 }
 };
 
+/* Each passive gets a body: how fast it drops into a crouch, how hard it
+   dives, how much of its own momentum it keeps. */
+const ARCHETYPE_STYLES = {
+  tank:     { style: 'heavy', cDur: 1.22, aDur: 1.18, cLunge: 150, aVx: 180, diveVh: -260, knockMult: 1.30 },
+  heavy:    { style: 'heavy', cDur: 1.20, aDur: 1.15, cLunge: 165, aVx: 195, diveVh: -240, knockMult: 1.25 },
+  quick:    { style: 'agile', cDur: 0.78, aDur: 0.80, cLunge: 280, aVx: 300, diveVh: -90,  knockMult: 0.85 },
+  slippery: { style: 'agile', cDur: 0.75, aDur: 0.78, cLunge: 310, aVx: 320, diveVh: -80,  knockMult: 0.85 },
+  shover:   { style: 'tech',  cDur: 1.05, aDur: 1.00, cLunge: 210, aVx: 245, diveVh: -150, knockMult: 1.35 },
+  charged:  { style: 'tech',  cDur: 0.95, aDur: 0.92, cLunge: 230, aVx: 255, diveVh: -140, knockMult: 1.00 },
+  none:     { style: 'base',  cDur: 1.00, aDur: 1.00, cLunge: 210, aVx: 240, diveVh: -130, knockMult: 1.00 }
+};
+
 function buildAttacks(char) {
   const p = char.moves.punch;
   const k = char.moves.kick;
   const d = (v) => v * PACE;
+  const arch = ARCHETYPE_STYLES[(char.passive && char.passive.id) || 'none'] || ARCHETYPE_STYLES.none;
+  const heavy = arch.style === 'heavy';
+  const agile = arch.style === 'agile';
+  const tech = arch.style === 'tech';
 
   return {
     /* --- punches: jab, uppercut from a crouch, overhead from the air --- */
@@ -89,26 +105,28 @@ function buildAttacks(char) {
       ...BANDS.punch
     },
     crouchPunch: {
+      style: arch.style,
       family: 'punch',
       type: 'crouchPunch',
-      damage: p.damage * 1.2,
+      damage: p.damage * (heavy ? 1.32 : 1.15) * 1.2,
       /* must out-reach BODY_GAP or it can never connect */
       range: p.range * 1.0,
-      dur: d(p.dur * 1.2),
-      hitAt: p.hitAt * PACE * 1.1,
-      knock: p.knock * 1.2,
+      dur: d(p.dur * 1.2 * arch.cDur),
+      hitAt: p.hitAt * PACE * 1.1 * arch.cDur,
+      knock: p.knock * 1.2 * 1.15 * arch.knockMult,
       cd: d(p.cd * 1.2),
-      hitstun: 0.22,
+      hitstun: heavy ? 0.28 : 0.2,
       ...BANDS.crouchPunch
     },
     airPunch: {
+      style: arch.style,
       family: 'punch',
       type: 'airPunch',
-      damage: p.damage * 1.1,
+      damage: p.damage * (heavy ? 1.25 : 1.05),
       range: p.range * 0.9,
-      dur: d(0.3),
-      hitAt: 0.1 * PACE,
-      knock: p.knock * 1.1,
+      dur: d(p.dur * arch.aDur),
+      hitAt: p.hitAt * PACE * 1.15 * arch.aDur,
+      knock: p.knock * 1.1 * arch.knockMult,
       cd: d(0.4),
       hitstun: 0.22,
       air: true,
@@ -130,28 +148,30 @@ function buildAttacks(char) {
       ...BANDS.kick
     },
     sweep: {
+      style: arch.style,
       family: 'kick',
       type: 'sweep',
-      damage: k.damage * 0.8,
-      range: k.range * 1.05,
-      dur: d(k.dur * 1.15),
-      hitAt: k.hitAt * PACE * 1.25,
-      knock: k.knock * 0.7,
+      damage: p.damage * (heavy ? 0.95 : 0.75),
+      range: p.range * (tech ? 1.14 : 1.05),
+      dur: d(p.dur * arch.cDur),
+      hitAt: k.hitAt * PACE * 1.25 * arch.cDur,
+      knock: p.knock * 0.75 * arch.knockMult,
       cd: d(k.cd * 1.25),
       hitstun: 0.5,
       knockdown: true,
       ...BANDS.sweep
     },
     airKick: {
+      style: arch.style,
       family: 'kick',
       type: 'airKick',
-      damage: k.damage * 1.1,
-      range: k.range * 0.9,
-      dur: d(0.36),
-      hitAt: 0.12 * PACE,
+      damage: p.damage * (heavy ? 1.28 : 1.08),
+      range: p.range * (agile ? 0.98 : 0.9),
+      dur: d(p.dur * arch.aDur),
+      hitAt: p.hitAt * PACE * 1.1 * arch.aDur,
       knock: k.knock * 1.15,
       cd: d(0.45),
-      hitstun: 0.32,
+      hitstun: heavy ? 0.38 : 0.28,
       air: true,
       ...BANDS.airKick
     },
@@ -380,6 +400,21 @@ function stepMatch(m, inputs) {
         p.attack.hit = true;
         resolveHit(m, p, p.attack);
       }
+
+      /* a jab that landed can be cancelled straight into the heavy option */
+      if (p.attack && p.attack.connected && p.attack.type === 'punch' && p.attack.t >= p.attack.hitAt) {
+        if (inp.punch && p.cd.punch <= 0) {
+          p.attack = null;
+          startAttack(p, p.attacks.lungePunch, m);
+          p.cd.punch = p.attacks.lungePunch.cd;
+          p.attack.connected = false;
+        } else if (inp.kick && p.cd.kick <= 0) {
+          p.attack = null;
+          startAttack(p, p.crouching ? p.attacks.sweep : p.attacks.kick, m);
+          p.cd.kick = p.attacks.kick.cd;
+          p.attack.connected = false;
+        }
+      }
       if (p.attack.t >= p.attack.dur) p.attack = null;
     } else {
       p.crouching = wantCrouch;
@@ -452,7 +487,7 @@ function stepMatch(m, inputs) {
     } else {
       const mx = clamp(inp.mx || 0, -1, 1);
       const slow = p.slowT > 0 ? 0.45 : 1;
-      const speed = p.stats.speed * 240 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
+      const speed = p.stats.speed * 215 * slow * (p.crouching ? 0.3 : p.onGround ? 1 : 0.72);
       p.vx = mx * speed;
     }
 

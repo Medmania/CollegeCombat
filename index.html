@@ -4093,7 +4093,7 @@ function createRenderer(canvas) {
 
   function say(id, text) {
     bubbles.length = 0;
-    bubbles.push({ id, text, life: 3.4, max: 3.4 });
+    bubbles.push({ id, text, life: 4.6, max: 4.6 });
   }
 
   function step(dt) {
@@ -6120,7 +6120,7 @@ function updateHud() {
   if (el.textContent !== String(t)) el.textContent = String(t);
 
   const now = performance.now();
-  if (now - S.tickerAt > 7000) {
+  if (now - S.tickerAt > 11000) {
     S.tickerAt = now;
     S.tickerIndex = (S.tickerIndex + 1) % TICKER.length;
     const tickEl = $('#hud-ticker');

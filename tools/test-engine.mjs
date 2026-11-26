@@ -157,7 +157,7 @@ console.log('\nheight matters');
   const before = b.hp;
   stepMatch(m, { p0: act({ kick: true, my: 1 }), p1: act({ my: 1 }) });
   check('crouch + kick becomes a sweep', a.attack && a.attack.type === 'sweep', a.attack && a.attack.type);
-  run(m, 16, { p0: idle, p1: act({ my: 1 }) });
+  run(m, 24, { p0: idle, p1: act({ my: 1 }) });
   check('a sweep hits a crouching opponent', b.hp < before, `${b.hp} vs ${before}`);
 }
 
@@ -261,7 +261,7 @@ console.log('\nknockdown');
   const [a, b] = m.players;
   b.x = a.x + 55;
   stepMatch(m, { p0: act({ kick: true, my: 1 }), p1: idle });
-  run(m, 16, { p0: idle, p1: idle });
+  run(m, 24, { p0: idle, p1: idle });
   check('a sweep knocks the opponent down', b.downT > 0, `downT=${b.downT.toFixed(2)}`);
   run(m, 20, { p0: idle, p1: idle });
   check('a downed fighter gets back up', m.players[1].downT < 1.2);
