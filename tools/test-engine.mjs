@@ -20,6 +20,9 @@ await import('../js/supers/jeetu.js');
 await import('../js/supers/mukesh.js');
 await import('../js/supers/ansh.js');
 await import('../js/supers/anmol.js');
+await import('../js/supers/thirtytwo.js');
+await import('../js/supers/thirtythree.js');
+await import('../js/supers/ashish.js');
 await import('../js/characters.js');
 await import('../js/engine.js');
 
@@ -282,47 +285,25 @@ console.log('\nsuper');
 }
 
 console.log('\nsuper archetypes');
-/* only fighters WITHOUT a cinematic module use these now: mukesh (shot),
-   ansh (aura), thirtytwo (flurry). The rest are covered by the module pass. */
+/* Every fighter now has a cinematic module, so the plain archetypes are only a
+   fallback. Prove the fallback still works by removing a module for one match. */
 {
-  /* shot: a projectile that travels and hits once */
-  const m = makeTwo('thirtythree', 'ashish');
-  const [a, b] = m.players;
-  b.x = a.x + 240;
-  a.meter = 100;
-  stepMatch(m, { p0: act({ super: true }), p1: idle });
-  run(m, 9, { p0: idle, p1: idle });
-  check('shot super spawns a projectile', m.projectiles.length > 0, `${m.projectiles.length}`);
-  const before = b.hp;
-  run(m, 40, { p0: idle, p1: idle });
-  check('the projectile damages the target', b.hp < before, `${b.hp} vs ${before}`);
-  check('projectiles clear up afterwards', m.projectiles.length === 0);
-}
+  const saved = globalThis.KK_SUPERS['ashish'];
+  delete globalThis.KK_SUPERS['ashish'];
 
-{
-  /* aura: debuffs everyone in range */
-  const m = makeTwo('ashish', 'thirtytwo');
+  const m = makeTwo('ashish', 'ansh');
   const [a, b] = m.players;
   b.x = a.x + 110;
   a.meter = 100;
   stepMatch(m, { p0: act({ super: true }), p1: idle });
-  run(m, 14, { p0: idle, p1: idle });
-  /* ashish is the last generic aura: it weakens and locks rather than slows */
-  check('aura super applies weakness', b.weakT > 0, `weakT=${b.weakT.toFixed(2)}`);
-  check('aura super applies lock', b.lockT > 0, `lockT=${b.lockT.toFixed(2)}`);
-}
+  check('the fallback does not start a cinematic', m.superShow === null);
+  /* the archetype effect starts when the super attack lands, not on the press */
+  run(m, 12, { p0: idle, p1: idle });
+  check('a fighter without a module falls back to its archetype', !!a.superLive,
+    `live=${a.superLive && a.superLive.kind}`);
 
-{
-  /* flurry: several small hits in a row */
-  const m = makeTwo('thirtytwo', 'ashish');
-  const [a, b] = m.players;
-  b.x = a.x + 110;
-  a.meter = 100;
-  stepMatch(m, { p0: act({ super: true }), p1: idle });
-  run(m, 9, { p0: idle, p1: idle });
-  const before = b.hp;
-  run(m, 34, { p0: idle, p1: idle });
-  check('flurry super multi-hits', before - b.hp >= 8, `damage ${(before - b.hp).toFixed(0)}`);
+  globalThis.KK_SUPERS['ashish'] = saved;
+  check('the module is restored', !!globalThis.KK_SUPERS['ashish']);
 }
 
 {
