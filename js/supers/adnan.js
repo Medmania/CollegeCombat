@@ -44,6 +44,7 @@
 
   draw(g, s) {
     const ctx = g.ctx;
+    const soft = !!g.reduced;   /* reduce shake and flashes */
     const boomAt = 3.35;
     const pr = g.project(s.x, 0);
     if (!pr) return;
@@ -78,7 +79,7 @@
 
     /* ---- the blast, in layers ---- */
     if (dt >= 0 && dt < 2.4) {
-      drawBlast(ctx, pr.x, pr.y, s0, dt, this.debris);
+      drawBlast(ctx, pr.x, pr.y, s0, dt, soft ? this.debris.slice(0, 6) : this.debris, soft);
     }
 
     /* ---- scorch mark, fading ---- */
@@ -289,9 +290,9 @@ function drawBomb(ctx, x, y, u, elapsed, boomAt) {
 
 /* ------------------------------------------------------------ the blast */
 
-function drawBlast(ctx, x, y, u, dt, debris) {
-  /* 1. short hot core */
-  if (dt < 0.5) {
+function drawBlast(ctx, x, y, u, dt, debris, soft) {
+  /* 1. short hot core — skipped when the player asked for fewer flashes */
+  if (dt < 0.5 && !soft) {
     const k = dt / 0.5;
     const r = 90 * u * (0.5 + k * 0.8);
     const core = ctx.createRadialGradient(x, y - 40 * u, 2, x, y - 40 * u, r);

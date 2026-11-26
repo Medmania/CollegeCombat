@@ -1979,6 +1979,12 @@ table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
           <p class="hint" id="sfx-value">80%</p>
         </div>
 
+        <div class="field">
+          <label for="reduce-fx">Reduce shake and flashes</label>
+          <button class="chip" id="reduce-fx" aria-pressed="false">Off</button>
+          <p class="hint">Turns down camera shake, big flashes and heavy effects. Gameplay, hit timing and warnings stay exactly the same.</p>
+        </div>
+
         <p class="hint">Saved on this phone only. No account, no cloud, no server.</p>
       </section>
 
@@ -2021,7 +2027,7 @@ table.moves td:first-child { color: rgba(244, 239, 228, 0.72); }
             <tr><td>Backflip</td><td>double-tap away</td></tr>
             <tr><td>Super</td><td>full meter, then Super</td></tr>
           </table>
-          <p class="sheet-note">Keyboard: A/D move, W/S jump and crouch, J punch, K kick, L super, double-tap A/D to dash or flip.</p>
+          <p class="sheet-note">Keyboard: A/D move, W jump, S crouch, J punch, K kick, L dash, Space super. Double-tap A or D to dash or backflip.</p>
         </div>
       </div>
     </div>
@@ -3396,6 +3402,7 @@ function createRenderer(canvas) {
   let time = 0;
   let frameDt = 1 / 60;
   let hitstopNow = 0;
+  let reducedFx = false;
   let shake = 0;
 
   const particles = [];
@@ -4412,6 +4419,7 @@ function createRenderer(canvas) {
 
   function step(dt) {
     time += dt;
+    if (reducedFx) shake = Math.min(shake, 3);
     frameDt = dt;
     cheer = Math.max(0, cheer - dt * 0.55);
     shake *= Math.pow(0.0015, dt);
@@ -4859,6 +4867,8 @@ function createRenderer(canvas) {
     }
 
     hitstopNow = view.hitstop || 0;
+    /* reduced effects: less shake, no full-screen flashes */
+    reducedFx = !!view.reduced;
     for (const p of view.players) {
       p._won = !!(view.over && view.winnerId && p.id === view.winnerId);
       p._lost = !!(view.over && (!view.winnerId || p.id !== view.winnerId));
@@ -5600,7 +5610,8 @@ const LAB_SPEED = 0.25;
 
 /* L toggles the Animation Lab, [ and ] pick the move. */
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'l' || e.key === 'L') {
+  /* P for the Animation Lab: L is the dash key, so it must stay free */
+  if (e.key === 'p' || e.key === 'P') {
     S.lab.on = !S.lab.on;
     S.lab.t = 0;
     S.lab.frame = 0;
@@ -5631,6 +5642,7 @@ const S = {
   mode: 'solo',
   me: { name: 'You', charId: CHARACTERS[0].id, foeId: null },
   difficulty: 'normal',
+  reduced: false,
   hitStop: 0,
   slotState: {},
   fighters: null,
@@ -5831,7 +5843,7 @@ function buildMenuFighters() {
 /* remember the last name and fighter between visits */
 function savePrefs() {
   try {
-    localStorage.setItem('kk.prefs', JSON.stringify({ name: S.me.name, charId: S.me.charId, foeId: S.me.foeId, diff: S.difficulty }));
+    localStorage.setItem('kk.prefs', JSON.stringify({ name: S.me.name, charId: S.me.charId, foeId: S.me.foeId, diff: S.difficulty, reduced: S.reduced }));
   } catch (err) { /* private mode: not fatal */ }
 }
 
@@ -5844,6 +5856,7 @@ function loadPrefs() {
     if (p.charId && getCharacter(p.charId)) S.me.charId = p.charId;
     if (p.foeId && getCharacter(p.foeId)) S.me.foeId = p.foeId;
     if (p.diff) S.difficulty = p.diff;
+    if (typeof p.reduced === 'boolean') S.reduced = p.reduced;
   } catch (err) { /* ignore a corrupt value */ }
 }
 
@@ -6435,7 +6448,7 @@ function stepLab(dt) {
         ` · hitAt ${a.hitAt.toFixed(2)}` +
         ` · f${S.lab.frame}` +
         (live ? ' · <span class="lab-contact">CONTACT</span>' : ' · <span class="lab-wait">wind-up</span>') +
-        ' · [ ] to change · L to exit';
+        ' · [ ] to change · P to exit';
     }
   }
 }
@@ -6506,6 +6519,7 @@ function drawFrame() {
     winnerId: m.winner,
     superShow: m.superShow || null,
     lab: S.lab.on,
+    reduced: S.reduced,
     hitstop: S.hitStop
   });
 }
@@ -6726,6 +6740,22 @@ function wire() {
   $('#moves-sheet').addEventListener('click', (e) => {
     if (e.target.id === 'moves-sheet') $('#moves-sheet').hidden = true;
   });
+
+  const reduceBtn = $('#reduce-fx');
+  if (reduceBtn) {
+    const paint = () => {
+      reduceBtn.textContent = S.reduced ? 'On' : 'Off';
+      reduceBtn.classList.toggle('active', S.reduced);
+      reduceBtn.setAttribute('aria-pressed', S.reduced ? 'true' : 'false');
+    };
+    reduceBtn.addEventListener('click', () => {
+      S.reduced = !S.reduced;
+      paint();
+      savePrefs();
+      audio.click();
+    });
+    paint();
+  }
 
   $('#pick-random').addEventListener('click', () => {
     const pool = CHARACTERS.filter((c) => c.id !== S.me.charId);

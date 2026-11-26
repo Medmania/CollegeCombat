@@ -38,7 +38,7 @@
     const fade = Math.min(1, s.elapsed / 0.5) * Math.min(1, Math.max(0, (3.5 - s.elapsed) / 0.4));
     if (fade <= 0) return;
     g.ctx.save();
-    g.ctx.globalAlpha = fade;
+    g.ctx.globalAlpha = fade * (g.reduced ? 0.35 : 1);
     g.ctx.fillStyle = mood.tint;
     g.ctx.fillRect(0, 0, g.W, g.H);
     g.ctx.restore();

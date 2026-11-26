@@ -107,7 +107,7 @@
     }
 
     /* ---- record scratch ---- */
-    if (el > endAt && el < endAt + 0.25) {
+    if (el > endAt && el < endAt + 0.25 && !g.reduced) {
       const k = (el - endAt) / 0.25;
       ctx.save();
       ctx.globalAlpha = (1 - k) * 0.5;
