@@ -87,15 +87,16 @@
       ctx.globalCompositeOperation = 'lighter';
       ctx.lineCap = 'round';
 
-      for (const off of [-5, 5]) {
-        const sx = pr.x;
-        const sy = eyeY + off * u * 0.6;
+      /* the beams start just outside each eye, so the face stays readable */
+      for (const off of [-9, 9]) {
+        const sx = pr.x + off * u * 0.5;
+        const sy = eyeY + 2 * u;
         const ex = endX;
-        const ey = endY + off * u * 0.6;
+        const ey = endY + off * u * 0.35;
 
         ctx.globalAlpha = 0.35 * fade;
         ctx.strokeStyle = '#7ec8ff';
-        ctx.lineWidth = 22 * u * pulse;
+        ctx.lineWidth = 11 * u * pulse;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(ex, ey);
@@ -103,7 +104,7 @@
 
         ctx.globalAlpha = 0.95 * fade;
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 6 * u * pulse;
+        ctx.lineWidth = 3 * u * pulse;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(ex, ey);

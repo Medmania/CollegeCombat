@@ -66,17 +66,35 @@
     if (el < landAt) {
       const k = Math.min(1, (el - launchAt) / (landAt - launchAt));
       const bx = pr.x + (land.x - pr.x) * k;
-      const by = pr.y - 62 * u;
+      /* kept low at chest height so it never covers his face */
+      const by = pr.y - 52 * u;
 
-      /* the elastic band back to him */
+      /* the shirt stretching with it: a wide tapering band, not a string */
       ctx.save();
-      ctx.strokeStyle = 'rgba(240,180,90,0.55)';
-      ctx.lineWidth = 6 * u;
-      ctx.lineCap = 'round';
+      const bandGrad = ctx.createLinearGradient(pr.x, pr.y - 60 * u, bx, by);
+      bandGrad.addColorStop(0, 'rgba(150,90,30,0.95)');
+      bandGrad.addColorStop(1, 'rgba(240,180,90,0.95)');
+      ctx.fillStyle = bandGrad;
       ctx.beginPath();
-      ctx.moveTo(pr.x, pr.y - 62 * u);
-      ctx.quadraticCurveTo((pr.x + bx) / 2, pr.y - 100 * u, bx, by);
-      ctx.stroke();
+      ctx.moveTo(pr.x - 16 * u, pr.y - 58 * u);
+      ctx.quadraticCurveTo((pr.x + bx) / 2, pr.y - 84 * u, bx - 30 * u, by - 16 * u);
+      ctx.lineTo(bx - 30 * u, by + 16 * u);
+      ctx.quadraticCurveTo((pr.x + bx) / 2, pr.y - 36 * u, pr.x - 16 * u, pr.y - 34 * u);
+      ctx.closePath();
+      ctx.fill();
+
+      /* stretch folds across the band */
+      ctx.strokeStyle = 'rgba(120,70,20,0.45)';
+      ctx.lineWidth = 1.2 * u;
+      for (let i = 1; i < 5; i++) {
+        const t = i / 5;
+        const fx = pr.x + (bx - pr.x) * t;
+        const fy = pr.y - 58 * u + (by - (pr.y - 58 * u)) * t;
+        ctx.beginPath();
+        ctx.moveTo(fx, fy - 8 * u * (1 - t * 0.5));
+        ctx.lineTo(fx, fy + 8 * u * (1 - t * 0.5));
+        ctx.stroke();
+      }
       ctx.restore();
 
       /* the belly itself */
