@@ -765,6 +765,13 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   }
   tgt.hitstun = Math.max(tgt.hitstun, def.hitstun || 0.18);
   tgt.lastHit = kind;
+  /* what the renderer needs to pick a reaction: kind, side, and how hard */
+  tgt.hitInfo = {
+    kind,
+    dir: tgt.x >= src.x ? 1 : -1,
+    tier: dmg >= 16 ? 'heavy' : dmg >= 8 ? 'medium' : 'light',
+    heavy: !!def.knockdown
+  };
   tgt.iframes = 0.08;
   tgt.attack = null;
 
@@ -822,6 +829,20 @@ function checkEnd(m) {
 }
 
 /* Gameplay randomness must be reproducible: never Math.random here. */
+/* Which part of the body an attack lands on. Drives the reaction pose. */
+const HIT_HEIGHT = {
+  punch: 'high',
+  lungePunch: 'high',
+  airPunch: 'high',
+  crouchPunch: 'up',
+  kick: 'body',
+  spinKick: 'body',
+  backKick: 'body',
+  airKick: 'body',
+  sweep: 'low',
+  super: 'super'
+};
+
 function nextRandom(m) {
   m.rngState = (m.rngState * 1664525 + 1013904223) >>> 0;
   return m.rngState / 4294967296;
@@ -967,6 +988,6 @@ function unpackSnapshot(snap, match) {
   globalThis.KK_Engine = {
     TICK, LANE, PLAYER_R, BODY_GAP, STAND_H, CROUCH_H, GRAVITY, JUMP_V, ROUND_TIME, SUPER_COST, HP_SCALE,
     EMPTY_INPUT, makePlayer, createMatch, stepMatch, playerById, packSnapshot,
-    unpackSnapshot, hurtBox, buildAttacks
+    unpackSnapshot, hurtBox, buildAttacks, HIT_HEIGHT, nextRandom
   };
 })();

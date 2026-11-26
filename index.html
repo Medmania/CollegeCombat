@@ -1278,6 +1278,31 @@ input[type='range'] {
     opacity: 1;
   }
 }
+
+/* ---------------------------------------------------- Animation Lab (debug) */
+.lab-hud {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(8, 7, 12, 0.88);
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  color: #f4efe4;
+  font: 600 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.lab-hud[hidden] { display: none; }
+.lab-hud b { color: #ffd166; font-weight: 800; }
+.lab-hud .lab-contact { color: #ff5a45; font-weight: 800; }
+.lab-hud .lab-wait { color: #8ad4ff; }
     </style>
   </head>
   <body>
@@ -1395,6 +1420,7 @@ input[type='range'] {
       <!-- ================= GAME (landscape) ================= -->
       <section class="screen" id="screen-game">
         <canvas id="game-canvas"></canvas>
+        <div id="lab-hud" class="lab-hud" hidden></div>
 
         <div class="game-hud">
           <div class="hud-row">
@@ -1536,7 +1562,7 @@ input[type='range'] {
      js/engine.js       the rules (movement, hits, damage, knockout)
    They are loaded just above this block. */
 
-const { TICK, LANE, PLAYER_R, SUPER_COST, createMatch, stepMatch, packSnapshot } = globalThis.KK_Engine;
+const { TICK, LANE, PLAYER_R, SUPER_COST, createMatch, stepMatch, packSnapshot, unpackSnapshot, HIT_HEIGHT } = globalThis.KK_Engine;
 const { CHARACTERS, getCharacter, HEADLINES, TICKER } = globalThis.KK_Roster;
 
 
@@ -2041,6 +2067,21 @@ function rng(seed) {
   };
 }
 
+/* Two-bone IK: where the knee has to sit so the foot lands on its target. */
+function solveKnee(hip, foot, l1, l2, dir) {
+  const dx = foot[0] - hip[0];
+  const dy = foot[1] - hip[1];
+  let d = Math.hypot(dx, dy);
+  const maxD = l1 + l2 - 0.5;
+  if (d > maxD) d = maxD;
+  if (d < 0.001) d = 0.001;
+  const cosA = Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)));
+  const a = Math.acos(cosA);
+  const base = Math.atan2(dx, dy);
+  const ang = base + a * (dir >= 0 ? 1 : -1);
+  return [hip[0] + Math.sin(ang) * l1, hip[1] + Math.cos(ang) * l1];
+}
+
 const COMIC_WORDS = ['DHISHOOM', 'THAPPAD', 'DHADAM', 'DHADAAM'];
 
 const CROWD_COLORS = ['#e05a4a', '#3f7fbf', '#e8b64c', '#5fa86b', '#9b6bc4', '#e08a3c', '#4fb3a5'];
@@ -2108,10 +2149,25 @@ const ATTACK_POSES = {
 
 /* What the body does when it takes one, by the family of the strike. */
 const HURT_POSES = {
-  punch: { lean: -0.34, headTilt: -0.46, fUpper: -0.55, fFore: 0.9, bUpper: -0.72, bFore: 0.8 },
-  kick: { lean: 0.38, headTilt: 0.3, hipY: RIG.hipY - 5, fUpper: 0.85, fFore: 1.95, bUpper: 0.72, bFore: 1.85 },
+  /* a hit to the head snaps it back and throws the arms up */
+  high: { lean: -0.34, headTilt: -0.5, fUpper: -0.55, fFore: 0.9, bUpper: -0.72, bFore: 0.8, hipY: RIG.hipY - 2 },
+  /* a hit to the body folds them over it */
+  body: { lean: 0.42, headTilt: 0.32, hipY: RIG.hipY - 7, fUpper: 0.9, fFore: 1.95, bUpper: 0.76, bFore: 1.85, fThigh: 0.34, fShin: 0.5, bThigh: -0.34, bShin: -0.5 },
+  /* an uppercut lifts the chin and stretches them tall */
+  up: { lean: -0.2, headTilt: -0.55, hipY: RIG.hipY + 6, fUpper: -0.3, fFore: 1.2, bUpper: -0.5, bFore: 1.0 },
+  /* a sweep takes the legs out */
+  low: { lean: 0.3, headTilt: 0.2, hipY: RIG.hipY - 18, fThigh: 0.9, fShin: 0.4, bThigh: -0.9, bShin: -0.4, fUpper: 1.1, fFore: 1.6, bUpper: 1.0, bFore: 1.7 },
   super: { lean: -0.55, headTilt: -0.5, fUpper: -0.9, fFore: 0.5, bUpper: -1.0, bFore: 0.4, hipY: RIG.hipY - 8 }
 };
+
+/* extra lean on a heavy hit, so weight reads without adding stun */
+function heavyLean(pose, tier) {
+  if (tier === 'heavy') {
+    pose.lean = (pose.lean || 0) * 1.45;
+    pose.headTilt = (pose.headTilt || 0) * 1.4;
+  }
+  return pose;
+}
 
 const WIN_POSE = { fUpper: -1.05, fFore: -0.55, bUpper: -1.15, bFore: -0.5, lean: -0.08, headTilt: -0.2, hipY: RIG.hipY + 2 };
 const LOSE_POSE = { hipY: RIG.hipY - 12, lean: 0.5, fUpper: 0.9, fFore: 0.4, bUpper: 0.8, bFore: 0.5, headTilt: 0.35, fThigh: 0.3, fShin: 0.7, bThigh: -0.3, bShin: -0.7 };
@@ -2136,11 +2192,9 @@ function basePose() {
 }
 
 function familyOf(kind) {
-  if (!kind) return 'punch';
+  if (!kind) return 'high';
   if (kind === 'super') return 'super';
-  if (kind === 'sweep') return 'sweep';
-  if (kind.indexOf('kick') >= 0 || kind === 'backKick') return 'kick';
-  return 'punch';
+  return HIT_HEIGHT[kind] || 'high';
 }
 
 function poseFor(p, phase, opts) {
@@ -2203,8 +2257,9 @@ function poseFor(p, phase, opts) {
 
   /* taking one overrides everything */
   if (p.hitstun > 0.02 && !a) {
-    const fam = familyOf(p.lastHit);
-    const hurt = HURT_POSES[fam] || HURT_POSES.punch;
+    const info = p.hitInfo || {};
+    const where = HIT_HEIGHT[p.lastHit] || HIT_HEIGHT[info.kind] || 'high';
+    const hurt = heavyLean({ ...(HURT_POSES[where] || HURT_POSES.high) }, info.tier);
     mixPose(P, P, hurt, Math.min(1, p.hitstun * 6));
   }
 
@@ -2529,9 +2584,11 @@ function createRenderer(canvas) {
   function drawDowned(p, foot, s, dir) {
     const c = p.colors;
     const u = (v) => v * s;
-    const y = foot.y;
-    const bodyW = u(74);
-    const bodyH = u(26);
+    /* rising from the floor: the last 0.45 s of downT is the get-up */
+    const rise = p.alive ? clamp(1 - p.downT / 0.45, 0, 1) : 0;
+    const y = foot.y - rise * u(26);
+    const bodyW = u(74) * (1 - rise * 0.35);
+    const bodyH = u(26) * (1 - rise * 0.4) + u(46) * rise;
 
     ctx.save();
     ctx.globalAlpha = 0.95;
@@ -2539,13 +2596,13 @@ function createRenderer(canvas) {
     ctx.strokeStyle = 'rgba(0,0,0,0.5)';
     ctx.lineWidth = u(2);
     ctx.beginPath();
-    ctx.ellipse(foot.x - dir * u(10), y - bodyH * 0.5, bodyW * 0.5, bodyH * 0.5, 0, 0, TAU);
+    ctx.ellipse(foot.x - dir * u(10) * (1 - rise), y - bodyH * 0.5, bodyW * 0.5, bodyH * 0.5, rise * 0.2, 0, TAU);
     ctx.fill();
     ctx.stroke();
 
     /* head */
-    const hx = foot.x + dir * bodyW * 0.42;
-    const hy = y - bodyH * 0.42;
+    const hx = foot.x + dir * bodyW * 0.42 * (1 - rise * 0.3);
+    const hy = y - bodyH * (0.42 + rise * 0.55);
     ctx.fillStyle = c.skin;
     ctx.beginPath();
     ctx.arc(hx, hy, u(14), 0, TAU);
@@ -2558,6 +2615,22 @@ function createRenderer(canvas) {
 
     ctx.strokeStyle = '#14161b';
     ctx.lineWidth = u(2);
+    if (rise > 0.55) {
+      /* waking up: a flat line for an eye, and a small "huh" */
+      for (const d of [-1, 1]) {
+        const ex = hx + d * u(4.5);
+        ctx.beginPath();
+        ctx.moveTo(ex - u(3), hy);
+        ctx.lineTo(ex + u(3), hy);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(230,230,238,0.85)';
+      ctx.font = `800 ${Math.round(9 * s)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('huh?', hx, hy - u(20));
+      ctx.restore();
+      return;
+    }
     for (const d of [-1, 1]) {
       const ex = hx + d * u(4.5);
       ctx.beginPath();
@@ -2739,8 +2812,11 @@ function createRenderer(canvas) {
       rig = { ...target };
       rigs.set(p.id, rig);
     }
-    /* frame-rate independent, and snappier while a strike is live */
-    const rate = p.attack ? 46 : 18;
+    /* frame-rate independent. Around contact the pose is snapped rather than
+       blended, so the strike is not blurred exactly when it should read. */
+    const ext = p.attack ? p.attack.ext : 0;
+    const atContact = p.attack && ext > 0.82;
+    const rate = atContact ? 260 : p.attack ? 46 : 18;
     for (const k of Object.keys(target)) rig[k] = approach(rig[k], target[k], rate, frameDt);
 
     const hitFlash = p.hitstun > 0.02;
@@ -2761,10 +2837,31 @@ function createRenderer(canvas) {
     const neck = [shoulder[0] + Math.sin(rig.lean) * 7 * dir, shoulder[1] - 7];
     const head = [neck[0] + Math.sin(rig.lean + rig.headTilt) * 11 * dir, neck[1] - 19];
 
-    const fKnee = P(RIG.thigh, rig.fThigh, hip);
-    const fAnkle = P(RIG.shin, rig.fShin, fKnee);
-    const bKnee = P(RIG.thigh, rig.bThigh, hip);
-    const bAnkle = P(RIG.shin, rig.bShin, bKnee);
+    /* Feet are planted when standing still, crouching, taking a hit or throwing
+       a punch. The knees are solved backwards from the foot, so the hips can
+       shift without the feet sliding along the floor. Leg-based attacks and the
+       air keep the forward-kinematic angles the poses are tuned for. */
+    const legAttack = p.attack && /kick|sweep/i.test(p.attack.type);
+    const planted = p.onGround && Math.abs(p.vx) < 70 && !legAttack;
+
+    let fKnee;
+    let fAnkle;
+    let bKnee;
+    let bAnkle;
+
+    if (planted) {
+      const stanceF = 13;
+      const stanceB = -15;
+      fAnkle = [stanceF * dir + rig.hipX * 0.25, 0];
+      bAnkle = [stanceB * dir + rig.hipX * 0.25, 0];
+      fKnee = solveKnee(hip, fAnkle, RIG.thigh, RIG.shin, dir);
+      bKnee = solveKnee(hip, bAnkle, RIG.thigh, RIG.shin, dir);
+    } else {
+      fKnee = P(RIG.thigh, rig.fThigh, hip);
+      fAnkle = P(RIG.shin, rig.fShin, fKnee);
+      bKnee = P(RIG.thigh, rig.bThigh, hip);
+      bAnkle = P(RIG.shin, rig.bShin, bKnee);
+    }
 
     const fElbow = P(RIG.upper, rig.fUpper, shoulder);
     const fHand = P(RIG.fore, rig.fFore, fElbow);
@@ -3147,6 +3244,53 @@ function createRenderer(canvas) {
 
   /* ------------------------------------------------------- super effects */
 
+  /* debug: the live hit box and its reach, for the Animation Lab */
+  function drawHitboxes(view) {
+    for (const p of view.players) {
+      const a = p.attack;
+      if (!a || !a.def) continue;
+      const def = a.def;
+      const off = def.air ? p.h : 0;
+      const x0 = p.x;
+      const x1 = p.x + p.facing * def.range;
+      const y0 = off + def.minH;
+      const y1 = off + def.maxH;
+
+      const pts = [
+        project([x0, 0, y0]),
+        project([x1, 0, y0]),
+        project([x1, 0, y1]),
+        project([x0, 0, y1])
+      ];
+      if (pts.some((q) => !q)) continue;
+
+      const live = a.t >= a.hitAt - 0.02 && a.t <= a.hitAt + 0.06;
+      ctx.save();
+      ctx.globalAlpha = live ? 0.42 : 0.18;
+      ctx.fillStyle = live ? '#ff5a45' : '#8ad4ff';
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < 4; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = live ? '#ff5a45' : '#8ad4ff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      /* the hurt box of whoever is standing in it */
+      for (const t of view.players) {
+        if (t === p) continue;
+        const tp = project([t.x, 0, 0]);
+        const tq = project([t.x, 0, 118]);
+        if (!tp || !tq) continue;
+        ctx.globalAlpha = 0.25;
+        ctx.strokeStyle = '#9fe3a0';
+        ctx.strokeRect(tp.x - 16 * tp.s, tq.y, 32 * tp.s, tp.y - tq.y);
+      }
+      ctx.restore();
+    }
+  }
+
   function drawSuperShow(view) {
     const ss = view.superShow;
     if (!ss) return;
@@ -3474,6 +3618,7 @@ function createRenderer(canvas) {
     drawSupers(view);
     drawSuperShow(view);
     drawProjectiles(view);
+    if (view.lab) drawHitboxes(view);
     drawEffects();
     drawBubbles(view.players);
     drawComicWords();
@@ -4125,6 +4270,38 @@ const audio = createAudio();
 const input = createInput(document);
 let renderer = null;
 
+const LAB_MOVES = ['punch', 'lungePunch', 'crouchPunch', 'airPunch', 'kick', 'spinKick', 'backKick', 'sweep', 'airKick'];
+const LAB_SPEED = 0.25;
+
+/* L toggles the Animation Lab, [ and ] pick the move. */
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'l' || e.key === 'L') {
+    S.lab.on = !S.lab.on;
+    S.lab.t = 0;
+    S.lab.frame = 0;
+    const hud = document.getElementById('lab-hud');
+    if (hud) {
+      hud.hidden = !S.lab.on;
+      if (!S.lab.on) hud.textContent = '';
+    }
+    if (S.lab.on && S.match) {
+      S.match.players.forEach((p) => {
+        p.attack = null;
+        p.hitstun = 0;
+        p.downT = 0;
+      });
+    }
+    e.preventDefault();
+    return;
+  }
+  if (S.lab.on && (e.key === '[' || e.key === ']')) {
+    S.lab.move = (S.lab.move + (e.key === ']' ? 1 : LAB_MOVES.length - 1)) % LAB_MOVES.length;
+    S.lab.frame = 0;
+    if (S.match) S.match.players.forEach((p) => { p.attack = null; });
+    e.preventDefault();
+  }
+});
+
 const S = {
   mode: 'solo',
   me: { name: 'You', charId: CHARACTERS[0].id },
@@ -4148,7 +4325,8 @@ const S = {
   slotMsg: {},
   tickerAt: 0,
   tickerIndex: 0,
-  hudCards: []
+  hudCards: [],
+  lab: { on: false, move: 0, t: 0, frame: 0 }
 };
 
 let rafId = 0;
@@ -4650,7 +4828,7 @@ function loop(ts) {
   if (dt > 0.1) dt = 0.1;
   if (dt < 0) dt = 0;
 
-  if (heldInPortrait) {
+  if (heldInPortrait || S.lab.on) {
     acc = 0;
   } else if (S.introT > 0) {
     S.introT = Math.max(0, S.introT - dt);
@@ -4668,6 +4846,17 @@ function loop(ts) {
       guard++;
     }
     if (guard >= 6) acc = 0;
+  }
+
+  if (S.lab.on) {
+    stepLab(dt * LAB_SPEED);
+    if (renderer) {
+      renderer.step(dt);
+      drawFrame();
+    }
+    updateHud();
+    rafId = requestAnimationFrame(loop);
+    return;
   }
 
   if (S.mode === 'guest') {
@@ -4725,6 +4914,45 @@ function smoothGuest(dt) {
     p.x += (p.tx - p.x) * k;
     p.h += (p.th - p.h) * k;
     p.facing = p.tf;
+  }
+}
+
+/* Animation Lab: one fighter, one move, played slow, with the hit box shown. */
+function stepLab(dt) {
+  const m = S.match;
+  if (!m || m.players.length < 2) return;
+  const p = m.players[0];
+  const name = LAB_MOVES[S.lab.move];
+  const def = p.attacks[name];
+  if (!def) return;
+
+  if (!p.attack) {
+    p.attack = { type: name, t: 0, dur: def.dur, hitAt: def.hitAt, hit: false, def };
+  }
+  p.attack.t += dt;
+  S.lab.frame++;
+  if (p.attack.t >= p.attack.dur + 0.18) {
+    p.attack = null;
+    S.lab.frame = 0;
+  }
+  S.lab.t = p.attack ? p.attack.t : 0;
+
+  const hud = $('#lab-hud');
+  if (hud) {
+    hud.hidden = false;
+    const a = p.attack;
+    if (!a) {
+      hud.innerHTML = `<b>${name}</b> · looping…`;
+    } else {
+      const live = Math.abs(a.t - a.hitAt) < 0.02;
+      hud.innerHTML =
+        `<b>${name}</b>` +
+        ` · t ${a.t.toFixed(2)} / ${a.dur.toFixed(2)}` +
+        ` · hitAt ${a.hitAt.toFixed(2)}` +
+        ` · f${S.lab.frame}` +
+        (live ? ' · <span class="lab-contact">CONTACT</span>' : ' · <span class="lab-wait">wind-up</span>') +
+        ' · [ ] to change · L to exit';
+    }
   }
 }
 
@@ -4786,7 +5014,8 @@ function drawFrame() {
     projectiles: m.projectiles || [],
     over: m.over,
     winnerId: m.winner,
-    superShow: m.superShow || null
+    superShow: m.superShow || null,
+    lab: S.lab.on
   });
 }
 
