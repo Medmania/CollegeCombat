@@ -149,6 +149,7 @@ function buildAttacksRaw(char) {
       cd: d(0.4),
       hitstun: 0.22,
       air: true,
+      block: 'stand',
       ...BANDS.airPunch
     },
 
@@ -178,6 +179,7 @@ function buildAttacksRaw(char) {
       cd: d(k.cd * 1.25),
       hitstun: 0.5,
       knockdown: true,
+      block: 'crouch',
       ...BANDS.sweep
     },
     uraken: {
@@ -935,9 +937,10 @@ function applyDamage(m, src, tgt, def, baseDmg, knockBase, kind) {
   /* Guard: low hits need a crouching guard, overheads need a standing one,
      everything else can be blocked either way. */
   if (tgt.blocking && src !== tgt) {
-    const low = kind === 'sweep';
-    const overhead = kind === 'airPunch' || kind === 'airKick';
-    const holds = low ? tgt.crouching : overhead ? !tgt.crouching : true;
+    /* the move declares its own rule: 'crouch' must be guarded low,
+       'stand' must be guarded high, 'any' either way */
+    const rule = def.block || (kind === 'sweep' ? 'crouch' : (kind === 'airPunch' || kind === 'airKick') ? 'stand' : 'any');
+    const holds = rule === 'crouch' ? tgt.crouching : rule === 'stand' ? !tgt.crouching : true;
 
     if (holds) {
       const chip = baseDmg * 0.15;

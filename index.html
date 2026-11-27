@@ -567,9 +567,23 @@ textarea:focus {
 
 .hud-strip {
   display: flex;
-  gap: 5px;
-  max-width: 420px;
+  gap: 8px;
+  width: 100%;
+  /* player one on the left, player two on the right, each on their own side */
+  justify-content: space-between;
 }
+
+.hud-strip .hud-card {
+  flex: 1 1 0;
+  max-width: 46%;
+}
+.hud-strip .hud-card:nth-child(2) {
+  /* the second card sits on the right, mirrored */
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.hud-strip .hud-card:nth-child(2) .hud-info { align-items: flex-end; }
+.hud-strip .hud-card:nth-child(2) .hud-bar { direction: rtl; }
 
 .hud-card {
   flex: 1 1 0;
@@ -3840,6 +3854,91 @@ function createRenderer(canvas) {
     ctx.restore();
   }
 
+  /* rising from the floor on jointed legs: crouched, then straightening */
+  function drawGetUp(p, foot, s, dir, rise) {
+    const c = p.colors;
+    const u = (v) => v * s;
+    const x = foot.x;
+    const y = foot.y;
+    const crouch = 1 - rise;               /* 1 = still low, 0 = standing */
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    /* contact shadow */
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, u(30), u(9), 0, 0, TAU);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const hipY = -u(24 + (1 - crouch) * 30);
+    const shoulderY = hipY - u(28 + (1 - crouch) * 6);
+
+    /* legs: knees bent while low, straightening as he rises */
+    for (const side of [-1, 1]) {
+      const hipX = side * u(8);
+      const kneeX = side * u(14 + crouch * 8);
+      const kneeY = hipY + u(18);
+      const footX = side * u(13);
+      limb([hipX, hipY], [kneeX, kneeY], u(13), u(10), shade(c.body, -34), 'rgba(0,0,0,0.4)');
+      limb([kneeX, kneeY], [footX, 0], u(10), u(8), shade(c.body, -48), 'rgba(0,0,0,0.4)');
+    }
+
+    /* torso */
+    limb([0, hipY], [0, shoulderY], u(20), u(17), c.body, 'rgba(0,0,0,0.42)');
+
+    /* arms pushing off the floor, then hanging */
+    for (const side of [-1, 1]) {
+      const sx = side * u(14);
+      const ex = side * u(20);
+      const ey = shoulderY + u(16 + crouch * 6);
+      const hx2 = side * u(18);
+      const hy2 = crouch > 0.5 ? 0 : shoulderY + u(34);
+      limb([sx, shoulderY + u(4)], [ex, ey], u(9), u(7), shade(c.body, -22), 'rgba(0,0,0,0.4)');
+      limb([ex, ey], [hx2, hy2], u(7), u(6), c.skin, 'rgba(0,0,0,0.4)');
+    }
+
+    /* head, still a bit dazed */
+    const hy3 = shoulderY - u(15);
+    ctx.fillStyle = c.skin;
+    ctx.beginPath();
+    ctx.arc(0, hy3, u(12), 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = u(1.6);
+    ctx.stroke();
+    ctx.fillStyle = c.hair || '#222';
+    ctx.beginPath();
+    ctx.arc(0, hy3 - u(2), u(12), Math.PI * 1.05, Math.PI * 1.95);
+    ctx.fill();
+
+    /* flat eyes while he is still low, normal once he is up */
+    ctx.strokeStyle = '#14161b';
+    ctx.lineWidth = u(2);
+    for (const d of [-1, 1]) {
+      const ex2 = d * u(4.5);
+      ctx.beginPath();
+      if (rise < 0.75) {
+        ctx.moveTo(ex2 - u(3), hy3);
+        ctx.lineTo(ex2 + u(3), hy3);
+      } else {
+        ctx.arc(ex2, hy3, u(1.8), 0, TAU);
+      }
+      ctx.stroke();
+    }
+
+    if (rise < 0.75) {
+      ctx.fillStyle = 'rgba(230,230,238,0.85)';
+      ctx.font = `800 ${Math.round(9 * s)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('huh?', 0, hy3 - u(20));
+    }
+
+    ctx.restore();
+  }
+
   function drawDowned(p, foot, s, dir) {
     const c = p.colors;
     const u = (v) => v * s;
@@ -3874,20 +3973,10 @@ function createRenderer(canvas) {
 
     ctx.strokeStyle = '#14161b';
     ctx.lineWidth = u(2);
-    if (rise > 0.55) {
-      /* waking up: a flat line for an eye, and a small "huh" */
-      for (const d of [-1, 1]) {
-        const ex = hx + d * u(4.5);
-        ctx.beginPath();
-        ctx.moveTo(ex - u(3), hy);
-        ctx.lineTo(ex + u(3), hy);
-        ctx.stroke();
-      }
-      ctx.fillStyle = 'rgba(230,230,238,0.85)';
-      ctx.font = `800 ${Math.round(9 * s)}px ui-sans-serif, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText('huh?', hx, hy - u(20));
+    if (rise > 0.3) {
+      /* he is getting up on his own legs now, not sliding upright as a blob */
       ctx.restore();
+      drawGetUp(p, foot, s, dir, rise);
       return;
     }
     for (const d of [-1, 1]) {
@@ -5389,13 +5478,25 @@ function botInput(p, m) {
 
   /* Guard: if a strike is on its way and it is close enough to land, hold
      away from it and drop the attack. Holding away is what raises the guard. */
-  const incoming = target && target.attack && target.attack.t < target.attack.hitAt + 0.04;
-  const near = target && Math.abs(target.x - p.x) < 150;
-  if (incoming && near && p.hitstun <= 0 && p.downT <= 0 && !p.attack && p.onGround) {
+  /* Guard sometimes, not always: a bot that blocks every single strike is
+     unbeatable. It only reacts to a strike it can actually see coming, and
+     only a fraction of the time, by difficulty. */
+  const guardChance = { easy: 0.15, normal: 0.4, hard: 0.65 }[difficulty] || 0.4;
+  const incoming = target && target.attack && target.attack.t < target.attack.hitAt - 0.02;
+  const near = target && Math.abs(target.x - p.x) < 130;
+  if (incoming && near && p.onGround && p.hitstun <= 0 && p.downT <= 0 && !p.attack &&
+      p.ai && p.ai.guardRoll === undefined) {
+    p.ai.guardRoll = Math.random() < guardChance ? 1 : 0;
+  }
+  if (incoming && near && p.ai && p.ai.guardRoll === 1 &&
+      p.onGround && p.hitstun <= 0 && p.downT <= 0 && !p.attack) {
     out.mx = -dir;
     out.punch = false;
     out.kick = false;
     out.super = false;
+  } else if (!incoming && p.ai) {
+    /* the roll is spent once the strike is past */
+    p.ai.guardRoll = undefined;
   }
 
   return out;
@@ -6401,9 +6502,12 @@ function bufferedInput(raw, now) {
     if (raw[k]) inputBuffer[k] = now;
   }
   const out = { ...raw };
-  for (const k of ['punch', 'kick', 'super', 'dash']) {
+  for (const k of ['punch', 'kick', 'dash']) {
     if (now - inputBuffer[k] < 100) out[k] = true;
   }
+  /* Super stays armed much longer: one press fires as soon as the meter is
+     full or the lock clears, instead of having to be mashed. */
+  if (now - inputBuffer.super < 900) out.super = true;
   return out;
 }
 
@@ -6574,6 +6678,7 @@ function handleEvents(events) {
       audio.ko();
       audio.cheer(1);
     } else if (e.type === 'superstart') {
+      inputBuffer.super = 0;   /* consumed */
       audio.superMove();
       audio.cheer(0.8);
       const rb = $('#round-banner');
