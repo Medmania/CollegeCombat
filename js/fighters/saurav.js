@@ -27,10 +27,10 @@
 
 (globalThis.KK_FIGHTERS = globalThis.KK_FIGHTERS || []).push({
   id: 'saurav',
-  name: 'Saurav',
+  name: 'Saurabh',
   tagline: 'Absolute thiccness',
-  colors: { body: '#5b4b8a', accent: '#ff8fab', skin: '#e0b090', hair: '#241d33' },
-  look: { hair: { style: 'bun' }, body: 'broad', prop: 'thigh' },
+  colors: { body: '#2b3346', pants: '#b9a887', accent: '#8fa3c4', skin: '#b9855e', hair: '#15120f', shoe: '#2a2620' },
+  look: { hair: { style: 'crop', color: '#15120f' }, body: 'stocky', prop: 'thigh', extra: 'beard' },
   stats: { speed: 0.9, power: 1.05, weight: 1.3, hp: 125 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
