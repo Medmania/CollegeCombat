@@ -4241,6 +4241,8 @@ function createRenderer(canvas) {
     const hitFlash = p.hitstun > 0.02;
     const guardFlash = (p.blockFlash || 0) > 0;
     const body = guardFlash ? '#cfe4ff' : hitFlash ? '#ffffff' : c.body;
+    /* trousers are their own colour, so a kurta over jeans reads correctly */
+    const pants = guardFlash ? '#cfe4ff' : hitFlash ? '#ffffff' : (c.pants || shade(c.body, -30));
     const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -46);
     const outline = 'rgba(0,0,0,0.42)';
 
@@ -4315,9 +4317,9 @@ function createRenderer(canvas) {
     }
 
     /* ---- back limbs, deeper in shadow ---- */
-    limb(S(hip), S(bKnee), u(17), u(13), bodyDark, outline);
-    limb(S(bKnee), S(bAnkle), u(13), u(10), bodyDark, outline);
-    ctx.fillStyle = '#1b1e24';
+    limb(S(hip), S(bKnee), u(17), u(13), shade(pants, -30), outline);
+    limb(S(bKnee), S(bAnkle), u(13), u(10), shade(pants, -40), outline);
+    ctx.fillStyle = c.shoe ? shade(c.shoe, -22) : '#1b1e24';
     ctx.beginPath();
     ctx.ellipse(S(bAnkle)[0] + dir * u(3), S(bAnkle)[1], u(9), u(4.5), 0, 0, TAU);
     ctx.fill();
@@ -4362,8 +4364,8 @@ function createRenderer(canvas) {
     drawHead(S(head)[0], S(head)[1], u(RIG.headR), dir, c, rig.lean * 0.5 + rig.headTilt, expr, Math.cos(yaw) < 0);   /* past a quarter turn we see the back of the head */
 
     /* ---- front leg ---- */
-    limb(S(hip), S(fKnee), u(18), u(14), body, outline);
-    limb(S(fKnee), S(fAnkle), u(14), u(11), body, outline);
+    limb(S(hip), S(fKnee), u(18), u(14), pants, outline);
+    limb(S(fKnee), S(fAnkle), u(14), u(11), shade(pants, -18), outline);
     ctx.fillStyle = '#20242c';
     ctx.beginPath();
     ctx.ellipse(S(fAnkle)[0] + dir * u(4), S(fAnkle)[1], u(10), u(5), 0, 0, TAU);
