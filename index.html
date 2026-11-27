@@ -1405,6 +1405,7 @@ input[type='range'] {
   border-radius: 3px;
   background: var(--gold, #ffd166);
 }
+.pick-preview { overflow: visible; }
 .pick-preview .pv-pass {
   font-size: 12px;
   color: rgba(244, 239, 228, 0.62);
@@ -4039,7 +4040,7 @@ function createRenderer(canvas) {
   }
 
   /* a side-on head: skull, jaw, nose, ear, hair mass, one eye and a brow */
-  function drawHead(hx, hy, r, dir, c, tilt, expr, back) {
+  function drawHead(hx, hy, r, dir, c, tilt, expr, back, look) {
     ctx.save();
     ctx.translate(hx, hy);
     ctx.rotate(tilt || 0);
@@ -4140,6 +4141,23 @@ function createRenderer(canvas) {
       ctx.lineTo(r * 0.62, -r * 0.1);
     }
     ctx.stroke();
+
+    /* glasses, moustache and beard, from the fighter's look data */
+    if (look && look.extra === 'glasses') {
+      ctx.strokeStyle = 'rgba(20,22,26,0.9)';
+      ctx.lineWidth = r * 0.07;
+      ctx.beginPath();
+      ctx.arc(r * 0.38, r * 0.1, r * 0.24, 0, TAU);
+      ctx.moveTo(r * 0.62 + r * 0.24, r * 0.1);
+      ctx.arc(r * 0.62, r * 0.1, r * 0.24, 0, TAU);
+      ctx.stroke();
+    }
+    if (look && (look.extra === 'beard' || look.extra === 'stubble')) {
+      ctx.fillStyle = look.extra === 'beard' ? (c.hair || '#222') : 'rgba(40,32,28,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.42, r * 0.5, r * 0.5, r * 0.36, 0, 0, Math.PI);
+      ctx.fill();
+    }
 
     /* mouth */
     ctx.strokeStyle = 'rgba(130,70,60,0.7)';
@@ -4243,6 +4261,7 @@ function createRenderer(canvas) {
     const body = guardFlash ? '#cfe4ff' : hitFlash ? '#ffffff' : c.body;
     /* trousers are their own colour, so a kurta over jeans reads correctly */
     const pants = guardFlash ? '#cfe4ff' : hitFlash ? '#ffffff' : (c.pants || shade(c.body, -30));
+    const look = (typeof getCharacter === 'function' ? getCharacter(p.charId) : null)?.look || {};
     const bodyDark = hitFlash ? '#eeeeee' : shade(c.body, -46);
     const outline = 'rgba(0,0,0,0.42)';
 
@@ -4361,7 +4380,7 @@ function createRenderer(canvas) {
     if (p._won) expr = 'win';
     else if (p.hitstun > 0.02) expr = 'hurt';
     else if (p.attack) expr = 'angry';
-    drawHead(S(head)[0], S(head)[1], u(RIG.headR), dir, c, rig.lean * 0.5 + rig.headTilt, expr, Math.cos(yaw) < 0);   /* past a quarter turn we see the back of the head */
+    drawHead(S(head)[0], S(head)[1], u(RIG.headR), dir, c, rig.lean * 0.5 + rig.headTilt, expr, Math.cos(yaw) < 0, look);   /* past a quarter turn we see the back of the head */
 
     /* ---- front leg ---- */
     limb(S(hip), S(fKnee), u(18), u(14), pants, outline);

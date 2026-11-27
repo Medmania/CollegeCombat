@@ -29,8 +29,8 @@
   id: 'ankit',
   name: 'Ankit',
   tagline: 'Pinchu Panda, at your service',
-  colors: { body: '#2f4f4f', accent: '#f4f1de', skin: '#f0c9a0', hair: '#111111' },
-  look: { hair: { style: 'short' }, body: 'stocky', prop: 'panda' },
+  colors: { body: '#6d4a93', pants: '#2f2a3a', accent: '#d9c27a', skin: '#d9a877', hair: '#1b1719', shoe: '#2a2733' },
+  look: { hair: { style: 'short', color: '#1b1719' }, body: 'average', prop: 'panda', extra: 'glasses' },
   stats: { speed: 0.88, power: 1.2, weight: 1.3, hp: 130 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

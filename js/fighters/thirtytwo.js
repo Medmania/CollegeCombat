@@ -29,8 +29,8 @@
   id: 'thirtytwo',
   name: '32',
   tagline: 'Player 2 has entered',
-  colors: { body: '#2d6a4f', accent: '#95d5b2', skin: '#e3b489', hair: '#1f1f1f' },
-  look: { hair: { style: 'short', color: '#3f7fbf' }, body: 'average', prop: 'pad' },
+  colors: { body: '#2f5480', pants: '#232a33', accent: '#8ad4ff', skin: '#d2a173', hair: '#171417', shoe: '#20242c' },
+  look: { hair: { style: 'short', color: '#171417' }, body: 'average', prop: 'pad', extra: 'glasses' },
   stats: { speed: 1.14, power: 0.95, weight: 0.9, hp: 92 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
