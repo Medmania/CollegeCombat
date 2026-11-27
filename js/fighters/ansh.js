@@ -29,8 +29,8 @@
   id: 'ansh',
   name: 'Ansh',
   tagline: 'Sober boy, allegedly',
-  colors: { body: '#4a6741', accent: '#d9f99d', skin: '#e3b489', hair: '#2b2b2b' },
-  look: { hair: { style: 'long' }, body: 'slim', prop: 'cloud' },
+  colors: { body: '#5b7fa8', pants: '#22242a', accent: '#9fc4e0', skin: '#c08a5c', hair: '#141116', shoe: '#2b2b2b' },
+  look: { hair: { style: 'curly', color: '#141116' }, body: 'average', prop: 'cloud', extra: 'beard' },
   stats: { speed: 1.0, power: 1.0, weight: 1.0, hp: 100 },
   moves: {
     punch: { damage: 7, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },

@@ -29,8 +29,8 @@
   id: 'adnan',
   name: 'Adnan',
   tagline: 'Final countdown, always',
-  colors: { body: '#3b2f2f', accent: '#ff6b6b', skin: '#c98d63', hair: '#1a1414' },
-  look: { hair: { style: 'crop' }, body: 'average', prop: 'clock', extra: 'stubble' },
+  colors: { body: '#e2582a', pants: '#1c1f26', accent: '#ffd166', skin: '#c68a5e', hair: '#15120f', shoe: '#2a2a2a' },
+  look: { hair: { style: 'slick', color: '#15120f' }, body: 'slim', prop: 'clock', extra: 'glasses' },
   stats: { speed: 0.94, power: 1.18, weight: 1.1, hp: 108 },
   moves: {
     punch: { damage: 8, range: 70, arc: 1.25, dur: 0.22, hitAt: 0.08, knock: 150, cd: 0.26 },
